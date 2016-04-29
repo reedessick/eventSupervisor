@@ -3,7 +3,9 @@ author = "reed.essick@ligo.org"
 
 #---------------------------------------------------------------------------------------------------
 
-from ligo.lvalert import lvalertMPutils as utils
+import sys
+sys.path.append("../")
+import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 

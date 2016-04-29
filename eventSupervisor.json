@@ -1,0 +1,95 @@
+{
+    "new" :
+        [
+         "EventCreation",
+         "FARCheck",
+         "LocalRate",
+         "ExternalTriggers",
+         "UnblindInjections",
+
+         "ApprovalProcessorPrelimDQ",
+
+         "dqSummaryStart",
+         "idqStart",
+         "segDB2grcDBStart",
+         "HofTOmegaScanStart",
+         "allAuxOmegaScanStart",
+
+         "CWBPEStart",
+         "LIBPEStart",
+         "BayestarStart",
+         "BayeWavePEStart",
+         "LALInfPEStart"
+              
+        ],
+
+    "update" : 
+        {
+
+         "approvalProcessorSegDBStart" :
+             [
+               "approvalProcessorSegDBFlags",
+               "approvalProcessorSegDBFinish"
+             ],
+
+         "dqSummaryStart" :
+             [
+              "dqSummaryData",
+              "dqSummaryFinish"
+             ],
+
+         "idq_start" : 
+             [
+              "idq_FAP",
+              "idq_timeseries",
+              "idq_tables",
+              "idq_performance",
+              "idq_finish",
+              "approvalProcessoriDQglitchFAP"
+             ],
+
+         "idq_performance" : 
+             [
+              "iDQOmegaScanStart"
+             ],
+
+         "iDQOmegaScanStart" : 
+             [
+              "iDQOmegaScanData",
+              "iDQOmegaScanFinish"
+             ],
+
+         "segDB2grcDBStart" :
+             [
+              "segDB2grcDBFlags",
+              "segDB2grcDBVetoDef",
+              "segDB2grcDBall",
+              "segDB2grcDBFinish"
+             ],
+
+         "HofTOmegaScanStart" :        
+             [
+              "HofTOmegaScanData",
+              "HofTOmegaScanFinish"
+             ],
+
+         "allAuxOmegaScanStart" :        
+             [
+              "allAuxOmegaScanData",
+              "allAuxOmegaScanFinish"
+             ],
+
+         "CWBPEStart" : [],
+         "LIBPEStart" : [],
+         "BayestarStart" : [],
+         "BayeWavePEStart" : [],
+         "LALInfPEStart" : []
+
+        },
+
+    "label" : 
+        [
+
+        ]
+
+}

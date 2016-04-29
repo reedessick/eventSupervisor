@@ -3,7 +3,17 @@ author = "reed.essick@ligo.org"
 
 #---------------------------------------------------------------------------------------------------
 
-from ligo.lvalert import lvalertMPutils as utils
+import sys
+sys.path.append("../")
+import eventSupervisorUtils as esUtils
+
+#---------------------------------------------------------------------------------------------------
+
+def is_idqAlert( alert ):
+    """
+    determine if this is an iDQ messages
+    """
+    return 'idq' in alert['tagname']
 
 #---------------------------------------------------------------------------------------------------
 
