@@ -7,6 +7,10 @@ import sys
 sys.path.append("../")
 import eventSupervisorUtils as esUtils
 
+import numpy as np
+
+from lal.gpstime import tconvert
+
 #---------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------
@@ -172,10 +176,7 @@ class FARCheck(esUtils.EventSupervisorTask):
     def FARCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         check the sanity of the reported FAR
-        NOT IMPLEMENTD
         """
-        raise NotImplementedError("FARCheck")
-
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
             print( "    retrieving event details" )
@@ -230,12 +231,12 @@ class FARCheck(esUtils.EventSupervisorTask):
 
 class LocalRateItem(esUtils.EventSupervisorQueueItem):
     """
-    a check for local rate of events submitted to GraceDb
+    a check for local rate of events submitted to GraceDb around the event's gpstime
     """
     description = "check local rates of events"
 
-    def __init__(self, graceid, gdb, t0, timeout, group, pipeline, search=None, annotate=False, email=[]):
-        tasks = [ localRateCheck(timeout, group, pipeline, search=search, email=email) ] 
+    def __init__(self, graceid, gdb, t0, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, annotate=False, email=[]):
+        tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ] 
         super(LocalRateItem, self).__init__( graceid, 
                                              gdb,
                                              t0, 
@@ -246,11 +247,11 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
 
 class localRateCheck(esUtils.EventSupervisorTask):
     """
-    a check for local rate of events submitted to GraceDB
+    a check for local rate of events submitted to GraceDB in the neighborhood of the event's gpstime
     """
     name = "localRateCheck"
 
-    def __init__(self, timeout, group, pipeline, search=None, email=[]):
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
         description = "a check of local rates for %s_%s"%(group, pipline)
         if search:
             description = "%s_%s"%(description, search)
@@ -267,9 +268,142 @@ class localRateCheck(esUtils.EventSupervisorTask):
     def localRateCheck(self, graceid, gdb, verbose=None, annotate=False):
         """
         check the local rate of triggers submitted to GraceDB
-        NOT IMPLEMENTED
+        checks only around the event's gpstime : (gpstime-self.mWin, gpstime+self.pWin)
         """
-        raise NotImplementedError("localRateCheck")
+        if verbose:
+            report( "%s : %s"%(graceid, self.description) )
+
+        ### get this event
+        if verbose:
+            print( "    retrieving information about this event" )
+        gdb_entry = gdb.event( graceid ).json()
+
+        ### get event time
+        event_time = float(gdb_entry['gpstime'])
+        if verbose:
+            print( "    gpstime : %.6f"%(event_time) )
+        if verbose:
+            report( "    retrieving neighbors within [%.6f-%.6f, %.6f+%6f]"%(event_time, mWin, event_time, pWin) )
+
+        count = 0
+        for entry in gdb.events( "%d .. %d"%(np.floor(event_time-self.mWin), np.ceil(event_time+self.pWin)) ): ### query for neighbors in (t-mWin, t+pWin)
+            if not entry.has_key('search'): 
+                entry['search'] = None
+            ###         not the 'current' event          belongs to the right group        associated with the right pipeline           from the correct search
+            count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
+            
+        if count > (pWin+mWin)*maxRate:
+            if verbose or annotate:
+                message = "action required : found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid) 
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )  
+            return True ### action_required = True
+
+        if verbose or annotate:
+            message = "no action required : found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                message = "event_supervisor : "+message
+                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+        return False ### action_required = False
+
+
+class CreateRateItem(esUtils.EventSupervisorQueueItem):
+    """
+    a check for local rate of events submitted to GraceDb around the event's creation time
+    """
+    description = "check creation rates of events"
+
+    def __init__(self, graceid, gdb, t0, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, annotate=False, email=[]):
+        tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ]
+        super(CreateRateItem, self).__init__( graceid,
+                                             gdb,
+                                             t0,
+                                             tasks,
+                                             description=self.description,
+                                             annotate=annotate
+                                           )
+
+
+class createRateCheck(esUtils.EventSupervisorTask):
+    """
+    a check for local rate of events submitted to GraceDB in the neighborhood of the event's creation time
+    """
+    name = "createRateCheck"
+
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
+        description = "a check of creation rate for %s_%s"%(group, pipline)
+        if search:
+            description = "%s_%s"%(description, search)
+        self.group = group
+        self.pipeline = pipeline
+        self.search = search
+        super(createRateCheck, self).__init__( timeout,
+                                              self.createRateCheck,
+                                              name=self.name,
+                                              description=self.description,
+                                              email=email
+                                            )
+
+    def createRateCheck(self, graceid, gdb, verbose=None, annotate=False):
+        """
+        check the local rate of triggers submitted to GraceDB
+        checks only around the event's creation time : (t-self.mWin, t+self.pWin)
+        NOT IMPLEMENTED --> problems with 'tconvert' and 'created' (I have not thought them through)
+        """
+
+        raise NotImplementedError
+
+        if verbose:
+            report( "%s : %s"%(graceid, self.description) )
+
+        ### get this event
+        if verbose:
+            print( "    retrieving information about this event" )
+        gdb_entry = gdb.event( graceid ).json()
+
+        ### get event time
+        event_time = tconvert( gdb_entry['created'] )
+        if verbose: 
+            print( "    %s -> %.3f"%(gdb_entry['created'], event_time) )
+
+        priint( "WARNING: you are using a hack to correct for peculiarities in querying GraceDB with creation time. We convert GMT -> CST by hand by subtracting 5 hours from the gps time and then converting using lalapps_tconvert. This gives us a time in UTC which we pretend is in CST for the query (string formatted through datestring_converter()" )
+
+        winstart = datestring_converter( tconvert( np.floor(event_time-mWin - 5*3600 ) ) )
+        winstop  = datestring_converter( tconvert( np.ceil( event_time+pWin - 5*3600 ) ) )
+
+        if verbose:
+            print( "\tretrieving neighbors within [%s CST, %s CST]"%(winstart, winstop) )
+
+        count = 0
+        for entry in gdb.events( "created: %s .. %s"%(winstart, winstop) ): ### query for neighbors in (t-mWin, t+pWin)
+            if not entry.has_key('search'):
+                entry['search'] = None
+            ###         not the 'current' event          belongs to the right group        associated with the right pipeline           from the correct search
+            count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
+
+        if count > (pWin+mWin)*maxRate:
+            if verbose or annotate:
+                message = "action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return True ### action_required = True
+
+        if verbose or annotate:
+            message = "no action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                message = "event_supervisor : "+message
+                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+        return False ### action_required = False
 
 #-------------------------------------------------
 # external triggers
@@ -312,9 +446,34 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
     def externalTriggersCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that the external triggers search was completed
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError("externalTriggersCheck")
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving log messages" )
+        logs = gdb.logs( graceid ).json()['log']
+
+        if verbose:
+            print( "    parsing log" )
+        for log in logs:
+            comment = log['comment']
+            if "Coincidence search complete" in comment:
+                if verbose or annotate:
+                    message = "no action required : coincidence search reported completion"
+                    if verbose:
+                        print( "    "+message )
+                    if annotate:
+                        message = "event_supervisor : "+message
+                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                return False ### action_required = False
+
+        if verbose or annotate:
+            message = "action required : no statement about coincidence search was found" 
+            if verbose:
+                print "    "+message
+            if annotate:
+                message = "event_supervisor : "+message
+                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+        return True ### action_required = True
 
 #-------------------------------------------------
 # unblind injections
@@ -354,9 +513,37 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
                                                       email=email
                                                     )
 
-    def unblindInjectionsCheck(self, graceid, gid, verbose=False, annotate=False):
+    def unblindInjectionsCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that the unblind injections search was completed
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError("unblindInjectionsCheck")
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving log messages" )
+        logs = gdb.logs( graceid ).json()['log']
+
+        if verbose:
+            print( "    parsing log" )
+        for log in logs:
+            comment = log['comment']
+            if "No unblind injections in window" in comment:
+                if verbose or annotate:
+                    message = "no action required : process reported that no unblind injections were found" 
+                    if verbose:
+                        print ( "    "+message )
+                    if annotate:
+                        message = "event_supervisor : "+message
+                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+
+                return False ### action_required = False
+
+        print( "    WARNING: we do not currently know how to parse out statements when there *is* an unblind injection...raising an alarm anyway" )
+
+        if verbose or annotate:
+            message = "    action required : could not find a statement about unblind injections" 
+            if verbose:
+                print "    "+message
+            if annotate:
+                message = "event_supervisor : "+message
+                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+        return True ### action_required = True
