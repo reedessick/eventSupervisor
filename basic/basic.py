@@ -18,7 +18,8 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
     a check for propper event creation and readability of associated trigger files
     """
 
-    def __init__(self, graceid, pipeline, t0, timeout, verbose=False, email=[]):
+    def __init__(self, graceid, gdb, pipeline, t0, timeout, annotate=False, email=[]):
+        self.email = email
         if pipeline=="cwb":
             tasks = [cWBTriggerCheck(timeout, email=email)]
         elif pipeline=="lib":
@@ -31,10 +32,11 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
             raise ValueError("pipeline=%s not understood"%pipeline)
 
         super(EventCreationItem, self).__init__( graceid, 
+                                                 gdb,
                                                  t0, 
                                                  tasks, 
-                                                 description="check %s event creation and trigger files"%(pipeline), 
-                                                 verbose=verbose 
+                                                 description="check %s event creation and trigger files"%(pipeline),
+                                                 annotate=annotate 
                                                 )
 
 class cWBTriggerCheck(esUtils.EventSupervisorTask):
@@ -139,13 +141,14 @@ class FARItem(esUtils.EventSupervisorQueueItem):
     """
     description = "check sanity of reported FAR"
 
-    def __init__(self, graceid, t0, timeout, email=[]):
+    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
         tasks = [farChec(timeout, email=email)]
         super(FARItem, self).__init__( graceid, 
+                                       gdb, 
                                        t0, 
-                                       timeout, 
                                        tasks, 
-                                       description=self.description
+                                       description=self.description,
+                                       annotate=annotate
                                      )
 
 class FARCheck(esUtils.EventSupervisorTask):
@@ -155,9 +158,10 @@ class FARCheck(esUtils.EventSupervisorTask):
     description = "a check for propper FAR"
     name = "FARCheck"
 
-    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[]):
+    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, annotate=False, email=[]):
         self.maxFAR = maxFAR
         self.minFAR = minFAR
+        
         super(farCheck, self).__init__( timeout, 
                                         self.FARCheck, 
                                         name=self.name, 
@@ -181,27 +185,44 @@ class FARCheck(esUtils.EventSupervisorTask):
             far = event['far']
             big = far > maxFAR
             sml = far < minFAR
-            if big:
-                if verbose:
-                    print( "WARNING: FAR=%.3e > %.3e"%(far, maxFAR) )
-                if annotate:
-                    pass
-            elif sml:
-                if verbose:
-                    print( "WARNING: FAR=%.3e < %.3e"%(far, minFAR) )
-                if annotate:
-                    pass
-            else:
-                if verbose:
-                    print( "%.3e <= FAR=%.3e <= %.3e"%(minFAR, far, maxFAR) )
-                if annotate:
-                    pass
+            action_required = big or sml
+
+            if verbose or annotate:
+                if big:
+                    message = "action required : FAR=%.3e > %.3e"%(far, maxFAR)
+                    if verbose:
+                        print( message )
+                    if annotate:
+                        message = "event_supervisor : "+message
+                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                
+                elif sml:
+                    message = "action required : FAR=%.3e < %.3e"%(far, minFAR)
+                    if verbose:
+                        print( message )
+                    if annotate:
+                        message = "event_supervisor :"+message
+                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                else:
+                    message = "no action required : %.3e <= FAR=%.3e <= %.3e"%(minFAR, far, maxFAR)
+                    if verbose:
+                        print( message )
+                    if annotate:
+                        message = "event_supervisor : "+message
+                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
 
         else: ### something is very wrong...
-            if verbose:
-                print( "something is very wrong... this event does not have a FAR" )
-            if annotate:
-                pass
+            action_required = True
+
+            if verbose or annotate:
+                message = "action required : FAR is not defined!"
+                if verbose:
+                    print( message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+
+        return action_required
 
 #-------------------------------------------------
 # localRate
@@ -213,13 +234,14 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
     """
     description = "check local rates of events"
 
-    def __init__(self, graceid, t0, timeout, group, pipeline, search=None, email=[]):
+    def __init__(self, graceid, gdb, t0, timeout, group, pipeline, search=None, annotate=False, email=[]):
         tasks = [ localRateCheck(timeout, group, pipeline, search=search, email=email) ] 
         super(LocalRateItem, self).__init__( graceid, 
+                                             gdb,
                                              t0, 
-                                             timeout, 
                                              tasks,
-                                             description=self.description
+                                             description=self.description,
+                                             annotate=annotate
                                            )
 
 class localRateCheck(esUtils.EventSupervisorTask):
@@ -239,7 +261,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
                                               self.localRateCheck, 
                                               name=self.name, 
                                               description=self.description, 
-                                              email=[]
+                                              email=email
                                             )
 
     def localRateCheck(self, graceid, gdb, verbose=None, annotate=False):
@@ -259,13 +281,14 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
     """
     description = "check that the unblind injection search completed"
 
-    def __init__(self, graceid, t0, timeout, email=[]):
+    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
         tasks = [externalTriggersCheck(timeout, email=email)]
         super(ExternalTriggersItem, self).__init__( graceid, 
+                                                    gdb,
                                                     t0, 
-                                                    timeout, 
                                                     tasks, 
-                                                    description=self.description
+                                                    description=self.description,
+                                                    annotate=annotate
                                                   )
 
 class externalTriggersCheck(esUtils.EventSupervisorTask):
@@ -283,7 +306,7 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
                                                      self.externalTriggersCheck, 
                                                      name=self.name, 
                                                      description=self.description, 
-                                                     email=[]
+                                                     email=email
                                                    )
     
     def externalTriggersCheck(self, graceid, gdb, verbose=False, annotate=False):
@@ -303,13 +326,14 @@ class UnlindInjectionsItem(esUtils.EventSupervisorQueueItem):
     """
     description = "check that the unblind injection search completed"
 
-    def __init__(self, graceid, gdb, t0, timeout, email=[]):
+    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
         tasks = [unblindInjectionsCheck(timeout, email=email)]
         super(UnblindInjectionsItem, self).__init__( graceid, 
+                                                     gdb,
                                                      t0, 
-                                                     timeout, 
                                                      tasks, 
-                                                     description=self.description
+                                                     description=self.description,
+                                                     annotate=annotate
                                                    )
 
 class unblindInjectionsCheck(esUtils.EventSupervisorTask):
@@ -327,7 +351,7 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
                                                       self.unblindInjectionsCheck, 
                                                       name=self.name, 
                                                       description=self.description, 
-                                                      email=[]
+                                                      email=email
                                                     )
 
     def unblindInjectionsCheck(self, graceid, gid, verbose=False, annotate=False):

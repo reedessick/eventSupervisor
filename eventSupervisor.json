@@ -2,7 +2,7 @@
     "new" :
         [
          "EventCreation",
-         "FARCheck",
+         "FAR",
          "LocalRate",
          "ExternalTriggers",
          "UnblindInjections",

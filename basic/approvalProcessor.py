@@ -19,15 +19,15 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
     """
     description = "a set of checks for approval_processor's preliminary DQ and vetting"
 
-    def __init__(self, graceid, farTimeout, segStartTimeout, t0, verbose=False, email=[]):
+    def __init__(self, graceid, gdb, farTimeout, segStartTimeout, t0, verbose=False, email=[]):
         tasks = [approvalProcessorFARCheck(farTimeout, email=email),
                  approvalProcessorSegDBStartCheck(segStartTimeout, email=email)
                 ]
         super(ApprovalProcessorPrelimDQItem, self).__init__( graceid,
+                                                             gdb,
                                                              t0,
                                                              tasks,
                                                              description=self.description,
-                                                             verbose=verbose
                                                            )
 
 class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
@@ -123,13 +123,13 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
     """
     description = "an item for montitoring approval_processor's response to iDQ information"
 
-    def __init__(self, graceid, timeout, ifos, t0, verbose=False, email=[]):
+    def __init__(self, graceid, gdb, timeout, ifos, t0, verbose=False, email=[]):
         tasks = [ approvalProcessoriDQglitchFAPCheck(timeout, ifo, email=email) for ifo in ifos ]
         super(ApprovalProcessoriDQItem, self).__init__( graceid,
+                                                        gdb,
                                                         t0,
                                                         tasks,
                                                         description=self.description,
-                                                        verbose=verbose
                                                        )
 
 class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):

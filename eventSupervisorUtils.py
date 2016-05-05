@@ -9,7 +9,7 @@ import subprocess as sp
 
 #---------------------------------------------------------------------------------------------------
 
-def emailWarning(subject, body, email=[]):
+def emailWarning(subject, body, email):
     """
     issue an email to the addresses specified
     """
@@ -26,6 +26,28 @@ class EventSupervisorQueueItem(utils.QueueItem):
         almost certainly has faster insertion than what you've written and comes with many convenient features already implemented
     """
 
+    def __init__(self, graceid, gdb, t0, tasks, description="a series of connected tasks", annotate=False):
+        self.graceid = graceid
+        self.gdb = gdb
+        self.annotate = annotate
+        for task in tasks:
+            if not isinstance(task, EventSupervisorTask):
+                raise ValueError("each element of tasks must be an instance of eventSupervisorUtilts.EventSupervisorTask")
+        super(EventSupervisorQueueItem, self).__init__(t0, tasks, description=description)
+
+    def execute(self, verbose=False):
+        """
+        execute the next task
+        """
+        while len(self.tasks):
+            self.expiration = self.tasks[0].expiration
+            if self.hasExpired():
+                task = self.tasks.pop(0) ### extract this task
+                task.execute( self.graceid, self.gdb, verbose=verbose, annotate=self.annotate ) ### perform this task
+                self.completedTasks.append( task ) ### mark as completed
+            else:
+                break
+        self.complete = len(tasks)==0 ### only complete when there are no remaining tasks
 
 class EventSupervisorTask(utils.Task):
     """
@@ -55,4 +77,3 @@ class EventSupervisorTask(utils.Task):
                 url = "URL" ### extrace from gdb instance!
                 body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s"%(graceid, name, url, description)
                 emailWarning(subject, body, email=self.email)
-
