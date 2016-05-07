@@ -7,6 +7,8 @@ import sys
 sys.path.append("../")
 import eventSupervisorUtils as esUtils
 
+import re
+
 import numpy as np
 
 from lal.gpstime import tconvert
@@ -23,7 +25,6 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
     """
 
     def __init__(self, graceid, gdb, pipeline, t0, timeout, annotate=False, email=[]):
-        self.email = email
         if pipeline=="cwb":
             tasks = [cWBTriggerCheck(timeout, email=email)]
         elif pipeline=="lib":
@@ -62,11 +63,39 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
         """
         query GraceDB to check for proper event creation
         we check:
-            trigger.txt
-        NOT IMPLEMENTED
+            trigger_gpstime.txt
         """
-        raise NotImplementedError
-        
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving event details" )
+        event = gdb.event( graceid ).json()
+        if verbose:
+            print( "    retrieving filenames" )
+        files = gdb.files( graceid ).json().keys()
+
+        filename = "trigger_%.4f.txt"%event['gpstime']
+        if verbose:
+            print( "    parsing filenames" )
+        if filename in files:
+            if verbose or annotate:
+                message = "no action required : found trigger file %s"%(filename)
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return False ### action_required = False
+
+        else:
+            if verbose or annotate:
+                message = "action required : could not find trigger file matching expected naming convetion"
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return True ### action_required = True       
+ 
 class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     """
     check for oLIB event creation
@@ -86,10 +115,39 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
         """
         event creation sanity check for oLIB
         we check:
-            trigger.json
-        NOT IMPLEMENTED
+            gpstime-.\.json
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving event details" )
+        event = gdb.event( graceid ).json()
+        if verbose:
+            print( "    retrieving filenames" )
+        files = gdb.files( graceid ).json().keys()
+
+        template = re.compile( ("%.2f-d.json"%event['gpstime']).replace(".","\.").replace("d",".") )
+        if verbose:
+            print( "    parsing filenames" )
+        for filename in files:
+            if template.match( filename ):
+                if verbose or annotate:
+                    message = "no action required : found trigger file %s"%(filename)
+                    if verbose:
+                        print( "    "+message )
+                    if annotate:
+                        message = "event_supervisor : "+message
+                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                return False ### action_required = False
+
+        else:
+            if verbose or annotate:
+                message = "action required : could not find trigger file matching expected naming convetion"
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return True ### action_required = True
 
 class cbcCoincCheck(esUtils.EventSupervisorTask):
     """
@@ -109,15 +167,39 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
     def cbcTriggerCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         check for coinc.xml file
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError("cbcCoincCheck")
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving filenames" )
+        files = gdb.files( graceid ).json().keys()
+
+        if verbose:
+            print( "    parsing filenames" )
+        if "coinc.xml" in files:
+            if verbose or annotate:
+                message = "no action required : found coinc.xml file "
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return False ### action_required = False
+
+        else:
+            if verbose or annotate:
+                message = "action required : could not find coinc.xml file"
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return True ### action_required = True
 
 class cbcPSDCheck(esUtils.EventSupervisorTask):
     """
     check for CBC event creation, checking PSD.xml file
     """
-    description = "check psd.xml file for CBC events"
+    description = "check psd.xml.gz file for CBC events"
     name = "cbcPSDCheck"
 
     def __init__(self, timeout, email=[]):
@@ -130,10 +212,34 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
 
     def cbcPSDCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
-        check for psd.xml file
-        NOT IMPLEMENTED
+        check for psd.xml.gz file
         """
-        raise NotImplementedError("cbcPSDCheck")
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving filenames" )
+        files = gdb.files( graceid ).json().keys()
+
+        if verbose:
+            print( "    parsing filenames" )
+        if "psd.xml.gz" in files:
+            if verbose or annotate:
+                message = "no action required : found psd.xml.gz file "
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return False ### action_required = False
+
+        else:
+            if verbose or annotate:
+                message = "action required : could not find psd.xml.gz file"
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+            return True ### action_required = True
 
 #-------------------------------------------------
 # FAR
@@ -146,7 +252,7 @@ class FARItem(esUtils.EventSupervisorQueueItem):
     description = "check sanity of reported FAR"
 
     def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
-        tasks = [farChec(timeout, email=email)]
+        tasks = [FARCheck(timeout, email=email)]
         super(FARItem, self).__init__( graceid, 
                                        gdb, 
                                        t0, 
@@ -353,11 +459,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
         """
         check the local rate of triggers submitted to GraceDB
         checks only around the event's creation time : (t-self.mWin, t+self.pWin)
-        NOT IMPLEMENTED --> problems with 'tconvert' and 'created' (I have not thought them through)
         """
-
-        raise NotImplementedError
-
         if verbose:
             report( "%s : %s"%(graceid, self.description) )
 
@@ -371,13 +473,11 @@ class createRateCheck(esUtils.EventSupervisorTask):
         if verbose: 
             print( "    %s -> %.3f"%(gdb_entry['created'], event_time) )
 
-        priint( "WARNING: you are using a hack to correct for peculiarities in querying GraceDB with creation time. We convert GMT -> CST by hand by subtracting 5 hours from the gps time and then converting using lalapps_tconvert. This gives us a time in UTC which we pretend is in CST for the query (string formatted through datestring_converter()" )
-
-        winstart = datestring_converter( tconvert( np.floor(event_time-mWin - 5*3600 ) ) )
-        winstop  = datestring_converter( tconvert( np.ceil( event_time+pWin - 5*3600 ) ) )
+        winstart = tconvert( np.floor(event_time-mWin ), form="%Y-%m-%d %H:%M:%S" )
+        winstop  = tconvert( np.ceil( event_time+pWin ), form="%Y-%m-%d %H:%M:%S" )
 
         if verbose:
-            print( "\tretrieving neighbors within [%s CST, %s CST]"%(winstart, winstop) )
+            print( "\tretrieving neighbors within [%s, %s]"%(winstart, winstop) )
 
         count = 0
         for entry in gdb.events( "created: %s .. %s"%(winstart, winstop) ): ### query for neighbors in (t-mWin, t+pWin)
@@ -469,7 +569,7 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : no statement about coincidence search was found" 
             if verbose:
-                print "    "+message
+                print( "    "+message )
             if annotate:
                 message = "event_supervisor : "+message
                 gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
@@ -530,7 +630,7 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
                 if verbose or annotate:
                     message = "no action required : process reported that no unblind injections were found" 
                     if verbose:
-                        print ( "    "+message )
+                        print( "    "+message )
                     if annotate:
                         message = "event_supervisor : "+message
                         gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
@@ -540,9 +640,9 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
         print( "    WARNING: we do not currently know how to parse out statements when there *is* an unblind injection...raising an alarm anyway" )
 
         if verbose or annotate:
-            message = "    action required : could not find a statement about unblind injections" 
+            message = "action required : could not find a statement about unblind injections" 
             if verbose:
-                print "    "+message
+                print( "    "+message )
             if annotate:
                 message = "event_supervisor : "+message
                 gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )

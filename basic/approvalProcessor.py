@@ -32,6 +32,7 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
 
 class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
     """
+    a check that approvalProcessor analyzed the FAR as expected
     """
     description = ""
     name = "approvalProcessorFARCheck"
@@ -46,12 +47,14 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
 
     def approvalProcessorFARCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
+        a check that approvalProcessor analyzed the FAR as expected
         NOT IMPLEMENTED
         """
         raise NotImplementedError("approvalProcessorFARCheck")
 
 class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
     """
+    a check that approvalProcessor started checking segments as expected
     """
     description = ""
     name = "approvalProcessorSegDBStartCheck"
@@ -66,6 +69,7 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
 
     def approvalProcessorSegDBStartCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
+        a check that approvalProcessor started checking segments as expected
         NOT IMPLEMENTED
         """
         raise NotImplementedError("approvalProcessorSegDBStartCheck")
@@ -73,6 +77,7 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
 
 class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
     """
+    a check that approvalProcessor checked all the segment/flags as expected
     """
     description = ""
     name = "approvalProcessorSegDBFlagsCheck"
@@ -88,12 +93,14 @@ class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
 
     def approvalProcessorSegDBFlagsCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
+        a check that approvalProcessor checked all the segment/flags as expected
         NOT IMPLEMENTED
         """
         raise NotImplementedError("approvalProcessorSegDBFlagsCheck")
 
 class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
     """
+    a check that approvalProcessor finished checking segments as expected
     """
     description = ""
     name = "approvalProcessorSegDBFinishCheck"
@@ -108,6 +115,7 @@ class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
 
     def approvalProcessorSegDBFlagsCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
+        a check that approvalProcessor finished checking all segments as expected
         NOT IMPLEMENTED
         """
         raise NotImplementedError("approvalProcessorSegDBFinishCheck")
@@ -134,6 +142,7 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
 
 class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
     """
+    a check that approvalProcessor responded to iDQ FAP reports as expected
     """
     description = ""
     name = "approvalProcessoriDQglitchFAP"
@@ -149,6 +158,7 @@ class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
 
     def approvalProcessoriDQglitchFAPCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
+        a check that approvalProcessor responded to iDQ FAP reports as expected
         NOT IMPLEMENTED
         """
         raise NotImplementedError("approvalProcessoriDQgltichFAPCheck")
