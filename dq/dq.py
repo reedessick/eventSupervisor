@@ -9,7 +9,12 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
-"""
-define queueItems for the following:
-  dqSummary
-"""
+class DQSummaryItem(esUtils.EventSupervisorQueueItem):
+    """
+    a check that a link to the DQ Summary page was posted
+    """
+
+class dqSummaryCheck(esUtils.EventSupervisorTask):
+    """
+    a check that a link to the DQ Summary page was posted
+    """

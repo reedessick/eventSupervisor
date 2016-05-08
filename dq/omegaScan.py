@@ -9,17 +9,38 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
-"""
-define queueItems for the following:
-  HofTOmegaScan_start
-  HofTOmegaScan_data
-  HofTOmegaScan_finish
-  allAuxOmegaScan_start
-  allAuxOmegaScan_data
-  allAuxOmegaScan_finish
-  idqOmegaScan_start
-  idqOmegaScan_data
-  idqOmegaScan_finish
+class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
+    """
+    a check that OmegaScans were started
+    """
 
-NOTE: we may be able to get away with only defining 3 classes and re-using them as needed
+class omegaScanStartCheck(esUtils.EventSupervisorTask):
+    """
+    a check that OmegaScans were started
+    """
+
+class OmegaScanItem(esUtils.EventSupervisorQueueItem):
+    """
+    a check that OmegaScans uploaded data and finished as expected
+    """
+
+class omegaScanDataCheck(esUtils.EventSupervisorTask):
+    """
+    a check that OmegaScans uploaded data
+    """
+
+class omegaScansFinishCheck(esUtils.EventSupervisorTask):
+    """
+    a check that OmegaScans finished as expected
+    """
+
+
+
+"""
+need to set this up so these classes can be used for
+  h(t)
+  all aux chans
+  iDQ specific chans
+
+we may do this with further inheritence... or just passing some keyword argument?
 """

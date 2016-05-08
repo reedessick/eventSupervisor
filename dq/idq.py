@@ -9,20 +9,42 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
-def is_idqAlert( alert ):
+class IDQStartItem(esUtils.EventSupervisorQueueItem):
     """
-    determine if this is an iDQ messages
+    a check that iDQ started as expected
     """
-    return 'idq' in alert['tagname']
 
-#---------------------------------------------------------------------------------------------------
+class idqStartCheck(esUtils.EventSupervisorTask):
+    """
+    a check that iDQ started as expected
+    """
 
-"""
-define queueItems for the following:
-  idq_start
-  idq_glitchFAP
-  idq_timeseries
-  idq_tables
-  idq_performance
-  idq_finish
-"""
+class IDQItem(esUtils.EventSupervisorQueueItem):
+    """
+    a check that iDQ reported the timeseries information as expected
+    """
+
+class idqGlichFAPCheck(esUtils.EventSupervisorTask):
+    """
+    a check that iDQ reported the glitch-FAP as expected
+    """
+
+class idqTimeseriesCheck(esUtils.EventSupervisorTask):
+    """
+    a check that iDQ reported timeseries information as expected
+    """
+
+class idqTablesCheck(esUtils.EventSupervisorTask):
+    """
+    a check that iDQ reported the xml tables as expected
+    """
+
+class idqPerformanceCheck(esUtils.EventSupervisorTask):
+    """
+    a check that iDQ reported historical performance as expected
+    """
+
+class idqFinishCheck(esUtils.EventSupervisorTask):
+    """
+    a check that iDQ finished as expected
+    """
