@@ -43,9 +43,28 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
     def bayeswavePEStartCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that BayesWave PE started
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "BayesWaveBurst launched", verbose=verbose ):
+            self.warning = "found BayesWave PE starting message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find BayesWave PE staring message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
+
 
 class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
     """
@@ -53,10 +72,10 @@ class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
     """
     description = "a check that BayesWave PE produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
         tasks = [bayeswavePEPostSampCheck(timeout, email=email),
-                 bayeswavePESkymapCheck(timeout, email=email),
-                 bayeswavePEFinishCheck(timeout, email=email)
+                 bayeswavePESkymapCheck(timeout, tagnames=tagnames, email=email),
+#                 bayeswavePEFinishCheck(timeout, email=email)
                 ]
         super(BayesWavePEItem, self).__init__( graceid, 
                                                gdb,
@@ -95,7 +114,8 @@ class bayeswavePESkymapCheck(esUtils.EventSupervisorTask):
     name = "bayeswavePESkymapCheck"
     description = "a check that BayesWave PE posted a skymap"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, tagnames=None, email=[]):
+        self.tagnames = tagnames
         super(bayeswavePESkymapCheck, self).__init__( timeout,
                                                       self.bayeswavePESkymapCheck,
                                                       name=self.name,
@@ -106,9 +126,21 @@ class bayeswavePESkymapCheck(esUtils.EventSupervisorTask):
     def bayeswavePESkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that BayesWave PE posted a skymap
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        fitsname = "BW_skymap.fits"
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class bayeswavePEFinishCheck(esUtils.EventSupervisorTask):
     """
@@ -131,3 +163,5 @@ class bayeswavePEFinishCheck(esUtils.EventSupervisorTask):
         NOT IMPLEMENTED
         """
         raise NotImplementedError
+        ### NOTE: bayeswave may not report a "finish" statement and instead may only report data
+        ###       if this is the case, then we should NOT have a finishCheck.

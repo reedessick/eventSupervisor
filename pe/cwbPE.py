@@ -46,6 +46,8 @@ class cWBPEStartCheck(esUtils.EventSupervisorTask):
         NOT IMPLEMENTED
         """
         raise NotImplementedError
+        ### NOTE: cWB PE may not have a cannonical "start" statement and may only report data
+        ###       if this is the case, then we should NOT have a startCheck.
 
 class CWBPEItem(esUtils.EventSupervisorQueueItem):
     """
@@ -53,10 +55,10 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
     """
     description = "a check that cWB PE produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
         tasks = [cWBPEDataCheck(timeout, email=email),
-                 cWBPESkymapCheck(timeout, email=email),
-                 cWBPEFinishCheck(timeout, email=email)
+                 cWBPESkymapCheck(timeout, tagnames=tagnames, email=email),
+#                 cWBPEFinishCheck(timeout, email=email)
                 ]
         super(CWBPEItem, self).__init__( graceid, 
                                          gdb,
@@ -95,7 +97,8 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     name = "cWBPESkymapCheck"
     description = "a check that cWB PE posted a skymap"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, tagnames=None, email=[]):
+        self.tagnames = tagnames
         super(cWBPESkymapCheck, self).__init__( timeout,
                                                 self.cWBPESkymapCheck,
                                                 name=self.name,
@@ -106,9 +109,22 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     def cWBPESkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that cWB PE posted a skymap
-        NOT IMPLEMENTED
+        looks for the existence of a skymap and the correct tagnames
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        fitsname = "skyprobcc_cWB.fits"
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class cWBPEFinishCheck(esUtils.EventSupervisorTask):
     """
@@ -131,3 +147,5 @@ class cWBPEFinishCheck(esUtils.EventSupervisorTask):
         NOT IMPLEMENTED
         """
         raise NotImplementedError
+        ### NOTE: cWB PE may not have a cannonical "finish" statement and may only report data
+        ###       if this is the case, then we should NOT have a finishCheck.

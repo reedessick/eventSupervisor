@@ -7,6 +7,9 @@ import sys
 sys.path.append("../")
 import eventSupervisorUtils as esUtils
 
+import numpy as np
+import healpy as hp
+
 #---------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------
@@ -48,9 +51,63 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
     def skymapSanityCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         check the skymap for sane and proper formatting
-        NOT IMPLEMENTED
+        checks that normalization is correct and that map is in Equatorial (C) coordinates
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    downloading %s"%(self.fitsname) )
+        file_obj = open(self.fitsname, "w")
+        file_obj.write( gdb.files( graceid, self.fitsname ).read() )
+        file_obj.close()
+
+        if verbose:
+            print( "    checking %s"%(self.fitsname) )
+        post, header = hp.read_map( self.fitsname, h=True )
+        header = dict(header)
+
+        normed = np.sum(post) == 1.0
+        coord = header['COORDSYS'] == 'C'
+
+        if normed and coord:
+            self.warning = "%s is properly normalized and in Equatorial coordinates"%self.fitsname
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        elif normed:
+            self.warning = "%s is not in Equatorial coordinates"%self.fitsname
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return True ### action_required = False
+
+        elif coord:
+            self.warning = "%s is not properly normalized"%self.fitsname
+            if verbose or annotate:
+                message = "action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return True ### action_required = True
+
+        else:
+            self.warning = "%s is not properly normalized and is not in Equatorial coordinates"%self.fitsname
+            if verbose or annotate:
+                message = "action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    message = "event_supervisor : "+message
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return True ### action_required = True
 
 #-------------------------------------------------
 # plotting
@@ -81,7 +138,7 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, fitsname, tagnames, email=[]):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
-        self.tagnames = tagnames
+        self.tagnames = sorted(tagnames)
         super(plotSkymapCheck, self).__init__( timeout,
                                                self.plotSkymapCheck,
                                                name=self.name,
@@ -92,9 +149,22 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
     def plotSkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that plotting jobs ran and tagged figures properly
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        figname = "%s.png"%(self.fitsname.split('.')[0])
+        self.warning, action_required = check4file( graceid, gdb, figname, tagnames=self.tagnames, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 #-------------------------------------------------
 # skyviewer
@@ -125,7 +195,7 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, fitsname, tagnames, email=[]):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
-        self.tagnames = tagnames
+        self.tagnames = sorted(tagnames)
         super(skyviewerCheck, self).__init__( timeout,
                                               self.skyviewerCheck,
                                               name=self.name,
@@ -136,7 +206,21 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
     def skyviewerCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that plotting jobs ran and tagged figures properly
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving files")
+        files = gdb.files( graceid ).json().keys()
 
+        jsonname = "%s.json"%(self.fitsname.strip(".gz").strip(".fits"))
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required

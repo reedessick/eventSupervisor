@@ -43,9 +43,27 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
     def lalinfStartCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that LALInference started
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "LALInference online estimation started", verbose=verbose ):
+            self.warning = "found LALInference starting message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find LALInference staring message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
 
 class LALInfItem(esUtils.EventSupervisorQueueItem):
     """
@@ -53,9 +71,9 @@ class LALInfItem(esUtils.EventSupervisorQueueItem):
     """
     description = "a check that LALInference produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
         tasks = [lalinfPostSampCheck(timeout, email=email),
-                 lalinfSkymapCheck(timeout, email=email),
+                 lalinfSkymapCheck(timeout, tagnames=tagnames, email=email),
                  lalinfFinishCheck(timeout, email=email)
                 ]
         super(LALInfItem, self).__init__( graceid, 
@@ -95,7 +113,8 @@ class lalinfSkymapCheck(esUtils.EventSupervisorTask):
     name = "lalinfSkymapCheck"
     description = "a check that LALInference posted a skymap"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, tagnames=None, email=[]):
+        self.tagnames = tagnames
         super(lalinfSkymapCheck, self).__init__( timeout,
                                                  self.lalinfSkymapCheck,
                                                  name=self.name,
@@ -106,9 +125,19 @@ class lalinfSkymapCheck(esUtils.EventSupervisorTask):
     def lalinfSkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that LALInference posted a skymap
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        fitsname = "LALInference_skymap.fits.gz"
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class lalinfFinishCheck(esUtils.EventSupervisorTask):
     """
@@ -128,6 +157,24 @@ class lalinfFinishCheck(esUtils.EventSupervisorTask):
     def lalinfFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that LALInference finished
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "LALInference online estimation finished", verbose=verbose ):
+            self.warning = "found LALInference completion message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find LALInference completion message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True

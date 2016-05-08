@@ -43,9 +43,27 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
     def bayestarStartCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that bayestar started as expected
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "INFO:BAYESTAR:starting sky localization", verbose=verbose ):
+            self.warning = "found BAYESTAR staring message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find a BAYESTAR staring message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
 
 
 class BayestarItem(esUtils.EventSupervisorQueueItem):
@@ -54,8 +72,10 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
     """
     description = "a check that BAYESTAR produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
-        tasks = []
+    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
+        tasks = [bayestarSkymapCheck(timeout, tagnames=tagnames, email=email),
+                 bayestarFinishCheck(timeout, email=email)
+                ]
         super(BayestarItem, self).__init__( graceid,
                                             gdb,
                                             t0,
@@ -71,7 +91,8 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     name = "bayestarSkymapCheck"
     description = "a check that bayestar produced a skymap"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, tagnames=None, email=[]):
+        self.tagnames = tagnames
         super(bayestarSkymapCheck, self).__init__( timeout, 
                                                    self.bayestarSkymapCheck,
                                                    name=self.name,
@@ -82,9 +103,22 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     def bayestarSkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that bayestar produced a skymap
-        NOT IMPLEMENTED
+        looks for the existence of a skymap and the correct tagnames
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        fitsname = "bayestar.fits.gz"
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class bayestarFinishCheck(esUtils.EventSupervisorTask):
     """
@@ -104,6 +138,24 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
     def bayestarFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that bayestar finished as expected
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "INFO:BAYESTAR:sky localization complete", verbose=verbose ):
+            self.warning = "found BAYESTAR completion message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find a BAYESTAR completion message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
