@@ -4,7 +4,7 @@ author = "reed.essick@ligo.org"
 #-------------------------------------------------
 
 from ligo.lvalert import lvalertMPutils as utils
-import eventSUpervisorUtils as esUtils
+import eventSupervisorUtils as esUtils
 
 ### basics
 from basic import basic
@@ -21,7 +21,7 @@ from pe import bayestar
 from pe import bayeswavePE
 from pe import cwbPE
 from pe import libPE
-from pe import lalinfPE
+from pe import lalinf
 
 ### DQ follow-up
 from dq import dq
@@ -58,7 +58,7 @@ def addToQueue( alert, listOfItems, queue, queueByGraceID, t0, config ):
     else:
         search = None
 
-    annotate = config.('general', 'annotate')
+    annotate = config('general', 'annotate')
 
     items = []
     for name in listOfItems:
@@ -74,7 +74,7 @@ def addToQueue( alert, listOfItems, queue, queueByGraceID, t0, config ):
             minFAR = config.getfloat("far", "minFAR")
             email = config.get("far", "email").split()
             for timeout in getDT( config.get("far", "dt") ):
-                items.append( basic.FARItem( graceid, gdb, t0, timeout, annotate=annotate, email ) )
+                items.append( basic.FARItem( graceid, gdb, t0, timeout, annotate=annotate, email=email ) )
 
         ### local rate
         if (name=="local rate") and config.has_section("local rate"):
