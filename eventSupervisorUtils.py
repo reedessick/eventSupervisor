@@ -7,13 +7,108 @@ from ligo.lvalert import lvalertMPutils as utils
 
 import subprocess as sp
 
+import traceback
+
+import re
+
 #---------------------------------------------------------------------------------------------------
+
+### basic logging and email utilities
+
+def writeGDBLog( gdb, graceid, message, tagnames=[] ):
+    """
+    writes a standard event_supervisor log message into gracedb
+    """
+    gdb.writeLog( graceid, message="ES:"+message, tagnames=['event_supervisor']+tagnames )
 
 def emailWarning(subject, body, email):
     """
     issue an email to the addresses specified
     """
     sp.Popen(["mail", "-s", subject, " ".join(email)], stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE).communicate(body)
+
+#---------------------------------------------------------------------------------------------------
+
+### some basic look-up utilities
+
+def filename2log( filename, logs, verbose=False ):
+    """
+    finds the log associated with a given filename
+    """
+    for log in logs[::-1]: ### iterate through logs in reverse so we get the most recent logs first
+                           ### this means we will get the most recent version of files, if multiple exist
+        if filename == log['filename']: ### this is the log message associated with that filename
+            if verbose:
+                print( "    %s assoicated with log message : %d"%(filename, log['N']) )
+            return log
+    else:
+        raise ValueError( "could not find %s in association with any log messages"%(filename) )
+
+def check4log( graceid, gdb, fragment, verbose=False ):
+    """
+    checks for the fragment in the logs for this graceid
+
+    return action_required
+    """
+    if verbose:
+        print( "    retrieving log messages" )
+    logs = gdb.logs( graceid ).json()['log']
+
+    if verbose:
+        print( "    parsing log" )
+    for log in logs:
+        comment = log['comment']
+        return fragment in comment
+
+    return True ### action_required = True
+
+def check4file( graceid, gdb, filename, tagnames=None, verbose=False, regex=False ):
+    """
+    checks for the existence of a file and that it is tagged correctly
+    if tagnames==None, we ignore check for tagnames
+
+    if regex, we interpret filename as a search string for regular expressions
+
+    return warning, action_required
+    """
+    if verbose:
+        print( "    retrieving filenames" )
+    files = gdb.files( graceid ).json().keys()
+
+    if regex:
+        template = re.compile( filename )
+        for f in files:
+            if template.match( f ):
+                file_exists = True
+                filename = f
+                break
+        else:
+            file_exists = False
+    else:
+        file_exists = filename in files
+
+    if file_exists: ### file exists
+        if tagnames!=None:
+            if verbose:
+                print( "    retrieving log messages" )
+            logs = gdb.logs( graceid ).json()['log']
+            log = filename2log( fitsname, logs, verbose=verbose )
+
+            if sorted(log['tagnames']) == sorted(tagnames): ### correct tagnames
+                warning = "found %s with correct tagnames (%s)"%(fitsname, ",".join(self.tagnames))
+                return warning, False ### action_required = False
+    
+            else: ### wrong tagnames
+                warning = "found %s but with incorrect tagnames (%s)"%(fitsname, ",".join(log['tagnames']))
+                return warning, True ### action_required = True
+
+        else: 
+            warning = "found %s and ignoring tagnames"%(fitsname)
+            return warning, False ### action_required = False
+
+    else: ### file does not exist
+        warning = "could not find %s"%(fitsname)
+        return warning, True ### action_required = True
 
 #---------------------------------------------------------------------------------------------------
 
@@ -58,6 +153,7 @@ class EventSupervisorTask(utils.Task):
 
     def __init__(self, timeout, functionHandle, name="task", description="a task", email=[], *args, **kwargs ):
         self.email = email
+        self.warning = None
         super(EventSupervisorTask, self).__init__(timeout, functionHandle, name=name, description=description, *args, **kwargs)
 
     def execute(self, graceid, gdb, verbose=False, annotate=False):
@@ -69,11 +165,11 @@ class EventSupervisorTask(utils.Task):
                 if self.email:
                     subject = "%s: %s requires attention"%(graceid, self.name)
                     url = "URL" ### extrace from gdb instance!
-                    body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s"%(graceid, name, url, description)
+                    body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\n%s"%(graceid, name, url, self.description, self.warning)
                     emailWarning(subject, body, email=self.email)
-        except:
+        except Exception as e:
             if self.email:
                 subject = "%s: %s FAILED"%(graceid, self.name)
                 url = "URL" ### extrace from gdb instance!
-                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s"%(graceid, name, url, description)
+                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, name, url, description, traceback.format_exc())
                 emailWarning(subject, body, email=self.email)

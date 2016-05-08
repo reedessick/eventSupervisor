@@ -69,32 +69,19 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
             print( "%s : %s"%(graceid, self.description) )
             print( "    retrieving event details" )
         event = gdb.event( graceid ).json()
-        if verbose:
-            print( "    retrieving filenames" )
-        files = gdb.files( graceid ).json().keys()
 
         filename = "trigger_%.4f.txt"%event['gpstime']
-        if verbose:
-            print( "    parsing filenames" )
-        if filename in files:
-            if verbose or annotate:
-                message = "no action required : found trigger file %s"%(filename)
-                if verbose:
-                    print( "    "+message )
-                if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-            return False ### action_required = False
-
-        else:
-            if verbose or annotate:
-                message = "action required : could not find trigger file matching expected naming convetion"
-                if verbose:
-                    print( "    "+message )
-                if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-            return True ### action_required = True       
+        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
  
 class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     """
@@ -121,33 +108,19 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
             print( "%s : %s"%(graceid, self.description) )
             print( "    retrieving event details" )
         event = gdb.event( graceid ).json()
-        if verbose:
-            print( "    retrieving filenames" )
-        files = gdb.files( graceid ).json().keys()
 
-        template = re.compile( ("%.2f-d.json"%event['gpstime']).replace(".","\.").replace("d",".") )
-        if verbose:
-            print( "    parsing filenames" )
-        for filename in files:
-            if template.match( filename ):
-                if verbose or annotate:
-                    message = "no action required : found trigger file %s"%(filename)
-                    if verbose:
-                        print( "    "+message )
-                    if annotate:
-                        message = "event_supervisor : "+message
-                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-                return False ### action_required = False
-
-        else:
-            if verbose or annotate:
-                message = "action required : could not find trigger file matching expected naming convetion"
-                if verbose:
-                    print( "    "+message )
-                if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-            return True ### action_required = True
+        template = ("%.2f-d.json"%event['gpstime']).replace(".","\.").replace("d",".") 
+        self.warning, action_required = check4file( graceid, gdb, template, tagnames=None, verbose=verbose, regex=True )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class cbcCoincCheck(esUtils.EventSupervisorTask):
     """
@@ -170,30 +143,19 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving filenames" )
-        files = gdb.files( graceid ).json().keys()
 
-        if verbose:
-            print( "    parsing filenames" )
-        if "coinc.xml" in files:
-            if verbose or annotate:
-                message = "no action required : found coinc.xml file "
-                if verbose:
-                    print( "    "+message )
-                if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-            return False ### action_required = False
-
-        else:
-            if verbose or annotate:
-                message = "action required : could not find coinc.xml file"
-                if verbose:
-                    print( "    "+message )
-                if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-            return True ### action_required = True
+        filename = "coinc.xml"
+        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class cbcPSDCheck(esUtils.EventSupervisorTask):
     """
@@ -216,30 +178,18 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving filenames" )
-        files = gdb.files( graceid ).json().keys()
-
-        if verbose:
-            print( "    parsing filenames" )
-        if "psd.xml.gz" in files:
-            if verbose or annotate:
-                message = "no action required : found psd.xml.gz file "
-                if verbose:
-                    print( "    "+message )
-                if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-            return False ### action_required = False
-
-        else:
-            if verbose or annotate:
-                message = "action required : could not find psd.xml.gz file"
-                if verbose:
-                    print( "    "+message )
-                if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-            return True ### action_required = True
+        filename = "psd.xml.gz"
+        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 #-------------------------------------------------
 # FAR
@@ -292,44 +242,47 @@ class FARCheck(esUtils.EventSupervisorTask):
             far = event['far']
             big = far > maxFAR
             sml = far < minFAR
-            action_required = big or sml
 
-            if verbose or annotate:
-                if big:
-                    message = "action required : FAR=%.3e > %.3e"%(far, maxFAR)
+            if big:
+                self.warning = "FAR=%.3e > %.3e"%(far, maxFAR)
+                if verbose or annotate:
+                    message = "action required : "+self.warning
                     if verbose:
                         print( message )
                     if annotate:
-                        message = "event_supervisor : "+message
-                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                        esUtils.writeGDBLog( gdb, graceid, message )
+                return True ### action_required=True
                 
-                elif sml:
-                    message = "action required : FAR=%.3e < %.3e"%(far, minFAR)
+            elif sml:
+                self.warning = "FAR=%.3e < %.3e"%(far, minFAR)
+                if verbose or annotate:
+                    message = "action required : "+self.warning
                     if verbose:
                         print( message )
                     if annotate:
-                        message = "event_supervisor :"+message
-                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-                else:
-                    message = "no action required : %.3e <= FAR=%.3e <= %.3e"%(minFAR, far, maxFAR)
+                        gdb.writeGDBLog( gdb, graceid, message )
+                return True ### action_required=True
+
+            else:
+                self.warning = "%.3e <= FAR=%.3e <= %.3e"%(minFAR, far, maxFAR)
+                if verbose or annotate:
+                    message = "no action required : "+self.warning
                     if verbose:
                         print( message )
                     if annotate:
-                        message = "event_supervisor : "+message
-                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                        gdb.writeGDBLog( gdb, graceid, message )
+                return False ### action_required=False
 
         else: ### something is very wrong...
-            action_required = True
-
+            self.warning = "FAR is not defined!"
             if verbose or annotate:
-                message = "action required : FAR is not defined!"
+                message = "action required : "+self.warning
                 if verbose:
                     print( message )
                 if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                    esUtils.writeGDBLog( gdb, graceid, message )
 
-        return action_required
+            return True ### action_required=True
 
 #-------------------------------------------------
 # localRate
@@ -399,23 +352,24 @@ class localRateCheck(esUtils.EventSupervisorTask):
             count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
             
         if count > (pWin+mWin)*maxRate:
+            self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
-                message = "action required : found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid) 
+                message = "action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message=message )  
+            return True ### action_required = True
+        else:
+            self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
+            if verbose or annotate:
+                message = "no action required : "+self.warning
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )  
-            return True ### action_required = True
-
-        if verbose or annotate:
-            message = "no action required : found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
-            if verbose:
-                print( "    "+message )
-            if annotate:
-                message = "event_supervisor : "+message
-                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-        return False ### action_required = False
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
 
 
 class CreateRateItem(esUtils.EventSupervisorQueueItem):
@@ -487,23 +441,23 @@ class createRateCheck(esUtils.EventSupervisorTask):
             count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
 
         if count > (pWin+mWin)*maxRate:
+            self.warning = self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
                 message = "action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)
                 if verbose:
                     print( "    "+message )
                 if annotate:
-                    message = "event_supervisor : "+message
-                    gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                    esUtils.writeGDBLog( gdb, graceid, message=message )
             return True ### action_required = True
-
-        if verbose or annotate:
-            message = "no action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)
-            if verbose:
-                print( "    "+message )
-            if annotate:
-                message = "event_supervisor : "+message
-                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-        return False ### action_required = False
+        else:
+            self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
+            if verbose or annotate:
+                message = "no action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
 
 #-------------------------------------------------
 # external triggers
@@ -549,30 +503,23 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving log messages" )
-        logs = gdb.logs( graceid ).json()['log']
+        if not esUtils.check4log( graceid, gdb, "Coincidence search complete", verbose=verbose ):
+            self.warning = "found external triggers coinc search completion message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
 
-        if verbose:
-            print( "    parsing log" )
-        for log in logs:
-            comment = log['comment']
-            if "Coincidence search complete" in comment:
-                if verbose or annotate:
-                    message = "no action required : coincidence search reported completion"
-                    if verbose:
-                        print( "    "+message )
-                    if annotate:
-                        message = "event_supervisor : "+message
-                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-                return False ### action_required = False
-
+        self.warning = "could not find external triggers search completion message"
         if verbose or annotate:
-            message = "action required : no statement about coincidence search was found" 
+            message = "action required : "+self.warning
             if verbose:
-                print( "    "+message )
+                print( "    "+self.warning )
             if annotate:
-                message = "event_supervisor : "+message
-                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
 
 #-------------------------------------------------
@@ -617,6 +564,7 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
         """
         a check that the unblind injections search was completed
         """
+        ### NOTE: we do not delegate to esUtils.check4log here because we need to look for mutliple logs...
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
             print( "    retrieving log messages" )
@@ -627,23 +575,22 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
         for log in logs:
             comment = log['comment']
             if "No unblind injections in window" in comment:
+                self.warning = "process reported that no unblind injections were found"
                 if verbose or annotate:
-                    message = "no action required : process reported that no unblind injections were found" 
+                    message = "no action required : "+self.warning
                     if verbose:
                         print( "    "+message )
                     if annotate:
-                        message = "event_supervisor : "+message
-                        gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
-
+                        esUtils.writeGDBLog( gdb, graceid, message )
                 return False ### action_required = False
 
         print( "    WARNING: we do not currently know how to parse out statements when there *is* an unblind injection...raising an alarm anyway" )
 
+        self.warning = "could not find a statement about unblind injections"
         if verbose or annotate:
-            message = "action required : could not find a statement about unblind injections" 
+            message = "action required : "+self.warning
             if verbose:
                 print( "    "+message )
             if annotate:
-                message = "event_supervisor : "+message
-                gdb.writeLog( graceid, message=message, tagnames=['event_supervisor'] )
+                esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
