@@ -19,7 +19,7 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
     """
     description = "a set of checks for approval_processor's preliminary DQ and vetting"
 
-    def __init__(self, graceid, gdb, farTimeout, segStartTimeout, t0, verbose=False, email=[]):
+    def __init__(self, graceid, gdb, farTimeout, segStartTimeout, t0, annotate=False, email=[]):
         tasks = [approvalProcessorFARCheck(farTimeout, email=email),
                  approvalProcessorSegDBStartCheck(segStartTimeout, email=email)
                 ]
@@ -28,6 +28,7 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
                                                              t0,
                                                              tasks,
                                                              description=self.description,
+                                                             annotate=annotate
                                                            )
 
 class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
@@ -131,13 +132,14 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
     """
     description = "an item for montitoring approval_processor's response to iDQ information"
 
-    def __init__(self, graceid, gdb, timeout, ifos, t0, verbose=False, email=[]):
+    def __init__(self, graceid, gdb, timeout, ifos, t0, annotate=False, email=[]):
         tasks = [ approvalProcessoriDQglitchFAPCheck(timeout, ifo, email=email) for ifo in ifos ]
         super(ApprovalProcessoriDQItem, self).__init__( graceid,
                                                         gdb,
                                                         t0,
                                                         tasks,
                                                         description=self.description,
+                                                        annotate=annotate
                                                        )
 
 class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
@@ -167,10 +169,139 @@ class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
 # approvalProcessor VOEvent and GCN
 #-------------------------------------------------
 
-'''
-need to define:
-    approvalProcessor VOEvent generation
-                              distribution
-                      GCN generation
-                          distribution
-'''
+class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
+    """
+    an item for monitoring VOEvent generation and distribution
+    """
+    description = "check that approval processor generated and distributed VOEvents"
+
+    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+        tasks = [approvalProcessorVOEventCreationCheck(timeout, email=email),
+                 approvalProcessorVOEventDistributionCheck(timeout, email=email)
+                ]
+        super(ApprovalProcessorVOEventItem, self).__init__( graceid,
+                                                            gdb,
+                                                            t0,
+                                                            tasks,
+                                                            description=self.description,
+                                                            annotate=annotate
+                                                          )
+
+class approvalProcessorVOEventCreationCheck(esUtils.EventSupervisorTask):
+    """
+    a check that approval processor created the expected VOEvent
+    """
+    description = "a check that approval processor created the expected VOEvent"
+    name = "approvalProcessorVOEventCreationCheck"
+
+    def __init__(self, timeout, email=[]):
+        super(approvalProcessorVOEventCreationCheck, self).__init__( timeout,
+                                                                     self.voeventCreationCheck,
+                                                                     name=self.name,
+                                                                     description=self.description,
+                                                                     email=email
+                                                                   )
+
+    def voeventCreationCheck(self, graceid, gdb, verbose=False, annotate=False ):
+        """
+        check that approval processor created the expected VOEvent
+        NOT IMPLEMENTED
+        """
+        raise NotImplementedError
+
+class approvalProcessorVOEventDistributionCheck(esUtils.EventSupervisorTask):
+    """
+    a check that approval processor distributed the VOEvent as expected
+    """
+    description = "a check that approval processor distributed the VOEvent"
+    name = "approvalProcessorVOEventDistributionCheck"
+
+    def __init__(self, timeout, email=[]):
+        super(approvalProcessorVOEventDistributionCheck, self).__init__( timeout,
+                                                                     self.voeventDistribCheck,
+                                                                     name=self.name,
+                                                                     description=self.description,
+                                                                     email=email
+                                                                   )
+
+    def voeventDistribCheck(self, graceid, gdb, verbose=False, annotate=False ):
+        """
+        check that approval processor distributed the VOEvent
+        NOT IMPLEMENTED
+        """
+        raise NotImplementedError
+
+class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
+    """
+    an item for monitoring GCN generation and distribution
+    """
+    description = "check that approval processor generated and distributed GCNs"
+
+    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+        tasks = [approvalProcessorGCNCreationCheck(timeout, email=email),
+                 approvalProcessorGCNDistributionCheck(timeout, email=email)
+                ]
+        super(ApprovalProcessorVOEventItem, self).__init__( graceid,
+                                                            gdb,
+                                                            t0,
+                                                            tasks,
+                                                            description=self.description,
+                                                            annotate=annotate
+                                                          )
+
+class approvalProcessorGCNCreationCheck(esUtils.EventSupervisorTask):
+    """
+    a check that approval processor created the GCN as expected
+    """
+    description = "a check that approval processor created the expected GCN"
+    name = "approvalProcessorGCNCreationCheck"
+
+    def __init__(self, timeout, email=[]):
+        super(approvalProcessorGCNCreationCheck, self).__init__( timeout,
+                                                                     self.gcnCreationCheck,
+                                                                     name=self.name,
+                                                                     description=self.description,
+                                                                     email=email
+                                                                   )
+
+    def gcnCreationCheck(self, graceid, gdb, verbose=False, annotate=False ):
+        """
+        check that approval processor created the expected GCN
+        NOT IMPLEMENTED
+        """
+        raise NotImplementedError
+
+
+class approvalProcessorGCNDistributionCheck(esUtils.EventSupervisorTask):
+    """
+    a check that approval processor distributed the GCN as expected
+    """
+    description = "a check that approval processor distributed the GCN"
+    name = "approvalProcessorGCNDistributionCheck"
+
+    def __init__(self, timeout, email=[]):
+        super(approvalProcessorVOEventDistributionCheck, self).__init__( timeout,
+                                                                     self.gcnDistribCheck,
+                                                                     name=self.name,
+                                                                     description=self.description,
+                                                                     email=email
+                                                                   )
+
+    def gcnDistribCheck(self, graceid, gdb, verbose=False, annotate=False ):
+        """
+        check that approval processor distributed the GCN
+        NOT IMPLEMENTED
+        """
+        raise NotImplementedError
+
+#-------------------------------------------------
+# labeling?
+#-------------------------------------------------
+"""
+need to monitor the appropriate use of
+  INJ
+  DQV
+  EM_READY
+  PE_READY
+  else? -> ADVREQ, H1REQ, L1REQ, ADVOK, H1OK, L1OK, ADVNO, H1NO, L1NO, 
+"""
