@@ -74,6 +74,7 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
 
     def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
         tasks = [libPEPostSampCheck(timeout, email=email),
+                 libPEBayesFactorsCheck(timeout, email=email),
                  libPESkymapCheck(timeout, tagnames=tagnames, email=email),
                  libPEFinishCheck(timeout, email=email)
                 ]
@@ -103,6 +104,28 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
     def libPEPostSampCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that LIB PE posted posterior samples
+        NOT IMPLEMENTED
+        """
+        raise NotImplementedError
+
+class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
+    """
+    a check that LIB PE posted BayesFactors
+    """
+    name = "libPEBayesFactorsCheck"
+    description = "a check that LIB PE posted Bayes Factors"
+
+    def __init__(self, timeout, email=[]):
+        super(libPEBayesFactorsCheck, self).__init__( timeout,
+                                                  self.libPEBayesFactorsCheck,
+                                                  name=self.name,
+                                                  descripiton=self.description,
+                                                  email=email
+                                                )
+
+    def libPEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that LIB PE posted Bayes Factors
         NOT IMPLEMENTED
         """
         raise NotImplementedError

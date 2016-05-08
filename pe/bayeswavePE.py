@@ -74,6 +74,7 @@ class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
 
     def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
         tasks = [bayeswavePEPostSampCheck(timeout, email=email),
+                 bayeswavePEBayesFactorsCheck(timeout, email=email),
                  bayeswavePESkymapCheck(timeout, tagnames=tagnames, email=email),
 #                 bayeswavePEFinishCheck(timeout, email=email)
                 ]
@@ -103,6 +104,28 @@ class bayeswavePEPostSampCheck(esUtils.EventSupervisorTask):
     def bayeswavePEPostSampCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that BayesWave PE posted posterior samples
+        NOT IMPLEMENTED
+        """
+        raise NotImplementedError
+
+class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
+    """
+    a check that BayesWave PE posted Bayes Factors
+    """
+    name = "bayeswavePEBayesFactorsCheck"
+    description = "a check that BayesWave PE posted Bayes Factors"
+
+    def __init__(self, timeout, email=[]):
+        super(bayeswavePEBayesFactorsCheck, self).__init__( timeout,
+                                                        self.bayeswavePEBayesFactorsCheck,
+                                                        name=self.name,
+                                                        descripiton=self.description,
+                                                        email=email
+                                                      )
+
+    def bayeswavePEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that BayesWave PE posted Bayes Factors
         NOT IMPLEMENTED
         """
         raise NotImplementedError
