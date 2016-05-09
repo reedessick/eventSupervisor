@@ -6,6 +6,9 @@ author = "reed.essick@ligo.org"
 from ligo.lvalert import lvalertMPutils as utils
 import eventSupervisorUtils as esUtils
 
+### notification and alerts
+from notify import notify
+
 ### basics
 from basic import basic
 
