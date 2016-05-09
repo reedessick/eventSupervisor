@@ -116,9 +116,10 @@ class idqGlichFAPCheck(esUtils.EventSupervisorTask):
     """
     name = "idqGlitchFAPCheck"
 
-    def __init__(self, timeout, ifo, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
-        self.description = "a check that iDQ reported a glitch-FAP at %s"%(self.ifo)
+        self.classifier = classifier
+        self.description = "a check that iDQ reported a glitch-FAP for %s at %s"%(self.classifier, self.ifo)
         super(idqGlitchFAPCheck, self).__init__( timeout,
                                                  self.idqGlitchFAPCheck,
                                                  name=self.name,
@@ -129,28 +130,120 @@ class idqGlichFAPCheck(esUtils.EventSupervisorTask):
     def idqGlitchFAPCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that iDQ reported the gltich-FAP as expected
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError 
-        ### minimum glitch-FAP for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
-        ### jsonfilename = idq.gdb_minFap_json(gdbdir, opts.classifier, ifo, "_minFAP%s"%filetag, int(opts.start), int(opts.end-opts.start))
-        ### just check for the filename?
-        ###   this is sort-of a special case (everyone cares about the log message), so we can check explicitly for that too?
-        ###   expand check4file to also require a match for the associated log message?
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        jsonname = "%s_%s(.*)-(.*)-(.*).json"%(self.ifo, self.classifier)
+        fragment = "minimum glitch-FAP for %s at %s within [(.*), (.*)] is (.*)"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid, 
+                                                    gdb, 
+                                                    jsonname, 
+                                                    regex=True,
+                                                    tagnames=self.tagnames, 
+                                                    verbose=verbose, 
+                                                    logFragment=fragment, 
+                                                    logRegex=True 
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqFAPFrameCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploads fap timeseries files
     """
-    ### fapfr = idq.gdb_timeseriesgwf( gdbdir , opts.classifier, ifo, "_fap%s"%filetag, start, dur)
-    ### "minimum glitch-FAP for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
+    name = "idqFAPFrameCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ uploads fap timeseries frames for %s at %s"%(self.classifier, self.ifo)
+        super(idqFAPFrameCheck, self).__init__( timeout,
+                                                self.idqFAPFrameCheck,
+                                                name=self.name,
+                                                description=self.description,
+                                                email=email
+                                              )
+
+    def idqFAPFrameCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        check that iDQ uploads fap timeseries files
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        framename = "%s_idq_%s_fap(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier)
+        fragment = "iDQ fap timeseries for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid, 
+                                                    gdb, 
+                                                    framename, 
+                                                    regex=True, 
+                                                    tagnames=self.tagnames, 
+                                                    verbose=verbose, 
+                                                    logFragment=fragment, 
+                                                    logRegex=True 
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqRankFrameCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploaded rank timeseries files
     """
-    ### rnkfr = idq.gdb_timeseriesgwf( gdbdir , opts.classifier, ifo, "_rank%s"%filetag, start, dur)
-    ### iDQ glitch-rank frame for %s at %s within [%d, %d] :"%(opts.classifier, ifo, start, start+dur)
+    name = "idqRankFrameCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ uploads rank timeseries frames for %s at %s"%(self.classifier, self.ifo)
+        super(idqRankFrameCheck, self).__init__( timeout,
+                                                self.idqRankFrameCheck,
+                                                name=self.name,
+                                                description=self.description,
+                                                email=email
+                                              )
+
+    def idqRankFrameCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        check that iDQ uploads rank timeseries files
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        framename = "%s_idq_%s_rank(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier)
+        fragment = "iDQ glitch-rank frame for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    framename,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=True
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
     """
@@ -158,38 +251,134 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
     """
     name = "idqTimeseriesPlotCheck"
 
-    def __init__(self, timeout, ifo, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
-        self.description = "a check that iDQ reproted timeseries information as expected at %s"%(self.ifo)
+        self.classifier = classifier
+        self.description = "a check that iDQ reproted timeseries information as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTimeseriesPlotCheck, self).__init__( timeout,
-                                                  self.idqTimeseriesPlotCheck,
-                                                  name=self.name,
-                                                  description=self.description,
-                                                  email=email
-                                                )
+                                                      self.idqTimeseriesPlotCheck,
+                                                      name=self.name,
+                                                      description=self.description,
+                                                      email=email
+                                                    )
 
     def idqTimeseriesPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that iDQ reported timeseries information as expected
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
-        ### figname = isp.timeseriesfig(gdbdir, ifo, opts.classifier, filetag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
-        ### "iDQ fap and glitch-rank timeseries plot for " + opts.classifier + " at "+ifo+":"
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        figname = "%s_%s(.*)_timeseries-(.*)-(.*).png"%(self.ifo, self.classifier)
+        fragment = "iDQ fap and glitch-rank timeseries plot for %s at %s:"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    figname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=True
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqActiveChanCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploaded a list of possible active channels
     """
-    ### "iDQ (possible) active channels for %s at %s between [%.3f, %.3f]"%(opts.classifier, ifo, opts.plotting_gps_start, opts.plotting_gps_end)
-    ### jsonfilename = idq.gdb_ovlstripchart_json(gdbdir, opts.classifier, ifo, filetag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
+    name = "idqActiveChanCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ uploads a list of possible active channels for %s at %s"%(self.classifier, self.ifo)
+        super(idqActiveChanCheck, self).__init__( timeout, 
+                                                  self.idqActiveChanCheck,
+                                                  name=self.name,
+                                                  description=self.description,
+                                                  email=email
+                                                )
+
+    def idqActiveChanCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        check that iDQ uploaded a list of possible active channels
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        jsonname = "%s_%s_chanlist(.*)-(.*)-(.*).json"%(self.ifo, self.classifier)
+        fragment = "iDQ (possible) active channels for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    jsonname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploaded a plot of the possibly active channels
     """
-    ### "iDQ channel strip chart for %s at %s between [%.3f, %.3f]"%(opts.classifier, ifo, opts.plotting_gps_start, opts.plotting_gps_end)
-    ### figname = isp.ovlstripchart(gdbdir, ifo, opts.classifier, filetag, opts.plotting_gps_start, opts.plotting_gps_end-opts.plotting_gps_start, figtype="png")
+    name = "idqActiveChanPlotCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ uploads a plot of possible active channels for %s at %s"%(self.classifier, self.ifo)
+        super(idqActiveChanPlotCheck, self).__init__( timeout,
+                                                      self.idqActiveChanPlotCheck,
+                                                      name=self.name,
+                                                      description=self.description,
+                                                      email=email
+                                                    )
+
+    def idqActiveChanPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        check that iDQ uploaded a plot of possible active channels
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        figname = "%s_%s(.*)_chanstrip-(.*)-(.*).%s"%(self.ifo, self.classifier)
+        fragment = "iDQ channel strip chart for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    figname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 #---
 # reported by laldetchar-idq-gdb-glitch-tables.py
@@ -200,9 +389,10 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
     """
     name = "idqTablesCheck"
 
-    def __init__(self, timeout, ifo, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
-        self.description = "a check that iDQ reported the xml tables as expected at %s"%(self.ifo)
+        self.classifier = classifier
+        self.description = "a check that iDQ reported the xml tables as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTablesCheck, self).__init__( timeout,
                                               self.idqTablesCheck,
                                               name=self.name,
@@ -213,11 +403,30 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
     def idqTablesCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that iDQ reported the xml tables as expected
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
-        ### "iDQ glitch tables " + ifo + ":",
-        ### merged_xmldoc_filename = idq.gdb_xml(gdbdir, opts.classifier, ifo, tag, int(opts.start), int(opts.end-opts.start))
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        filename = "%s_idq_%s(.*)-(.*)-(.*).xml.gz"%(self.ifo, self.classifier)
+        fragment = "iDQ glitch tables %s:"%(self.ifo) ### this is bad... but it's what we have at the moment within iDQ
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    filename,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 #---
 # reported by laldetchar-idq-local-performance.py
@@ -231,58 +440,266 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
         self.classifier = classifier
-        self.description = "a check that iDQ reported the performance metrics as expected for %s at %s"%(self.classifier, self.ifo)
-        super(idqPerformanceCheck, self).__init__( timeout, 
-                                                   self.idqPerformanceCheck,
+        self.description = "a check that iDQ reported the calibration data as expected for %s at %s"%(self.classifier, self.ifo)
+        super(idqCalibrationCheck, self).__init__( timeout, 
+                                                   self.idqCalibrationCheck,
                                                    name=self.name,
                                                    description=self.description,
                                                    email=email
                                                  )
 
-    def idqPerformanceCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqCalibrationCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that iDQ reported preformance metrics as expected
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
-        ### "iDQ calibration sanity check for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
-        ### jsonfilename = idq.gdb_calib_json( gdbdir, ifo, opts.classifier, filetag, opts.start, opts.end-opts.start )
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        jsonname = "%s_%s(.*)_calib-(.*)-(.*).json"%(self.ifo, self.classifier)
+        fragment = "iDQ calibration sanity check for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    jsonname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported historical calibration plot as expected
     """
-    ### "iDQ calibration sanity check figure for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
-    ### figname = isp.calibfig( gdbdir, ifo, opts.classifier, filetag, opts.start, opts.end-opts.start )
+    name = "idqCalibrationPlotCheck"
 
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ reported the calibration plot as expected for %s at %s"%(self.classifier, self.ifo)
+        super(idqCalibrationPlotCheck, self).__init__( timeout,
+                                                       self.idqCalibrationPlotCheck,
+                                                       name=self.name,
+                                                       description=self.description,
+                                                       email=email
+                                                     )
+
+    def idqCalibrationPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that iDQ reported preformance metrics as expected
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        figname = "%s_%s(.*)_calib-(.*)-(.*).png"%(self.ifo, self.classifier)
+        fragment = "iDQ calibration sanity check figure for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    figname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqROCCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported the local ROC data
     """
-    ### jsonfilename = idq.gdb_roc_json(  gdbdir, opts.classifier, ifo, filetag, opts.start, opts.end-opts.start )
-    ### "iDQ local ROC curves for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
+    name = "idqROCCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ reported the ROC data as expected for %s at %s"%(self.classifier, self.ifo)
+        super(idqROCCheck, self).__init__( timeout,
+                                           self.idqROCCheck,
+                                           name=self.name,
+                                           description=self.description,
+                                           email=email
+                                         )
+
+    def idqROCCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that iDQ reported preformance metrics as expected
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        jsonname = "%s_%s(.*)_ROC-(.*)-(.*).json"%(self.ifo, self.classifier)
+        fragment = "iDQ local ROC curves for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    jsonname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqROCPlotCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported the local ROC plot
     """
-    ### figname = isp.rocfig( gdbdir, opts.classifier, ifo, filetag, opts.start, opts.end-opts.start )
-    ### "iDQ local ROC figure for %s at %s within [%.3f, %.3f]"%(ifo, opts.classifier, opts.start, opts.end)
+    name = "idqROCPlotCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ reported the ROC plot as expected for %s at %s"%(self.classifier, self.ifo)
+        super(idqROCPlotCheck, self).__init__( timeout,
+                                               self.idqROCPlotCheck,
+                                               name=self.name,
+                                               description=self.description,
+                                               email=email
+                                             )
+
+    def idqROCPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that iDQ reported preformance metrics as expected
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        figname = "%s_%s(.*)_ROC-(.*)-(.*).png"%(self.ifo, self.classifier)
+        fragment = "iDQ local ROC figure for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    figname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqCalibStatsCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ uploaded statistics about when calibration took place
     """
-    ### jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_calibStats"%filetag, opts.start, opts.end-opts.start)
-    ### "iDQ local calibration vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
+    name = "idqCalibStatsCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ reported the calibration statistics as expected for %s at %s"%(self.classifier, self.ifo)
+        super(idqCalibStatsCheck, self).__init__( timeout,
+                                                  self.idqCalibStatsCheck,
+                                                  name=self.name,
+                                                  description=self.description,
+                                                  email=email
+                                                )
+
+    def idqCalibStatsCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that iDQ reported preformance metrics as expected
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        jsonname = "%s_%s(.*)_calibStats-(.*)-(.*).json"%(self.ifo, self.classifier)
+        fragment = "iDQ local calibration vital statistics for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    jsonname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class idqTrainStatsCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ uploaded statistics about when training took place
     """
-    ### jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_trainStats"%filetag, opts.start, opts.end-opts.start)
-    ### "iDQ local training vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
+    name = "idqTrainStatsCheck"
+
+    def __init__(self, timeout, ifo, classifier, email=[]):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ reported the training statistics as expected for %s at %s"%(self.classifier, self.ifo)
+        super(idqTrainStatsCheck, self).__init__( timeout,
+                                                  self.idqTrainStatsCheck,
+                                                  name=self.name,
+                                                  description=self.description,
+                                                  email=email
+                                                )
+
+    def idqTrainStatsCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that iDQ reported preformance metrics as expected
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        jsonname = "%s_%s(.*)_trainStats-(.*)-(.*).json"%(self.ifo, self.classifier)
+        fragment = "iDQ local training vital statistics for %s at %s"%(self.classifier, self.ifo)
+        self.warning, action_required = check4file( graceid,
+                                                    gdb,
+                                                    jsonname,
+                                                    regex=True,
+                                                    tagnames=self.tagnames,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
+                                                    logRegex=False
+                                                  )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 #---
 # finish statement

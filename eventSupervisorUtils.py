@@ -44,7 +44,7 @@ def filename2log( filename, logs, verbose=False ):
     else:
         raise ValueError( "could not find %s in association with any log messages"%(filename) )
 
-def check4log( graceid, gdb, fragment, verbose=False ):
+def check4log( graceid, gdb, fragment, verbose=False, regex=False ):
     """
     checks for the fragment in the logs for this graceid
 
@@ -56,13 +56,23 @@ def check4log( graceid, gdb, fragment, verbose=False ):
 
     if verbose:
         print( "    parsing log" )
-    for log in logs:
-        comment = log['comment']
-        return fragment in comment
+    if regex:
+        template = re.complile( fragment )
+        for log in logs:
+            comment = log['comment']
+            if template.match( comment ):
+                return False ### action_required = False (we found a match) 
+        else:
+            return True ### action_required = True (could not find a match)
+    else:
+        for log in logs:
+            comment = log['comment']
+            if fragment in comment:
+                return False ### action_required = False (we found a match)
+        else:
+            return True ### action_required = True (could not find log)
 
-    return True ### action_required = True
-
-def check4file( graceid, gdb, filename, tagnames=None, verbose=False, regex=False ):
+def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=False, logFragment=None, logRegex=False ):
     """
     checks for the existence of a file and that it is tagged correctly
     if tagnames==None, we ignore check for tagnames
@@ -88,22 +98,59 @@ def check4file( graceid, gdb, filename, tagnames=None, verbose=False, regex=Fals
         file_exists = filename in files
 
     if file_exists: ### file exists
-        if tagnames!=None:
+        check_tagnames = tagnames!=None
+        check_logFragment = logFragment!=None
+        if (check_tagnames) or (check_logFrament):
             if verbose:
                 print( "    retrieving log messages" )
             logs = gdb.logs( graceid ).json()['log']
             log = filename2log( fitsname, logs, verbose=verbose )
 
-            if sorted(log['tagnames']) == sorted(tagnames): ### correct tagnames
-                warning = "found %s with correct tagnames (%s)"%(fitsname, ",".join(self.tagnames))
-                return warning, False ### action_required = False
-    
-            else: ### wrong tagnames
-                warning = "found %s but with incorrect tagnames (%s)"%(fitsname, ",".join(log['tagnames']))
-                return warning, True ### action_required = True
+            if (check_tagnames) and (check_logFragment): ### check both tagnames and log message
+                tagsGood = sorted(log['tagnames']) == sorted(tagnames)
+                if logRegex:
+                    template = re.compile( logFragment )
+                    logGood = re.compile( logFragment ).match( log['comment'] )
+                else:
+                    logGood = logFragment in log['comment']
+
+                if tagsGood and logGood:
+                    warning = "found %s with correct tagnames (%s) and correct log message"%(filename, ",".join(tagnames))
+                    return warning, False ### action_required = False
+                elif tagsGood:
+                    warning = "found %s with correct tagnames (%s) but incorrect log message"%(filename, ",".join(tagnames))
+                    return warning, True ### action_required = True
+                elif logGood:
+                    warning = "found %s with correct log message but incorrect tagnames (%s)"%(filename, ",".join(log['tagnames']))
+                    return warning, True ### action_required = True
+                else:
+                    warning = "found %s with incorrect tagnames (%s) and incorrect log message"%(filename, ",".join(log['tagnames']))
+                    return warning, True ### action_required = True
+
+            elif check_tagnames: ### check only tagnames
+                if sorted(log['tagnames']) == sorted(tagnames): ### correct tags
+                    warning = "found %s with correct tagnames (%s) while ignoring log message"%(filename, ",".join(tagnames))
+                    return warning, False ### action_required = False
+                else: ### wrong tagnames
+                    warning = "found %s but with incorrect tagnames (%s) while ignoring log message"%(filename, ",".join(log['tagnames']))
+                    return warning, True ### action_required = True
+
+            else: ### check_logFragment -> check only log message
+                if logRegex:
+                    template = re.compile( logFragment )
+                    logGood = re.compile( logFragment ).match( log['comment'] )
+                else:
+                    logGood = logFragment in log['comment']
+
+                if logGood:
+                    warning = "found %s with correct log message while ignoring tagnames"%(filename)
+                    return warning, False ### action_required = False
+                else:
+                    warning = "found %s but with incorrect log message while ignoring tagnames"%(filename)
+                    return warning, True ### action_required = True
 
         else: 
-            warning = "found %s and ignoring tagnames"%(fitsname)
+            warning = "found %s while ignoring tagnames and log message"%(fitsname)
             return warning, False ### action_required = False
 
     else: ### file does not exist
