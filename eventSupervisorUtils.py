@@ -44,7 +44,7 @@ def filename2log( filename, logs, verbose=False ):
     else:
         raise ValueError( "could not find %s in association with any log messages"%(filename) )
 
-def check4log( graceid, gdb, fragment, verbose=False, regex=False ):
+def check4log( graceid, gdb, fragment, tagnames=None, verbose=False, regex=False ):
     """
     checks for the fragment in the logs for this graceid
 
@@ -61,7 +61,10 @@ def check4log( graceid, gdb, fragment, verbose=False, regex=False ):
         for log in logs:
             comment = log['comment']
             if template.match( comment ):
-                return False ### action_required = False (we found a match) 
+                if tagnames!=None: ### check for tagnames
+                    return sorted(log['tagnames']) != sorted(tagnames) ### log exists, so action_required depends only on tagnames
+                else:
+                    return False ### action_required = False (we found a match) 
         else:
             return True ### action_required = True (could not find a match)
     else:
