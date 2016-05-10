@@ -43,9 +43,27 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
     def segDB2grcDBStartCheck(self, graceid, gdb, verbose=False, annotate=False ):
         """
         a check that segDB2grcDB started
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "began searching for segments in : ", verbose=verbose ):
+            self.warning = "found LIB PE starting message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find LIB PE staring message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
 
 class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
     """
@@ -88,6 +106,7 @@ class segDB2grcDBFlagsCheck(esUtils.EventSupervisorTask):
         NOT IMPLEMENTED
         """
         raise NotImplementedError
+        ### raise a warning if the query failed, too
 
 class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
     """
@@ -110,6 +129,7 @@ class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
         NOT IMPLEMENTED
         """
         raise NotImplementedError
+        ### raise a warning if query failed, too
 
 class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
     """
@@ -132,6 +152,7 @@ class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
         NOT IMPLEMENTED
         """
         raise NotImplementedError
+        ### raised a warning if query failed, too
 
 class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
     """
@@ -151,6 +172,24 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
     def segDB2grcDBFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that segDB2grcDB finished
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "finished searching for segments in : ", verbose=verbose ):
+            self.warning = "found LIB PE starting message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find LIB PE staring message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
