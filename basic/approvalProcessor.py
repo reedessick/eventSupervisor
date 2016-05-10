@@ -49,9 +49,37 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
     def approvalProcessorFARCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that approvalProcessor analyzed the FAR as expected
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError("approvalProcessorFARCheck")
+        ### note, we do not delegate to esUtils.check4log because there are multiple possible messages
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+            print( "    retrieving log messages" )
+        logs = gdb.logs( graceid ).json()['log']
+
+        if verbose:
+            print( "    parsing log" )
+        for log in logs:
+            comment = log['comment']
+            if ("Candidate event has low enough FAR" in comment) \
+              or ("Candidate event rejected due to large FAR" in comment) \
+              or ("Ignoring new event because we found a hardware injection" in comment):
+                self.warning = "found ApprovalProcessor FAR check message"
+                if verbose or annotate:
+                    message = "no action required : "+self.warning
+                    if verbose:
+                        print( "    "+message )
+                    if annotate:
+                        esUtils.writeGDBLog( gdb, graceid, message )
+                return False ### action_required = False
+
+        self.warning = "could not find ApprovalProcessor FAR check message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
 
 class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
     """
