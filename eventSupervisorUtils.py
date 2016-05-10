@@ -31,6 +31,23 @@ def emailWarning(subject, body, email):
 
 ### some basic look-up utilities
 
+def isINJ( graceid, gdb, verbose=False ):
+    """
+    determines if the event is labeled as an injection
+    """
+    if verbose:
+        print( "    looking up labels" )
+    labels = gracedb.labels( gdb_id ).json()['labels']
+    if verbose:
+        if "INJ" in [label['name'] for label in labels]:
+            report( "\tevent labeled \"INJ\"" )
+            return True
+        else:
+            report( "\tevent not labeled \"INJ\"" )
+            return False
+    else:
+        return "INJ" in [label['name'] for label in labels]
+
 def filename2log( filename, logs, verbose=False ):
     """
     finds the log associated with a given filename
