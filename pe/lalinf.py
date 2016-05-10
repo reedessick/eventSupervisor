@@ -104,7 +104,24 @@ class lalinfPostSampCheck(esUtils.EventSupervisorTask):
         a check that LALInference posted posterior samples
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError("not sure what the posterior_samples filename is for lalinference follow-ups...")
+
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        filename = "posterior_samples.dat"
+        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
+
 
 class lalinfSkymapCheck(esUtils.EventSupervisorTask):
     """

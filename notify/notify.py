@@ -50,9 +50,22 @@ class notifyByEmail(esUtils.EventSupervisorTask):
     def notifyByEmail(self, graceid, gdb, verbose=False, annotate=False ):
         """
         notify folks by email
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if self.ignoreInj:
+            if esUtils.isINJ( graceid, gdb, verbose=verbose ):
+                if verbose:
+                    print( "    labeled INJ -> ignoring" )
+            else:
+                if verbose:
+                    print( "    not labeled INJ -> sending emails" )
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+        return False ### action_required = False
+                     ### all message are sent from within this function, so nothing else is necessary
 
 class notifyBySMS(esUtils.EventSupervisorTask):
     """
@@ -74,9 +87,22 @@ class notifyBySMS(esUtils.EventSupervisorTask):
     def notifyBySMS(self, graceid, gdb, verbose=False, annotate=False ):
         """
         notify folks by SMS
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if self.ignoreInj:
+            if esUtils.isINJ( graceid, gdb, verbose=verbose ):
+                if verbose:
+                    print( "    labeled INJ -> ignoring" )
+            else:
+                if verbose:
+                    print( "    not labeled INJ -> sending emails" )
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+        return False ### action_required = False
+                     ### all message are sent from within this function, so nothing else is necessary
 
 class notifyByPhone(esUtils.EventSupervisorTask):
     """
@@ -98,6 +124,19 @@ class notifyByPhone(esUtils.EventSupervisorTask):
     def notifyByPhone(self, graceid, gdb, verbose=False, annotate=False ):
         """
         notify folks by phone
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        if self.ignoreInj:
+            if esUtils.isINJ( graceid, gdb, verbose=verbose ):
+                if verbose:
+                    print( "    labeled INJ -> ignoring" )
+            else:
+                if verbose:
+                    print( "    not labeled INJ -> sending emails" )
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+        return False ### action_required = False
+                     ### all message are sent from within this function, so nothing else is necessary

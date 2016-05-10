@@ -74,6 +74,7 @@ class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
 
     def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
         tasks = [bayeswavePEPostSampCheck(timeout, email=email),
+                 bayeswavePEEstimateCheck(timeout, email=email),
                  bayeswavePEBayesFactorsCheck(timeout, email=email),
                  bayeswavePESkymapCheck(timeout, tagnames=tagnames, email=email),
 #                 bayeswavePEFinishCheck(timeout, email=email)
@@ -104,9 +105,28 @@ class bayeswavePEPostSampCheck(esUtils.EventSupervisorTask):
     def bayeswavePEPostSampCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that BayesWave PE posted posterior samples
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        if not esUtils.check4log( graceid, gdb, "BWB Follow-up results", verbose=verbose ):
+            self.warning = "found Bayeswave link to follow-up results"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find Bayeswave link to follow-up results"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
 
 class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
     """
@@ -126,9 +146,69 @@ class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
     def bayeswavePEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that BayesWave PE posted Bayes Factors
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        if not esUtils.check4log( graceid, gdb, "BWB Bayes Factors", verbose=verbose ):
+            self.warning = "found Bayeswave BayesFactors message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find Bayeswave BayesFactors message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
+
+class bayeswavePEEstimateCheck(esUtils.EventSupervisorTask):
+    """
+    a check that BayesWave PE posted estimates of parameters
+    """
+    name = "bayeswavePEEstimateCheck"
+    description = "a check that BayesWave PE posted estimates of parameters"
+
+    def __init__(self, timeout, email=[]):
+        super(bayeswavePEEstimateCheck, self).__init__( timeout,
+                                                        self.bayeswavePEEstimateCheck,
+                                                        name=self.name,
+                                                        descripiton=self.description,
+                                                        email=email
+                                                      )
+
+    def bayeswavePEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that BayesWave PE posted estimates of parameters
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        if not esUtils.check4log( graceid, gdb, "BWB parameter estimation", verbose=verbose ):
+            self.warning = "found Bayeswave BayesFactors message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find Bayeswave BayesFactors message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
 
 class bayeswavePESkymapCheck(esUtils.EventSupervisorTask):
     """

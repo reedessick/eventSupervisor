@@ -56,7 +56,8 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
     description = "a check that cWB PE produced the expected data and finished"
 
     def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
-        tasks = [cWBPEDataCheck(timeout, email=email),
+        tasks = [cWBPECEDCheck(timeout, email=email),
+                 cWBPEEstimateCheck(timeout, email=email),
                  cWBPESkymapCheck(timeout, tagnames=tagnames, email=email),
 #                 cWBPEFinishCheck(timeout, email=email)
                 ]
@@ -68,7 +69,7 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
                                          annotate=annotate
                                        )
 
-class cWBPEDataCheck(esUtils.EventSupervisorTask):
+class cWBPECEDCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted estimates of parameters
     """
@@ -76,19 +77,79 @@ class cWBPEDataCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE posted estimates of parameters"
 
     def __init__(self, timeout, email=[]):
-        super(cWBPEDataCheck, self).__init__( timeout,
-                                                  self.cWBPEDataCheck,
+        super(cWBPECEDCheck, self).__init__( timeout,
+                                                  self.cWBPECEDCheck,
                                                   name=self.name,
                                                   descripiton=self.description,
                                                   email=email
                                                 )
 
-    def cWBPEDataCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cWBPECEDCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that cWB PE posted posterior samples
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        if not esUtils.check4log( graceid, gdb, "cWB CED", verbose=verbose ):
+            self.warning = "found link to cWB CED page"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find link to cWB CED page"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
+
+class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
+    """
+    a check that cWB PE posted estimates of parameters
+    """
+    name = "cWBPEstimateCheck"
+    description = "a check that cWB PE posted estimates of parameters"
+
+    def __init__(self, timeout, email=[]):
+        super(cWBPEEstimateCheck, self).__init__( timeout,
+                                                  self.cWBPEEstimateCheck,
+                                                  name=self.name,
+                                                  descripiton=self.description,
+                                                  email=email
+                                                )
+
+    def cWBPEEstimateCheck(self, graceid, gdb, verbose=False, annotate=False):
+        """
+        a check that cWB PE posted posterior samples
+        """
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        if not esUtils.check4log( graceid, gdb, "cWB parameter estimation", verbose=verbose ):
+            self.warning = "found cWB estimates of parameters"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find cWB estimates of parameters"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
 
 class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     """

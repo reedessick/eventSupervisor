@@ -104,9 +104,23 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
     def libPEPostSampCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that LIB PE posted posterior samples
-        NOT IMPLEMENTED
+        NOTE: this is likely associated with the same log message as libPEFinishCheck 
+              and it is not clear that we should seprate them as we have...
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+        filename = "posterior_samples.dat"
+        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                print( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
 
 class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
     """
@@ -126,9 +140,29 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
     def libPEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that LIB PE posted Bayes Factors
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        if verbose:
+            print( "%s : %s"%(graceid, self.description) )
+
+        if not esUtils.check4log( graceid, gdb, "LIB PE summary", verbose=verbose ):
+            self.warning = "found LIB PE BayesFactors message"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find LIB PE BayesFactors message"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                print( "    "+self.warning )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
+
 
 class libPESkymapCheck(esUtils.EventSupervisorTask):
     """
