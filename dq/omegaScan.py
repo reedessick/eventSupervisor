@@ -83,14 +83,16 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
 
         self.ifo = alert['description'].split()[-1]  ### need to parse this out of the alert!
                                                         ### this is likely to break because Alex hasn't written it yet...
-        timeout = float(options['dt'])
+        data_dt = float(options['data dt'])
+        finish_dt = float(options['finish dt'])
+
         email = options['email'].split()
 
         self.chanset = chanset
 
         self.description = "a check that OmegaScans ran as expected for %s at %s"%(self.chanset, self.ifo)
-        tasks = [omegaScanDataCheck(timeout, ifo, chanset, email=email),
-                 omegaScanFinishCheck(timeout, ifo, chanset, email=email)
+        tasks = [omegaScanDataCheck(data_dt, ifo, chanset, email=email),
+                 omegaScanFinishCheck(finish_dt, ifo, chanset, email=email)
                 ]
         super(OmegaScanItem, self).__init__( graceid,
                                              gdb,
