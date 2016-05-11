@@ -118,6 +118,7 @@ parent_child = {
   'lalinf start'          : ['lalinf'],
   'lib pe start'          : ['lib pe'],
   'skymap summary start'  : ['skymap summary'],
+  'approvalProcessorSegDBStartCheck' : ['approval processor segdb']
   }
 
 ### special behavior if certain file types are seen
@@ -312,6 +313,10 @@ def parseUpdate( alert ):
     ### skymap summary start
     elif skymapSummary.is_skymapSummaryStart( description ):
         return 'skymap summary start'
+
+    ### approval processor segdb start
+    elif approvalProcessor.is_approvalProcessorSegDBStart( description ):
+        return 'approvalProcessorSegDBStartCheck'
 
     ### message not recognized or we don't care about it
     else: 

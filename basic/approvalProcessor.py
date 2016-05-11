@@ -11,6 +11,10 @@ import eventSupervisorUtils as esUtils
 
 ### methods to identify updates by description
 
+def is_approvalProcessorSegDBStart( description ):
+    ''' NOT IMPLEMENTED -> return False '''
+    return False
+
 #---------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------
@@ -93,7 +97,7 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
     """
     a check that approvalProcessor started checking segments as expected
     """
-    description = ""
+    description = "a check that approvalProcessor started checking segments as expected"
     name = "approvalProcessorSegDBStart"
 
     def __init__(self, timeout, email=[]):
@@ -109,16 +113,42 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
         """
         raise NotImplementedError(self.name)
 
+class approvalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
+    """
+    check that approval processor completed segment checks
+    """
+    name = "approval processor segdb"
+    description = "a set of checks for approval_processor's segment vetting"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        flags_dt = float(options['flags dt'])
+        finish_dt = float(options['finish dt'])
+
+        flags = options['flags'].split()
+
+        email = options['email'].split()
+
+        tasks = [approvalProcessorSegDBFlagsCheck(flags_dt, flags=flags, email=email),
+                 approvalProcessorSegDBFinishCheck(finish_dt, email=email)
+                ]
+        super(ApprovalProcessorPrelimDQItem, self).__init__( graceid,
+                                                             gdb,
+                                                             t0,
+                                                             tasks,
+                                                             annotate=annotate
+                                                           )
 
 class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
     """
     a check that approvalProcessor checked all the segment/flags as expected
     """
-    description = ""
+    description = "a check that approvalProcessor checked all the segment/flags as expected"
     name = "approvalProcessorSegDBFlags"
 
     def __init__(self, timeout, flags=[], email=[]):
-        self.flags = []
+        self.flags = flags 
         super(approvalProcessorSegDBFlagsCheck, self).__init__( timeout,
                                                                 self.approvalProcessorSegDBFlagsCheck,
                                                                 email=email
@@ -135,7 +165,7 @@ class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that approvalProcessor finished checking segments as expected
     """
-    description = ""
+    description = "a check that approvalProcessor finished checking segments as expected"
     name = "approvalProcessorSegDBFinish"
 
     def __init__(self, timeout, email=[]):
