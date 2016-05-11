@@ -9,6 +9,14 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_segdb2grcdbStart( description ):
+    ''' determine whether description is for a segdb2grcdb start alert by matching a string fragment '''
+    return "began searching for segments in " in description
+
+#---------------------------------------------------------------------------------------------------
+
 class SegDB2GrcDBStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that segDB2grcDB started
@@ -50,7 +58,7 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
         if not esUtils.check4log( graceid, gdb, "began searching for segments in : ", verbose=verbose ):
-            self.warning = "found LIB PE starting message"
+            self.warning = "found segDB2grcDB starting message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
@@ -59,7 +67,7 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-        self.warning = "could not find LIB PE staring message"
+        self.warning = "could not find segDB2grcDB staring message"
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
@@ -186,7 +194,7 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
         if not esUtils.check4log( graceid, gdb, "finished searching for segments in : ", verbose=verbose ):
-            self.warning = "found LIB PE starting message"
+            self.warning = "found segDB2grcDB finish message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
@@ -195,7 +203,7 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-        self.warning = "could not find LIB PE staring message"
+        self.warning = "could not find segDB2grcDB finish message"
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:

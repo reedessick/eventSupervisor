@@ -9,6 +9,10 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+#---------------------------------------------------------------------------------------------------
+
 class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that cWB PE started

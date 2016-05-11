@@ -9,6 +9,10 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+#---------------------------------------------------------------------------------------------------
+
 class NotifyItem(esUtils.EventSupervisorQueueItem):
     """
     notify folks that a new event was created

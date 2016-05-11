@@ -9,6 +9,13 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_bayeswavePEStart( description ):
+    ''' determine if description is for a bayeswave pe start alert by matching a string fragment '''
+    return 'BayesWaveBurst launched' in description
+
+#---------------------------------------------------------------------------------------------------
 class BayesWavePEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesWave PE started

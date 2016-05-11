@@ -9,23 +9,40 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_hoftOmegaScanStart( description ):
+    ''' identify whether description is for an hoft omega scan start alert by matching a fragment. NOT IMPLEMENTED -> return False '''
+    return False
+
+def is_auxOmegaScanStart( description ):
+    ''' identify whether description is for an aux omega scan start alert by matching a fragment. NOT IMPLEMENTED -> return False '''
+    return False
+
+def is_idqOmegaScanStart( description ):
+    ''' identify whether description is for an idq omega scan start alert by matching a fragment. NOT IMPLEMENTED -> return False '''
+    return False
+
+#---------------------------------------------------------------------------------------------------
+
 class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that OmegaScans were started
     """
     name = "omega scan start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, chanset='h(t'):
         graceid = alert['uid']
 
         self.ifos = options['ifos'].split()
-        self.chanset = options['chanset']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        self.description = "a check that OmegaScans were started for %s at (%s)"%(self.chanset, ",".join(self.ifos))
-        tasks = [omegaScanStartCheck(timeout, ifo, chanset=chanset, email=email) for ifo in self.ifos]
+        self.chanset = chanset
+
+        self.description = "a check that OmegaScans were started for %s at (%s)"%(",".join(self.chanset, self.ifos))
+        tasks = [omegaScanStartCheck(timeout, ifo, chanset, email=email) for ifo in self.ifos]
         super(OmegaScanStartItem, self).__init__( graceid,
                                                   gdb,
                                                   t0,
@@ -39,11 +56,11 @@ class omegaScanStartCheck(esUtils.EventSupervisorTask):
     """
     name = "omegaScanStart"
 
-    def __init__(self, timeout, ifo, chanset="h(t)", email=[]): 
+    def __init__(self, timeout, ifo, chanset, email=[]): 
         self.ifo = ifo
         self.chanset = chanset
         self.description = "a check that OmegaScans were started for %s at %s"%(chanset, ifo)
-        super(omegaScanStartChec, self).__init__( timeout,
+        super(omegaScanStartCheck, self).__init__( timeout,
                                                   self.omegaScanStartCheck,
                                                   email=email
                                                 )
@@ -61,19 +78,19 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
     """
     name = "omega scan"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, chanset='h(t)'):
         graceid = alert['uid']
 
         self.ifo = alert['description'].split()[-1]  ### need to parse this out of the alert!
                                                         ### this is likely to break because Alex hasn't written it yet...
-        self.chanset = options['chanset']
-
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        self.chanset = chanset
+
         self.description = "a check that OmegaScans ran as expected for %s at %s"%(self.chanset, self.ifo)
-        tasks = [omegaScanDataCheck(timeout, ifo, chanset=chanset, email=email),
-                 omegaScanFinishCheck(timeout, ifo, chanset=chanset, email=email)
+        tasks = [omegaScanDataCheck(timeout, ifo, chanset, email=email),
+                 omegaScanFinishCheck(timeout, ifo, chanset, email=email)
                 ]
         super(OmegaScanItem, self).__init__( graceid,
                                              gdb,
@@ -88,7 +105,7 @@ class omegaScanDataCheck(esUtils.EventSupervisorTask):
     """
     name = "omegaScanData"
 
-    def __init__(self, timeout, ifo, chanset="h(t)", email=[]):
+    def __init__(self, timeout, ifo, chanset, email=[]):
         self.ifo = ifo
         self.chanset = chanset
         self.description = "a check that OmegaScans posted data for %s at %s"%(chanset, ifo)
@@ -110,10 +127,10 @@ class omegaScansFinishCheck(esUtils.EventSupervisorTask):
     """
     name = "omegaScanFinish"
 
-    def __init__(self, timeout, ifo, chanset="h(t)", email=[]):
+    def __init__(self, timeout, ifo, chanset, email=[]):
         self.ifo = ifo
         self.chanset = chanset
-        self.description = "a check that OmegaScans for %s finished at %s"%(chanset, ifo)
+        self.description = "a check that OmegaScans finished for %s at %s"%(chanset, ifo)
         super(omegaScanFinishCheck, self).__init__( timeout,
                                                     self.omegaScanFinishCheck,
                                                     email=email
@@ -127,12 +144,72 @@ class omegaScansFinishCheck(esUtils.EventSupervisorTask):
         raise NotImplementedError(self.name) 
 
 #---------------------------------------------------------------------------------------------------
-'''
-need to define specific classes for different chansets via inheritence
-  this is because the expected behavior and timeouts could be very different for different chansets
-  with the standardized __init__ architecture, we need these to be separate for things to remain sane
-    we need a set of classes for each of the following chansets
-      -> h(t)
-      -> aux
-      -> idq
-'''
+
+#------------------------
+# h(t)
+#------------------------
+class HofTOmegaScanStartItem(OmegaScanStartItem):
+    """
+    a check that OmegaScans were started over h(t)
+    """
+    name = "hoft omega scan start"
+    chanset = "h(t)"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        super(HofTOmegaScanStartItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)
+
+class HofTOmegaScanItem(OmegaScanItem):
+    """
+    a check that OmegaScans uploaded data and finished as expected
+    """
+    name = "omega scan"
+    chanset = "h(t)"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        super(HofTOmegaScanItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)        
+
+#------------------------
+# aux
+#------------------------
+class AuxOmegaScanStartItem(OmegaScanStartItem):
+    """
+    a check that OmegaScans were started
+    """
+    name = "aux omega scan start"
+    chanset = "aux"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        super(AuxOmegaScanStartItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)
+
+class AuxOmegaScanItem(OmegaScanItem):
+    """
+    a check that OmegaScans uploaded data and finished as expected
+    """
+    name = "omega scan"
+    chanset = "aux"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        super(AuxOmegaScanItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)
+
+#------------------------
+# idq
+#------------------------
+class IDQOmegaScanStartItem(OmegaScanStartItem):
+    """
+    a check that OmegaScans were started
+    """
+    name = "idq omega scan start"
+    chanset = "idq"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        super(IDQOmegaScanStartItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)
+
+class IDQOmegaScanItem(OmegaScanItem):
+    """
+    a check that OmegaScans uploaded data and finished as expected
+    """
+    name = "idq omega scan"
+    chanset = "idq"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        super(IDQOmegaScanItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)

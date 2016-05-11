@@ -9,6 +9,14 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_skymapSummaryStart( description ):
+    ''' determine whether description is for a skymap summary start alert by matching a string fragment. NOT IMPLEMENTED -> return False '''
+    return False
+
+#---------------------------------------------------------------------------------------------------
+
 #-------------------------------------------------
 # skymap autosummary
 #-------------------------------------------------

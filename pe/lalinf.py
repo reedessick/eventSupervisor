@@ -9,6 +9,14 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_lalinfStart( description ):
+    ''' determine whether description is for a lalinference start alert by matching a string fragment '''
+    return 'LALInference online estimation started' in description
+
+#---------------------------------------------------------------------------------------------------
+
 class LALInfStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LALInference started

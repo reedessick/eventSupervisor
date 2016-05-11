@@ -9,6 +9,14 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_bayestarStart( description ):
+    ''' identify whether description is for a bayestar start alert by matching a string fragment '''
+    return "INFO:BAYESTAR:starting sky localization" in description
+
+#---------------------------------------------------------------------------------------------------
+
 class BayestarStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesStar started as expected

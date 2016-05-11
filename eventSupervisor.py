@@ -4,7 +4,9 @@ author = "reed.essick@ligo.org"
 #-------------------------------------------------
 
 def extractChildren( mod, klass ):
-    """ extracts the sublcasses of klass from module """
+    """
+    extracts the sublcasses of klass from module.
+    """
     d = {}
     for x in dir(mod):
         attr = getattr(mod, x)
@@ -16,6 +18,7 @@ def extractChildren( mod, klass ):
 
 qid = {} ### queueItemDict
          ### contains mapping of names -> QueueItem objects
+         ### used to standardize instantiation of QueueItems
 
 #-------------------------------------------------
 
@@ -72,6 +75,10 @@ qid.update( extractChildren( segDB2grcDB, esUtils.EventSupervisorQueueItem ) )
 
 #-------------------------------------------------
 
+#------------------------
+# currently, hard code relations here (although we may want to move this into a separate module?)
+#------------------------
+
 ### behvior when new alerts are witnessed
 new = [
   'approval processor prelim dq',
@@ -83,7 +90,8 @@ new = [
   'unblind injections',
   'dq summary',
   'idq start',
-  'omega scan start',
+  'hoft omega scan start',
+  'aux omega scan start',
   'segdb2grcdb start',
   'notify',
   'bayestar start',
@@ -94,24 +102,23 @@ new = [
   ]
 
 ### behavior if certian checks are satisfied/alerts are received
+### NOTE: keys can be Task names but values can ONLY contain Item names
 parent_child = {
+  None                    : [], ### helps with parsing. parseUpdate will return None if we don't do anything special for that alert
 ### parent name : [child name]
-  'idq start'            : ['idq item'],
-  'idqGlitchFAP'         : ['approval processor idq'], ### involves a Task
-  'idqActiveChan'        : ['omega scan idq start'], ### involves a Task, needs to be implemented
-  'omega scan start'     : ['omega scan'],
-  'omega scan idq start' : ['omega scan idq'], ### needs to be implemented
-  'segdb2grcdb start'    : ['segdb2grcdb'],
-  'bayestar start'       : ['bayestar'],
-  'bayeswave pe start'   : ['bayeswave pe'],
-  'lalinf start'         : ['lalinf'],
-  'lib pe start'         : ['lib pe'],
-  'skymap summary start' : ['skymap summary'],
+  'idq start'             : ['idq item'],
+  'idqGlitchFAP'          : ['approval processor idq'], 
+  'idqActiveChan'         : ['idq omega scan start'], 
+  'hoft omega scan start' : ['hoft omega scan'],
+  'aux omega scan start'  : ['aux omega scan'],
+  'idq omega scan start'  : ['idq omega scan'], 
+  'segdb2grcdb start'     : ['segdb2grcdb'],
+  'bayestar start'        : ['bayestar'],
+  'bayeswave pe start'    : ['bayeswave pe'],
+  'lalinf start'          : ['lalinf'],
+  'lib pe start'          : ['lib pe'],
+  'skymap summary start'  : ['skymap summary'],
   }
-
-### for known parent-child relationships, we define functions to determine if the alert matches (a regex?)
-###   we should be able to standardize this and limit the number of special cases
-###   we then have one function that identifies a 'name' based on an alert and then add items as needed based on those names
 
 ### special behavior if certain file types are seen
 fits = [
@@ -122,6 +129,10 @@ fits = [
   ]
 
 #-------------------------------------------------
+
+#------------------------
+# main parsing function
+#------------------------
 
 def parseAlert( queue, queueByGraceID, alert, t0, config ):
     """
@@ -155,35 +166,67 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     items = [] ### list of new items to add to queue
 
     ### filter based on alert type
-    if alert_type=="new": ### we don't need to parse this any further
+    #--------------------
+    # new alerts -> we don't need to parse this any further
+    #--------------------
+    if alert_type=="new":
         for name in new: ### iterate through names that neeed to be added
             if config.has_section( name ):
                 items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
-
         completed = 0
 
     else: ### need to parse this further
-        if alert_type=="update":
+
+        #----------------
+        # update alerts -> we react to each update differently
+        #----------------
+        ### parse updates
+        if alert_type=="update": 
             completed = 0 ### counter for the number of Items marked complete
 
+            #------------
+            # react to common file types in a systematic way
+            #------------
             if alert['file']: ### look for special actions based on the presence of a file
                 filename = alert['file']
-                if filename.strip('.gz').endswidth('.fits'): ### new FITS file
+
+                ### new FITS file
+                if filename.strip('.gz').endswidth('.fits'):
                     for name in fits:
                         if config.has_section( name ):
                             items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
+
                 else:
                     pass ### not sure what to do here... are there other file types that require special action?
 
-            else:
-                pass ### need a good way of identifying which check a log message satisfies...
+            #------------
+            # react to alert description
+            #------------
+            update_name = parseUpdate( alert ) ### determine the type of update
 
+            ### determine new QueueItems that need to be added based on this update
+            for name in parent_child[update_name]:
+                if config.has_section( name ):
+                    items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
+
+            ### determine which QueueItems/Tasks need to be marked complete based on this update
+            ###  >>>>>>>>>>>>>>>>>> HOW DO WE DO THIS CLEANLY? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+        #----------------
+        # label alert 
+        #----------------
         elif alert_type=="label":
-            completed = 0
+            completed = 0 ### currently we don't do anything...
 
+        #----------------
+        # alert type is not understood
+        #----------------
         else:
             raise ValueError("do not understand alert_type=%s"%alert_type)
 
+    #--------------------
+    # actually add items to the queue
+    #--------------------
     if items and (not queueByGraceID.has_key(graceid)): ### ensure queues are set up
         queueByGraceID[graceid] = utils.SortedQueue()
 
@@ -192,3 +235,84 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
         queueByGraceID[graceid].insert( item )
     
     return completed
+
+#------------------------
+# parser for update alerts based on description
+#------------------------
+
+def parseUpdate( alert ):
+    """
+    determines the "name" of the update, which we use to determine what actions we need to take
+    new QueueItems are defined through parent_child (dict)
+    and Items/Tasks that need to be marked complete are defined through ??????
+
+    need to key off these types of messages
+        idq start
+        idqGlitchFAP
+        idqActiveChan
+        hoft omega scan start
+        aux omega scan start
+        idq omega scan start
+        segdb2grcdb start
+        bayestar start
+        bayeswave pe start
+        lalinf start
+        lib pe start
+        skymap summary start
+
+    if update is not recognized or we do not need to do anything based on it:
+        return None
+    """
+    description = alert['description']
+
+    ### idq start
+    if idq.is_idqStart( description ):
+        return 'idq start'
+
+    ### idqGlitchFAP
+    elif idq.is_idqGlitchFap( description ):
+        return 'idqGlitchFAP'
+
+    ### idqActiveChan
+    elif idq.is_idqActiveChan( description ):
+        return 'idqActiveChan'
+
+    ### hoft omega scan start
+    elif omegaScan.is_hoftOmegaScanStart( description ):
+        return 'hoft omega scan start'
+
+    ### aux omega scan start
+    elif omegaScan.is_auxOmegaScanStart( description ):
+        return 'aux omega scan start'
+
+    ### idq omega scan start
+    elif omegaScan.is_idqOmegaScanStart( description ):
+        return 'idq omega scan start'
+    
+    ### segdb2grcdb start
+    elif segdb2grcdb.is_segdb2grcdbStart( description ):
+        return 'segdb2grcdb start'
+
+    ### bayestar start
+    elif bayestar.is_bayestarStart( description ):
+        return 'bayestar start'
+
+    ### bayeswave pe start
+    elif bayeswavePE.is_bayeswavePEStart( description ):
+        return 'bayeswave pe start'
+
+    ### lalinf start
+    elif lalinf.is_lalinfStart( description ):
+        return 'lalinf start'
+
+    ### lib pe start
+    elif libPE.is_libPEStart( description ):
+        return 'lib pe start'
+
+    ### skymap summary start
+    elif skymapSummary.is_skymapSummaryStart( description ):
+        return 'skymap summary start'
+
+    ### message not recognized or we don't care about it
+    else: 
+        return None

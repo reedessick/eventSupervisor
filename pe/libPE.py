@@ -9,6 +9,14 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_libPEStart( description ):
+    ''' determine whether description is for a lib pe start alert by matching a string fragment '''
+    return 'LIB Parameter estimation started' in description
+
+#---------------------------------------------------------------------------------------------------
+
 class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LIB PE started

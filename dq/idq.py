@@ -9,6 +9,22 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+def is_idqStart( description ):
+    ''' identify whether the description is for an idq start alert based on matching a string fragment '''
+    return "Started searching for iDQ information within" in description
+
+def is_idqGlitchFAP( description ):
+    ''' identify whether the description is for an idq glitchFAP alert based on matching a string fragment '''
+    return "minimum glitch-FAP for" in description
+
+def is_idqActiveChan( description ):
+    ''' identify whether the description is for an idq active channel alert based on matching a string fragment '''
+    return "iDQ (possible) active channels for" in description
+
+#---------------------------------------------------------------------------------------------------
+
 #---
 # start statement
 #---

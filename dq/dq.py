@@ -9,6 +9,10 @@ import eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
+### methods to identify updates by description
+
+#---------------------------------------------------------------------------------------------------
+
 class DQSummaryItem(esUtils.EventSupervisorQueueItem):
     """
     a check that a link to the DQ Summary page was posted
