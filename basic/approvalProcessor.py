@@ -17,9 +17,16 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
     """
     a set of checks for approval_processor's preliminary DQ and vetting
     """
+    name = "approval processor prelim dq"
     description = "a set of checks for approval_processor's preliminary DQ and vetting"
 
-    def __init__(self, graceid, gdb, farTimeout, segStartTimeout, t0, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        farTimeout = float(options['far dt'])
+        segTimeout = float(options['seg start dt'])
+        email = options['email'].split()
+
         tasks = [approvalProcessorFARCheck(farTimeout, email=email),
                  approvalProcessorSegDBStartCheck(segStartTimeout, email=email)
                 ]
@@ -27,7 +34,6 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
                                                              gdb,
                                                              t0,
                                                              tasks,
-                                                             description=self.description,
                                                              annotate=annotate
                                                            )
 
@@ -36,13 +42,11 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
     a check that approvalProcessor analyzed the FAR as expected
     """
     description = ""
-    name = "approvalProcessorFARCheck"
+    name = "approvalProcessorFAR"
 
     def __init__(self, timeout, email=[]):
         super(approvalProcessorFARCheck, self).__init__( timeout, 
                                                          self.approvalProcessorFARCheck, 
-                                                         name=self.name,
-                                                         description=self.description, 
                                                          email=email
                                                        )
 
@@ -86,13 +90,11 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
     a check that approvalProcessor started checking segments as expected
     """
     description = ""
-    name = "approvalProcessorSegDBStartCheck"
+    name = "approvalProcessorSegDBStart"
 
     def __init__(self, timeout, email=[]):
         super(approvalProcessorSegDBStartCheck, self).__init__( timeout, 
                                                                 self.approvalProcessorSegDBStartCheck, 
-                                                                name=self.name,
-                                                                description=self.description, 
                                                                 email=email
                                                               )
 
@@ -101,7 +103,7 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
         a check that approvalProcessor started checking segments as expected
         NOT IMPLEMENTED
         """
-        raise NotImplementedError("approvalProcessorSegDBStartCheck")
+        raise NotImplementedError(self.name)
 
 
 class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
@@ -109,14 +111,12 @@ class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
     a check that approvalProcessor checked all the segment/flags as expected
     """
     description = ""
-    name = "approvalProcessorSegDBFlagsCheck"
+    name = "approvalProcessorSegDBFlags"
 
     def __init__(self, timeout, flags=[], email=[]):
         self.flags = []
         super(approvalProcessorSegDBFlagsCheck, self).__init__( timeout,
                                                                 self.approvalProcessorSegDBFlagsCheck,
-                                                                name=self.name,
-                                                                description=self.description,
                                                                 email=email
                                                               )
 
@@ -125,20 +125,18 @@ class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
         a check that approvalProcessor checked all the segment/flags as expected
         NOT IMPLEMENTED
         """
-        raise NotImplementedError("approvalProcessorSegDBFlagsCheck")
+        raise NotImplementedError(self.name)
 
 class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that approvalProcessor finished checking segments as expected
     """
     description = ""
-    name = "approvalProcessorSegDBFinishCheck"
+    name = "approvalProcessorSegDBFinish"
 
     def __init__(self, timeout, email=[]):
         super(approvalProcessorSegDBFinishCheck, self).__init__( timeout,
                                                                  self.approvalProcessorSegDBFinishCheck,
-                                                                 name=self.name,
-                                                                 description=self.description,
                                                                  email=email
                                                                )
 
@@ -147,7 +145,7 @@ class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
         a check that approvalProcessor finished checking all segments as expected
         NOT IMPLEMENTED
         """
-        raise NotImplementedError("approvalProcessorSegDBFinishCheck")
+        raise NotImplementedError(self.name)
 
 
 #-------------------------------------------------
@@ -158,15 +156,22 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
     """
     an item for monitoring approval processor's response to iDQ information
     """
+    name = "approval processor idq"
     description = "an item for montitoring approval_processor's response to iDQ information"
 
-    def __init__(self, graceid, gdb, timeout, ifos, t0, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        ifos = options['ifos'].split()
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [ approvalProcessoriDQglitchFAPCheck(timeout, ifo, email=email) for ifo in ifos ]
         super(ApprovalProcessoriDQItem, self).__init__( graceid,
                                                         gdb,
                                                         t0,
                                                         tasks,
-                                                        description=self.description,
                                                         annotate=annotate
                                                        )
 
@@ -181,8 +186,6 @@ class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
         self.ifo = ifo
         super(approvalProcessoriDQglitchFAPCheck, self).__init__( timeout,
                                                              self.approvalProcessoriDQglitchFAPCheck,
-                                                             name=self.name,
-                                                             description=self.description,
                                                              email=email
                                                            )
 
@@ -191,7 +194,7 @@ class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
         a check that approvalProcessor responded to iDQ FAP reports as expected
         NOT IMPLEMENTED
         """
-        raise NotImplementedError("approvalProcessoriDQgltichFAPCheck")
+        raise NotImplementedError(self.name)
 
 #-------------------------------------------------
 # approvalProcessor VOEvent and GCN
@@ -201,9 +204,15 @@ class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
     """
     an item for monitoring VOEvent generation and distribution
     """
+    name="approval processor voevent"
     description = "check that approval processor generated and distributed VOEvents"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [approvalProcessorVOEventCreationCheck(timeout, email=email),
                  approvalProcessorVOEventDistributionCheck(timeout, email=email)
                 ]
@@ -211,7 +220,6 @@ class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
                                                             gdb,
                                                             t0,
                                                             tasks,
-                                                            description=self.description,
                                                             annotate=annotate
                                                           )
 
@@ -220,13 +228,11 @@ class approvalProcessorVOEventCreationCheck(esUtils.EventSupervisorTask):
     a check that approval processor created the expected VOEvent
     """
     description = "a check that approval processor created the expected VOEvent"
-    name = "approvalProcessorVOEventCreationCheck"
+    name = "approvalProcessorVOEventCreation"
 
     def __init__(self, timeout, email=[]):
         super(approvalProcessorVOEventCreationCheck, self).__init__( timeout,
                                                                      self.voeventCreationCheck,
-                                                                     name=self.name,
-                                                                     description=self.description,
                                                                      email=email
                                                                    )
 
@@ -235,20 +241,18 @@ class approvalProcessorVOEventCreationCheck(esUtils.EventSupervisorTask):
         check that approval processor created the expected VOEvent
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
 
 class approvalProcessorVOEventDistributionCheck(esUtils.EventSupervisorTask):
     """
     a check that approval processor distributed the VOEvent as expected
     """
     description = "a check that approval processor distributed the VOEvent"
-    name = "approvalProcessorVOEventDistributionCheck"
+    name = "approvalProcessorVOEventDistribution"
 
     def __init__(self, timeout, email=[]):
         super(approvalProcessorVOEventDistributionCheck, self).__init__( timeout,
                                                                      self.voeventDistribCheck,
-                                                                     name=self.name,
-                                                                     description=self.description,
                                                                      email=email
                                                                    )
 
@@ -257,15 +261,21 @@ class approvalProcessorVOEventDistributionCheck(esUtils.EventSupervisorTask):
         check that approval processor distributed the VOEvent
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
 
 class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
     """
     an item for monitoring GCN generation and distribution
     """
+    name = "approval processor gcn"
     description = "check that approval processor generated and distributed GCNs"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [approvalProcessorGCNCreationCheck(timeout, email=email),
                  approvalProcessorGCNDistributionCheck(timeout, email=email)
                 ]
@@ -273,7 +283,6 @@ class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
                                                             gdb,
                                                             t0,
                                                             tasks,
-                                                            description=self.description,
                                                             annotate=annotate
                                                           )
 
@@ -282,13 +291,11 @@ class approvalProcessorGCNCreationCheck(esUtils.EventSupervisorTask):
     a check that approval processor created the GCN as expected
     """
     description = "a check that approval processor created the expected GCN"
-    name = "approvalProcessorGCNCreationCheck"
+    name = "approvalProcessorGCNCreation"
 
     def __init__(self, timeout, email=[]):
         super(approvalProcessorGCNCreationCheck, self).__init__( timeout,
                                                                      self.gcnCreationCheck,
-                                                                     name=self.name,
-                                                                     description=self.description,
                                                                      email=email
                                                                    )
 
@@ -297,7 +304,7 @@ class approvalProcessorGCNCreationCheck(esUtils.EventSupervisorTask):
         check that approval processor created the expected GCN
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
 
 
 class approvalProcessorGCNDistributionCheck(esUtils.EventSupervisorTask):
@@ -305,13 +312,11 @@ class approvalProcessorGCNDistributionCheck(esUtils.EventSupervisorTask):
     a check that approval processor distributed the GCN as expected
     """
     description = "a check that approval processor distributed the GCN"
-    name = "approvalProcessorGCNDistributionCheck"
+    name = "approvalProcessorGCNDistribution"
 
     def __init__(self, timeout, email=[]):
         super(approvalProcessorVOEventDistributionCheck, self).__init__( timeout,
                                                                      self.gcnDistribCheck,
-                                                                     name=self.name,
-                                                                     description=self.description,
                                                                      email=email
                                                                    )
 
@@ -320,7 +325,7 @@ class approvalProcessorGCNDistributionCheck(esUtils.EventSupervisorTask):
         check that approval processor distributed the GCN
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
 
 #-------------------------------------------------
 # labeling?

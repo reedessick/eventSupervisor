@@ -17,15 +17,22 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the autosummary of skymaps started as expected
     """
+    name = "skymap summary start"
 
-    def __init__(self, graceid, gdb, fitsname, t0, timeout, annotate=False, email=[]):
-        self.description = "check that autosummary of skymaps started processing %s"%fitsname
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        self.fitsname = alert['file']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
+        self.description = "check that autosummary of skymaps started processing %s"%self.fitsname
         tasks = [skymapSummaryStartCheck(timeout, fitsname, email=email)]
         super(SkymapSummaryStartItem, self).__init__( graceid,
                                                       gdb,
                                                       t0,
                                                       tasks,
-                                                      description=self.description,
                                                       annotate=annotate
                                                     )
 
@@ -34,15 +41,13 @@ class skymapSummaryStartCheck(esUtils.EventSupervisorTask):
     """
     a check that skymap autosummary started as expected
     """
-    name = "skymapSummaryStartCheck"
+    name = "skymapSummaryStart"
 
     def __init__(self, timeout, fitsname, email=[]):
         self.fitsname = fitsname
         self.description = "check that autosummary of skymaps started processing %s"%fitsname
         super(skymapSummaryStartCheck, self).__init__( timeout,
                                                        self.skymapSummaryStartCheck,
-                                                       name=self.name,
-                                                       description=self.description,
                                                        email=email
                                                      )
 
@@ -51,24 +56,32 @@ class skymapSummaryStartCheck(esUtils.EventSupervisorTask):
         a check that skymap autosummary started as expected
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
 
 
 class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
     """
     a check that autosummary of skymaps ran and reported as expected
     """
+    name = "skymap summary"
 
-    def __init__(self, graceid, gdb, fitsname, t0, timeout, annotate=False, email=[]):
-        self.description = "check that autosummary of skymaps picked up and correctly processed %s"%fitsname
-        tasks = [skymapSummaryDataCheck(timeout, fitsname, email=email),
-                 skymapSummaryFinishCheck(timeout, fitsname, email=email)
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        self.fitsname = alert['description'].split()[-1] ### likely to break because I haven't written this yet...
+
+        data_dt = float(options['data dt'])
+        finish_dt = float(options['finish dt'])
+        email = options['email'].split()
+
+        self.description = "check that autosummary of skymaps picked up and correctly processed %s"%self.fitsname
+        tasks = [skymapSummaryDataCheck(data_dt, fitsname, email=email),
+                 skymapSummaryFinishCheck(finish_dt, fitsname, email=email)
                 ]
         super(SkymapSummaryItem, self).__init__( graceid,
                                                  gdb,
                                                  t0,
                                                  tasks,
-                                                 description=self.description,
                                                  annotate=annotate
                                                )
 
@@ -76,15 +89,13 @@ class skymapSummaryDataCheck(esUtils.EventSupervisorTask):
     """
     a check that skymap autosummary generated the expected data
     """
-    name = "skymapSummaryDataCheck"
+    name = "skymapSummaryData"
 
     def __init__(self, timeout, fitsname, email=[]):
         self.fitsname = fitsname
         self.description = "check that autosummary of skymaps generated the expected data for %s"%fitsname
         super(skymapSummaryDataCheck, self).__init__( timeout,
                                                       self.skymapSummaryStartCheck,
-                                                      name=self.name,
-                                                      description=self.description,
                                                       email=email
                                                     )
 
@@ -93,21 +104,19 @@ class skymapSummaryDataCheck(esUtils.EventSupervisorTask):
         a check that skymap autosummary generated the expected data
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
 
 class skymapSummaryFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that skymap autosummary finished as expected
     """
-    name = "skymapSummaryFinishCheck"
+    name = "skymapSummaryFinish"
 
     def __init__(self, timeout, fitsname, email=[]):
         self.fitsname = fitsname
         self.description = "check that autosummary of skymaps finished as expected for %s"%fitsname
         super(skymapSummaryFinishCheck, self).__init__( timeout,
                                                         self.skymapSummaryStartCheck,
-                                                        name=self.name,
-                                                        description=self.description,
                                                         email=email
                                                       )
 
@@ -116,4 +125,4 @@ class skymapSummaryFinishCheck(esUtils.EventSupervisorTask):
         a check that skymap autosummary finished as expected
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)

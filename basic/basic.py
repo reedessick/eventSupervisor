@@ -23,8 +23,15 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
     """
     a check for propper event creation and readability of associated trigger files
     """
+    name = "event creation"
 
-    def __init__(self, graceid, gdb, pipeline, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+        pipeline = alert['pipeline']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         if pipeline=="cwb":
             tasks = [cWBTriggerCheck(timeout, email=email)]
         elif pipeline=="lib":
@@ -36,11 +43,11 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
         else:
             raise ValueError("pipeline=%s not understood"%pipeline)
 
+        self.description = "check %s event creation and trigger files"%(pipeline)
         super(EventCreationItem, self).__init__( graceid, 
                                                  gdb,
                                                  t0, 
                                                  tasks, 
-                                                 description="check %s event creation and trigger files"%(pipeline),
                                                  annotate=annotate 
                                                 )
 
@@ -49,13 +56,11 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
     check for cWB event creation, checking the trigger.txt file
     """
     description = "a check of the trigger.txt file for cWB events"
-    name = "cWBTriggerCheck"
+    name = "cWBTrigger"
 
     def __init__(self, timeout, email=[]):
         super(cwbTriggerCheck, self).__init__( timeout, 
                                                self.cWBTriggerCheck, 
-                                               name=self.name, 
-                                               description=self.description, 
                                                email=email
                                              )
 
@@ -88,13 +93,11 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     check for oLIB event creation
     """
     description="a check of the trigger.json file for oLIB events"
-    name = "oLIBTriggerCheck"
+    name = "oLIBTrigger"
 
     def __init__(self, timeout, email=[]):
         super(oLIBTriggerCheck, self).__init__( timeout, 
                                                 self.oLIBTriggerCheck, 
-                                                name=self.name, 
-                                                description=self.description, 
                                                 email=email
                                               )
 
@@ -127,13 +130,11 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
     check for CBC event creation, checking coinc.xml file
     """
     description = "check coinc.xml file for CBC events"
-    name = "cbcCoincCheck"
+    name = "cbcCoinc"
 
     def __init__(self, timeout, email=[]):
         super(cbcCoincCheck, self).__init__( timeout, 
                                              self.cbcCoincCheck, 
-                                             name=self.name, 
-                                             description=self.description, 
                                              email=email
                                            )
 
@@ -162,13 +163,11 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
     check for CBC event creation, checking PSD.xml file
     """
     description = "check psd.xml.gz file for CBC events"
-    name = "cbcPSDCheck"
+    name = "cbcPSD"
 
     def __init__(self, timeout, email=[]):
         super(cbcPSDCheck, self).__init__( timeout, 
                                            self.cbcPSDCheck, 
-                                           name=self.name, 
-                                           description=self.description, 
                                            email=email
                                          )
 
@@ -199,15 +198,20 @@ class FARItem(esUtils.EventSupervisorQueueItem):
     """
     a check for propper FAR
     """
+    name = "far"
     description = "check sanity of reported FAR"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [FARCheck(timeout, email=email)]
         super(FARItem, self).__init__( graceid, 
                                        gdb, 
                                        t0, 
                                        tasks, 
-                                       description=self.description,
                                        annotate=annotate
                                      )
 
@@ -216,7 +220,7 @@ class FARCheck(esUtils.EventSupervisorTask):
     a check for propper FAR
     """
     description = "a check for propper FAR"
-    name = "FARCheck"
+    name = "FAR"
 
     def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, annotate=False, email=[]):
         self.maxFAR = maxFAR
@@ -224,8 +228,6 @@ class FARCheck(esUtils.EventSupervisorTask):
         
         super(farCheck, self).__init__( timeout, 
                                         self.FARCheck, 
-                                        name=self.name, 
-                                        description=self.description, 
                                         email=email
                                       )
 
@@ -292,15 +294,30 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
     """
     a check for local rate of events submitted to GraceDb around the event's gpstime
     """
+    name = "local rate"
     description = "check local rates of events"
 
-    def __init__(self, graceid, gdb, t0, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+        group = alert['group']
+        pipeline = alert['pipeline']
+        if alert.has_key('search'):
+            search = alert['search']
+        else:
+            search = None
+
+        pWin = float(options['win+'])
+        mWin = float(options['win-'])
+        maxRate = float(options['max rate'])
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ] 
         super(LocalRateItem, self).__init__( graceid, 
                                              gdb,
                                              t0, 
                                              tasks,
-                                             description=self.description,
                                              annotate=annotate
                                            )
 
@@ -308,7 +325,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
     """
     a check for local rate of events submitted to GraceDB in the neighborhood of the event's gpstime
     """
-    name = "localRateCheck"
+    name = "localRate"
 
     def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
         description = "a check of local rates for %s_%s"%(group, pipline)
@@ -319,8 +336,6 @@ class localRateCheck(esUtils.EventSupervisorTask):
         self.search = search
         super(localRateCheck, self).__init__( timeout, 
                                               self.localRateCheck, 
-                                              name=self.name, 
-                                              description=self.description, 
                                               email=email
                                             )
 
@@ -371,29 +386,42 @@ class localRateCheck(esUtils.EventSupervisorTask):
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-
 class CreateRateItem(esUtils.EventSupervisorQueueItem):
     """
     a check for local rate of events submitted to GraceDb around the event's creation time
     """
+    name = "creation rate"
     description = "check creation rates of events"
 
-    def __init__(self, graceid, gdb, t0, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+        group = alert['group']
+        pipeline = alert['pipeline']
+        if alert.has_key('search'):
+            search = alert['search']
+        else:
+            search = None
+
+        pWin = float(options['win+'])
+        mWin = float(options['win-'])
+        maxRate = float(options['max rate'])
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ]
         super(CreateRateItem, self).__init__( graceid,
                                              gdb,
                                              t0,
                                              tasks,
-                                             description=self.description,
                                              annotate=annotate
                                            )
-
 
 class createRateCheck(esUtils.EventSupervisorTask):
     """
     a check for local rate of events submitted to GraceDB in the neighborhood of the event's creation time
     """
-    name = "createRateCheck"
+    name = "createRate"
 
     def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
         description = "a check of creation rate for %s_%s"%(group, pipline)
@@ -404,8 +432,6 @@ class createRateCheck(esUtils.EventSupervisorTask):
         self.search = search
         super(createRateCheck, self).__init__( timeout,
                                               self.createRateCheck,
-                                              name=self.name,
-                                              description=self.description,
                                               email=email
                                             )
 
@@ -467,15 +493,20 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the external triggers search was completed
     """
+    name = "external triggers"
     description = "check that the unblind injection search completed"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [externalTriggersCheck(timeout, email=email)]
         super(ExternalTriggersItem, self).__init__( graceid, 
                                                     gdb,
                                                     t0, 
                                                     tasks, 
-                                                    description=self.description,
                                                     annotate=annotate
                                                   )
 
@@ -484,7 +515,7 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
     a check that the external triggers seach was completed
     """
     description = "a check that the external triggers search was completed"
-    name = "ExternalTriggersCheck"
+    name = "ExternalTriggers"
 
     def __init__(self, timeout, email=[]):
         """
@@ -492,8 +523,6 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
         """
         super(externalTriggersCheck, self).__init__( timeout, 
                                                      self.externalTriggersCheck, 
-                                                     name=self.name, 
-                                                     description=self.description, 
                                                      email=email
                                                    )
     
@@ -526,19 +555,24 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
 # unblind injections
 #-------------------------------------------------
 
-class UnlindInjectionsItem(esUtils.EventSupervisorQueueItem):
+class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the unblind Injections search was completed
     """
+    name = "unblind injections"
     description = "check that the unblind injection search completed"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [unblindInjectionsCheck(timeout, email=email)]
         super(UnblindInjectionsItem, self).__init__( graceid, 
                                                      gdb,
                                                      t0, 
                                                      tasks, 
-                                                     description=self.description,
                                                      annotate=annotate
                                                    )
 
@@ -547,7 +581,7 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
     a check that the unblind injections search was completed
     """
     description = "a check that the unblind injections search was completed"
-    name = "unblindInjectionsCheck"
+    name = "unblindInjections"
 
     def __init__(self, timeout, email=[]):
         """
@@ -555,8 +589,6 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
         """
         super(unblindInjectionsCheck, self).__init__( timeout, 
                                                       self.unblindInjectionsCheck, 
-                                                      name=self.name, 
-                                                      description=self.description, 
                                                       email=email
                                                     )
 

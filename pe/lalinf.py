@@ -13,15 +13,20 @@ class LALInfStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LALInference started
     """
+    name = "lalinf start"
     description = "a check that LALInference started"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeoutdt = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [lalinfStartCheck(timeout, email)]
         super(LALInfStartItem, self).__init__( graceid,
                                                gdb,
                                                t0,
                                                tasks,
-                                               description=self.description,
                                                annotate=annotate
                                              )
 
@@ -29,14 +34,12 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
     """
     a check that LALInference started
     """    
-    name = "lalinfStartCheck"
+    name = "lalinfStart"
     description = "a check that LALInference started"
 
     def __init__(self, timeout, email=[]):
         super(lalinfStartCheck, self).__init__( timeout,
                                                self.lalinfStartCheck,
-                                               name=self.name,
-                                               description=self.description,
                                                email=email
                                              )
 
@@ -69,18 +72,31 @@ class LALInfItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LALInference produces the expected data and finished
     """
+    name = "lalinf"
     description = "a check that LALInference produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
-        tasks = [lalinfPostSampCheck(timeout, email=email),
-                 lalinfSkymapCheck(timeout, tagnames=tagnames, email=email),
-                 lalinfFinishCheck(timeout, email=email)
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        postsamp_dt = float(options['post samp dt'])
+        skymap_dt = float(options['skymap dt'])
+        skymap_tagnames = options['skymap tagnames']
+        if skymap_tangames !=None:
+            skymap_tagnames = skymap_tagnames.split()
+        finish_dt = float(options['finish dt'])
+
+        email = options['email'].split()
+
+
+        tasks = [
+#                 lalinfPostSampCheck(postsamp_dt, email=email), ### NOT IMPLEMENTED
+                 lalinfSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
+                 lalinfFinishCheck(finish_dt, email=email)
                 ]
         super(LALInfItem, self).__init__( graceid, 
                                           gdb,
                                           t0,
                                           tasks,
-                                          description=self.description,
                                           annotate=annotate
                                        )
 
@@ -88,14 +104,12 @@ class lalinfPostSampCheck(esUtils.EventSupervisorTask):
     """
     a check that LALInference posted posterior samples
     """
-    name = "lalinfPostSampCheck"
+    name = "lalinfPostSamp"
     description = "a check that LALInference posted posterior samples"
 
     def __init__(self, timeout, email=[]):
         super(lalinfPostSampCheck, self).__init__( timeout,
                                                    self.lalinfPostSampCheck,
-                                                   name=self.name,
-                                                   descripiton=self.description,
                                                    email=email
                                                  )
 
@@ -127,15 +141,13 @@ class lalinfSkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that LALInference posted a skymap
     """
-    name = "lalinfSkymapCheck"
+    name = "lalinfSkymap"
     description = "a check that LALInference posted a skymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(lalinfSkymapCheck, self).__init__( timeout,
                                                  self.lalinfSkymapCheck,
-                                                 name=self.name,
-                                                 descripiton=self.description,
                                                  email=email
                                                )
 
@@ -160,14 +172,12 @@ class lalinfFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that LALInference finished
     """
-    name = "lalinfFinishCheck"
+    name = "lalinfFinish"
     description = "a check that LALInference finished"
 
     def __init__(self, timeout, email=[]):
         super(lalinfFinishCheck, self).__init__( timeout,
                                                  self.lalinfFinishCheck,
-                                                 name=self.name,
-                                                 descripiton=self.description,
                                                  email=email
                                                )
 

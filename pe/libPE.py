@@ -13,15 +13,20 @@ class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LIB PE started
     """
+    name = "lib pe start"
     description = "a check that LIB PE started"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [libPEStartCheck(timeout, email)]
         super(LIBPEStartItem, self).__init__( graceid,
                                               gdb,
                                               t0,
                                               tasks,
-                                              description=self.description,
                                               annotate=annotate
                                             )
 
@@ -29,14 +34,12 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE started
     """    
-    name = "libPEStartCheck"
+    name = "libPEStart"
     description = "a check that LIB PE started"
 
     def __init__(self, timeout, email=[]):
         super(libPEStartCheck, self).__init__( timeout,
                                                self.libPEStartCheck,
-                                               name=self.name,
-                                               description=self.description,
                                                email=email
                                              )
 
@@ -70,19 +73,31 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LIB PE produces the expected data and finished
     """
+    name = "lib pe"
     description = "a check that LIB PE produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
-        tasks = [libPEPostSampCheck(timeout, email=email),
-                 libPEBayesFactorsCheck(timeout, email=email),
-                 libPESkymapCheck(timeout, tagnames=tagnames, email=email),
-                 libPEFinishCheck(timeout, email=email)
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        postsamp_dt = float(options['post samp dt'])
+        bayesFct_dt = float(options['bayes factor dt'])
+        skymap_dt = float(options['skymap dt'])
+        skymap_tagnames = options['skymap tagnames']
+        if skymap_tangames !=None:
+            skymap_tagnames = skymap_tagnames.split()
+        finish_dt = float(options['finish dt'])
+
+        email = options['email'].split()
+
+        tasks = [libPEPostSampCheck(postsamp_dt, email=email),
+                 libPEBayesFactorsCheck(bayesFct_dt, email=email),
+                 libPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
+                 libPEFinishCheck(finish_dt, email=email)
                 ]
         super(LIBPEItem, self).__init__( graceid, 
                                          gdb,
                                          t0,
                                          tasks,
-                                         description=self.description,
                                          annotate=annotate
                                        )
 
@@ -90,14 +105,12 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE posted posterior samples
     """
-    name = "libPEPostSampCheck"
+    name = "libPEPostSamp"
     description = "a check that LIB PE posted posterior samples"
 
     def __init__(self, timeout, email=[]):
         super(libPEPostSampCheck, self).__init__( timeout,
                                                   self.libPEPostSampCheck,
-                                                  name=self.name,
-                                                  descripiton=self.description,
                                                   email=email
                                                 )
 
@@ -126,14 +139,12 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE posted BayesFactors
     """
-    name = "libPEBayesFactorsCheck"
+    name = "libPEBayesFactors"
     description = "a check that LIB PE posted Bayes Factors"
 
     def __init__(self, timeout, email=[]):
         super(libPEBayesFactorsCheck, self).__init__( timeout,
                                                   self.libPEBayesFactorsCheck,
-                                                  name=self.name,
-                                                  descripiton=self.description,
                                                   email=email
                                                 )
 
@@ -168,15 +179,13 @@ class libPESkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE posted a skymap
     """
-    name = "libPESkymapCheck"
+    name = "libPESkymap"
     description = "a check that LIB PE posted a skymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(libPESkymapCheck, self).__init__( timeout,
                                                 self.libPESkymapCheck,
-                                                name=self.name,
-                                                descripiton=self.description,
                                                 email=email
                                               )
 
@@ -204,14 +213,12 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE finished
     """
-    name = "libPEFinishCheck"
+    name = "libPEFinish"
     description = "a check that LIB PE finished"
 
     def __init__(self, timeout, email=[]):
         super(libPEFinishCheck, self).__init__( timeout,
                                                 self.libPEFinishCheck,
-                                                name=self.name,
-                                                descripiton=self.description,
                                                 email=email
                                               )
 

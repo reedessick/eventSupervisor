@@ -13,15 +13,20 @@ class DQSummaryItem(esUtils.EventSupervisorQueueItem):
     """
     a check that a link to the DQ Summary page was posted
     """
+    name = "dq summary"
     description = "a check that the DQ summary page was posted"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [dqSummaryCheck(timeout, email=email)]
         super(DQSummaryItem, self).__init__( graceid,
                                              gdb,
                                              t0,
                                              tasks,
-                                             description=self.description,
                                              annotate=annotate
                                            )
 
@@ -30,13 +35,11 @@ class dqSummaryCheck(esUtils.EventSupervisorTask):
     a check that a link to the DQ Summary page was posted
     """
     description = "a check that the DQ summary page was posted"
-    name = "dqSummaryCheck"
+    name = "dqSummary"
 
     def __init__(self, timeout, email=[]):
         super(dqSummaryCheck, self).__init__( timeout,
                                               self.dqSummaryCheck,
-                                              name=self.name,
-                                              description=self.description,
                                               email=email
                                             )
 
@@ -45,4 +48,4 @@ class dqSummaryCheck(esUtils.EventSupervisorTask):
         a check that a link to the DQ Summary page was posted
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)

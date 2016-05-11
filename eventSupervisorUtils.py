@@ -187,15 +187,17 @@ class EventSupervisorQueueItem(utils.QueueItem):
     WARNING: we may want to replace this with the SortedContainers module's SortedList(WithKey?) 
         almost certainly has faster insertion than what you've written and comes with many convenient features already implemented
     """
+    name = "event supervisor item"
+    description = "a series of connected tasks for event supervisor"
 
-    def __init__(self, graceid, gdb, t0, tasks, description="a series of connected tasks", annotate=False):
+    def __init__(self, graceid, gdb, t0, tasks, annotate=False):
         self.graceid = graceid
         self.gdb = gdb
         self.annotate = annotate
         for task in tasks:
             if not isinstance(task, EventSupervisorTask):
                 raise ValueError("each element of tasks must be an instance of eventSupervisorUtilts.EventSupervisorTask")
-        super(EventSupervisorQueueItem, self).__init__(t0, tasks, description=description)
+        super(EventSupervisorQueueItem, self).__init__(t0, tasks)
 
     def execute(self, verbose=False):
         """
@@ -217,11 +219,13 @@ class EventSupervisorTask(utils.Task):
     this basic object manages execution via delegation to a functionHandle supplied when instantiated
     child classes may simply define their execution commands directly as part of the class definition
     """
+    name = "event supervisor task"
+    description = "a task for event supervisor"
 
-    def __init__(self, timeout, functionHandle, name="task", description="a task", email=[], *args, **kwargs ):
+    def __init__(self, timeout, functionHandle, email=[], *args, **kwargs ):
         self.email = email
         self.warning = None
-        super(EventSupervisorTask, self).__init__(timeout, functionHandle, name=name, description=description, *args, **kwargs)
+        super(EventSupervisorTask, self).__init__(timeout, functionHandle, *args, **kwargs)
 
     def execute(self, graceid, gdb, verbose=False, annotate=False):
         """

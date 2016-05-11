@@ -13,9 +13,21 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
     """
     notify folks that a new event was created
     """
+    name = "notify"
     description = "notify people by email, sms or phone"
 
-    def __init__(self, graceid, gdb, t0, timeout, ignoreInj=False, email=[], sms=[], phone=[], annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        email = options['by email'].split()
+        sms   = options['by sms'].split()
+        phone = options['by phone'].split()
+
+        ignoreInj = bool(options['ignoreInj'])
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = []
         if email:
             tasks.append( notifyByEmail(timeout, email=email, ignoreInj=ignoreInj) )
@@ -27,7 +39,6 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
                                           gdb,
                                           t0,
                                           tasks,
-                                          description=self.description,
                                           annotate=annotate
                                         )
 
@@ -42,8 +53,6 @@ class notifyByEmail(esUtils.EventSupervisorTask):
         self.ignoreInj = ignoreInj
         super(notifyByEmail, self).__init__( timeout, 
                                              self.notifyByEmail,
-                                             name=self.name,
-                                             description=self.description,
                                              email=email
                                            )
 
@@ -79,8 +88,6 @@ class notifyBySMS(esUtils.EventSupervisorTask):
         self.ignoreInj = ignoreInj
         super(notifyBySMS, self).__init__( timeout,
                                            self.notifyBySMS,
-                                           name=self.name,
-                                           description=self.description,
                                            email=[]
                                          )
 
@@ -116,8 +123,6 @@ class notifyByPhone(esUtils.EventSupervisorTask):
         self.ignoreInj = ignoreInj
         super(notifyByPhone, self).__init__( timeout,
                                              self.notifyByPhone,
-                                             name=self.name,
-                                             description=self.description,
                                              email=[]
                                            )
 

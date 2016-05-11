@@ -3,136 +3,121 @@ author = "reed.essick@ligo.org"
 
 #-------------------------------------------------
 
+def extractChildren( mod, klass ):
+    """ extracts the sublcasses of klass from module """
+    d = {}
+    for x in dir(mod):
+        attr = getattr(mod, x)
+        if isinstance(attr, type) and issubclass(attr, klass):
+            d[attr.name] = attr
+    return d
+
+#-------------------------------------------------
+
+qid = {} ### queueItemDict
+         ### contains mapping of names -> QueueItem objects
+
+#-------------------------------------------------
+
 from ligo.lvalert import lvalertMPutils as utils
 import eventSupervisorUtils as esUtils
 
 ### notification and alerts
 from notify import notify
-
+qid.update( extractChildren( notify, esUtils.EventSupervisorQueueItem ) )
+ 
 ### basics
 from basic import basic
+qid.update( extractChildren( basic, esUtils.EventSupervisorQueueItem ) )
 
 ### vetting and alerts
 from basic import approvalProcessor
+qid.update( extractChildren( approvalProcessor, esUtils.EventSupervisorQueueItem ) )
 
 ### localization
 from skymaps import skymaps
+qid.update( extractChildren( skymaps, esUtils.EventSupervisorQueueItem ) )
+
 from skymaps import skymapSummary
+qid.update( extractChildren( skymapSummary, esUtils.EventSupervisorQueueItem ) )
 
 ### PE follow-up
 from pe import bayestar
+qid.update( extractChildren( bayestar, esUtils.EventSupervisorQueueItem ) )
+
 from pe import bayeswavePE
+qid.update( extractChildren( bayeswavePE, esUtils.EventSupervisorQueueItem ) )
+
 from pe import cwbPE
+qid.update( extractChildren( cwbPE, esUtils.EventSupervisorQueueItem ) )
+
 from pe import libPE
+qid.update( extractChildren( libPE, esUtils.EventSupervisorQueueItem ) )
+
 from pe import lalinf
+qid.update( extractChildren( lalinf, esUtils.EventSupervisorQueueItem ) )
 
 ### DQ follow-up
 from dq import dq
+qid.update( extractChildren( dq, esUtils.EventSupervisorQueueItem ) )
+
 from dq import idq
+qid.update( extractChildren( idq, esUtils.EventSupervisorQueueItem ) )
+
 from dq import omegaScan
+qid.update( extractChildren( omegaScan, esUtils.EventSupervisorQueueItem ) )
+
 from dq import segDB2grcDB
+qid.update( extractChildren( segDB2grcDB, esUtils.EventSupervisorQueueItem ) )
 
 #-------------------------------------------------
 
-### load "DAG" for event_supervisor follow-up
-import json
-fileObj = open("eventSupervisor.json", "r")
-directedGraph = json.loads(fileObj.read())
-fileObj.close()
+### behvior when new alerts are witnessed
+new = [
+  'approval processor prelim dq',
+  'event creation',
+  'far',
+  'local rate',
+  'creation rate',
+  'external triggers',
+  'unblind injections',
+  'dq summary',
+  'idq start',
+  'omega scan start',
+  'segdb2grcdb start',
+  'notify',
+  'bayestar start',
+  'bayeswave pe start',
+  'cwb pe',
+  'lalinf start',
+  'lib pe start',
+  ]
+
+### behavior if certian checks are satisfied/alerts are received
+parent_child = {
+### parent name : [child name]
+  'idq start'            : ['idq item'],
+  'idqGlitchFAP'         : ['approval processor idq'], ### involves a Task
+  'idqActiveChan'        : ['omega scan idq start'], ### involves a Task
+  'omega scan start'     : ['omega scan'],
+  'omega scan idq start' : ['omega scan idq'],
+  'segdb2grcdb start'    : ['segdb2grcdb'],
+  'bayestar start'       : ['bayestar'],
+  'bayeswave pe start'   : ['bayeswave pe'],
+  'lalinf start'         : ['lalinf'],
+  'lib pe start'         : ['lib pe'],
+  'skymap summary start' : ['skymap summary'],
+  }
+
+### special behavior if certain file types are seen
+fits = [
+  'skymap sanity',
+  'plot skymap',
+  'skyviewer',
+  'skymap summary start',
+  ]
 
 #-------------------------------------------------
-
-def getDT( string ):
-    return [float(_) for _ in string.strip().split()]
-
-def addToQueue( alert, listOfItems, queue, queueByGraceID, t0, config ):
-    """
-    add a list of items to the associated queues
-    """
-    if config.has_option('general', 'graceDB_url'):
-        gdb = GraceDb(config.get('general', 'graceDB_url'))
-    else:
-        gdb = GraceDb()
-    graceid = alert['uid']
-    group = alert['group']
-    pipeline = alert['pipeline']
-    if alert.has_key('search'):
-        search = alert['search']
-    else:
-        search = None
-
-    annotate = config('general', 'annotate')
-
-    items = []
-    for name in listOfItems:
-        ### event creation
-        if (name=="event creation") and config.has_section( "event creation" ):
-            email = config.get("event creation", "email").split()
-            for timeout in getDT( config.get("event creation", "dt") ):
-                items.append( basic.EventCretaionItem( graceid, gdb, pipeline, t0, timeout, annotate=annotate, email=email ) )
-
-        ### far
-        if (name=="far") and config.has_section( "far" ):
-            maxFAR = config.getfloat("far", "maxFAR")
-            minFAR = config.getfloat("far", "minFAR")
-            email = config.get("far", "email").split()
-            for timeout in getDT( config.get("far", "dt") ):
-                items.append( basic.FARItem( graceid, gdb, t0, timeout, annotate=annotate, email=email ) )
-
-        ### local rate
-        if (name=="local rate") and config.has_section("local rate"):
-            maxRate = config.getfloat("local rate", "maxRate")
-            email = config.get("local rate", "email").split()
-            for timeout in getDT( config.get("local rate", "dt") ):
-                items.append( basic.LocalRateItem( graceid, gdb, t0, timeout, group, pipeline, search=search, annotate=annotate, email=email )  )
-
-        ### external triggers
-        if (name=="external triggers") and config.has_section("external triggers"):
-            email = config.get("external triggers", "email").split()
-            for timeout in getDT( config.get("external triggers", "dt") ):
-                items.append( basic.ExternalTriggersItem( graceid, gdb, t0, timeout, annotate=annotate, email=email ) )
-
-        ### unblind injections
-        if (name=="unblind injections") and config.has_section("unblind injections"):
-            email = config.get("unblind injections", "email").split()
-            for timeout in getDT( config.get("unblind injections", "dt") ):
-                items.append( basic.UnblindInjectionsItem( graceid, gdb, t0, timeout, annotate=annotate, email=email ) )
-
-        ### approval processor prelim
-        if (name=="approval processor prelimDQ"):
-            raise NotImplementedError
-
-        ### dq summary pages
-        if (name=="dq summary start"):
-            raise NotImplementedError
-
-        ### idq start
-        if (name=="idq start"):
-            raise NotImplementedError
-
-        ### segDB start
-
-        ### HofTOmegaScan start
-
-        ### allAuxOmegaScan start
-
-        ### cWBPE start
-
-        ### libPE start
-
-        ### lalinfPE start
-
-        ### bayestar start
-
-        ### bayeswavePE start
-
-    ### if we've created an item, add it to the queues
-    if items and (not queueByGraceID[graceid]):
-        queueByGraceID[graceid] = utils.SortedQueue()
-    for item in items:
-        queue.insert( item )
-        queueByGraceID[graceid].insert( item )
-    
 
 def parseAlert( queue, queueByGraceID, alert, t0, config ):
     """
@@ -149,17 +134,57 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
 
     NOTE: if we mark something as complete within this method, we must remove it from queueByGraceID as well 
         but do not have to remove it from queue
+
+    Importantly, this function will ignore anything with "event_supervisor" in the tagnames
     """
+    ### grab alert type
     alert_type = alert['alert_type']
 
+    ### general options
+    annotate = config.has_option('general', 'annotate') and config.getbool('general', 'annotate')
+    
+    if config.has_option('general', 'gracedb'):
+        gdb = GraceDb( config.get('general', 'gracedb') )
+    else:
+        gdb = GraceDb()
+
+    items = [] ### list of new items to add to queue
+
+    ### filter based on alert type
     if alert_type=="new": ### we don't need to parse this any further
-        addToQueue( graceid, directedGraph['new'], queue, queueByGraceID, t0, config )
-        return 0 ### we've only added things and not marked anything as complted
+        for name in new: ### iterate through names that neeed to be added
+            if config.has_section( name ):
+                items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
+
+        completed = 0
 
     else: ### need to parse this further
         if alert_type=="update":
-            pass
+            completed = 0 ### counter for the number of Items marked complete
+
+            if alert['file']: ### look for special actions based on the presence of a file
+                filename = alert['file']
+                if filename.strip('.gz').endswidth('.fits'): ### new FITS file
+                    for name in fits:
+                        if config.has_section( name ):
+                            items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
+                else:
+                    pass ### not sure what to do here... are there other file types that require special action?
+
+            else:
+                pass ### need a good way of identifying which check a log message satisfies...
+
         elif alert_type=="label":
-            pass
+            completed = 0
+
         else:
             raise ValueError("do not understand alert_type=%s"%alert_type)
+
+    if items and (not queueByGraceID.has_key(graceid)): ### ensure queues are set up
+        queueByGraceID[graceid] = utils.SortedQueue()
+
+    for item in items: ### add items to queues
+        queue.insert( item )
+        queueByGraceID[graceid].insert( item )
+    
+    return completed

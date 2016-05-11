@@ -13,15 +13,20 @@ class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that cWB PE started
     """
+    name = "cwb pe start"
     description = "a check that cWB PE started"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [cWBPEStartCheck(timeout, email)]
         super(CWBPEStartItem, self).__init__( graceid,
                                               gdb,
                                               t0,
                                               tasks,
-                                              description=self.description,
                                               annotate=annotate
                                             )
 
@@ -29,14 +34,12 @@ class cWBPEStartCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE started
     """    
-    name = "cWBPEStartCheck"
+    name = "cWBPEStart"
     description = "a check that cWB PE started"
 
     def __init__(self, timeout, email=[]):
         super(cWBPEStartCheck, self).__init__( timeout,
                                                self.cWBPEStartCheck,
-                                               name=self.name,
-                                               description=self.description,
                                                email=email
                                              )
 
@@ -45,7 +48,7 @@ class cWBPEStartCheck(esUtils.EventSupervisorTask):
         a check that cWB PE started
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
         ### NOTE: cWB PE may not have a cannonical "start" statement and may only report data
         ###       if this is the case, then we should NOT have a startCheck.
 
@@ -53,19 +56,30 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
     """
     a check that cWB PE produces the expected data and finished
     """
+    name = "cwb pe"
     description = "a check that cWB PE produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
-        tasks = [cWBPECEDCheck(timeout, email=email),
-                 cWBPEEstimateCheck(timeout, email=email),
-                 cWBPESkymapCheck(timeout, tagnames=tagnames, email=email),
-#                 cWBPEFinishCheck(timeout, email=email)
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        ced_dt = float(options['ced dt'])
+        estimate_dt = float(options['estimate dt'])
+        skymap_dt = float(options['skymap dt'])
+        skymap_tagnames = options['skymap tagnames']
+        if skymap_tangames !=None:
+            skymap_tagnames = skymap_tagnames.split()
+
+        email = options['email'].split()
+
+        tasks = [cWBPECEDCheck(ced_dt, email=email),
+                 cWBPEEstimateCheck(estimate_dt, email=email),
+                 cWBPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
+#                 cWBPEFinishCheck(timeout, email=email) ### NOT IMPLEMENTED
                 ]
         super(CWBPEItem, self).__init__( graceid, 
                                          gdb,
                                          t0,
                                          tasks,
-                                         description=self.description,
                                          annotate=annotate
                                        )
 
@@ -73,14 +87,12 @@ class cWBPECEDCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted estimates of parameters
     """
-    name = "cWBPEDataCheck"
+    name = "cWBPEData"
     description = "a check that cWB PE posted estimates of parameters"
 
     def __init__(self, timeout, email=[]):
         super(cWBPECEDCheck, self).__init__( timeout,
                                                   self.cWBPECEDCheck,
-                                                  name=self.name,
-                                                  descripiton=self.description,
                                                   email=email
                                                 )
 
@@ -114,14 +126,12 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted estimates of parameters
     """
-    name = "cWBPEstimateCheck"
+    name = "cWBPEstimate"
     description = "a check that cWB PE posted estimates of parameters"
 
     def __init__(self, timeout, email=[]):
         super(cWBPEEstimateCheck, self).__init__( timeout,
                                                   self.cWBPEEstimateCheck,
-                                                  name=self.name,
-                                                  descripiton=self.description,
                                                   email=email
                                                 )
 
@@ -155,15 +165,13 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted a skymap
     """
-    name = "cWBPESkymapCheck"
+    name = "cWBPESkymap"
     description = "a check that cWB PE posted a skymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(cWBPESkymapCheck, self).__init__( timeout,
                                                 self.cWBPESkymapCheck,
-                                                name=self.name,
-                                                descripiton=self.description,
                                                 email=email
                                               )
 
@@ -191,14 +199,12 @@ class cWBPEFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE finished
     """
-    name = "cWBPEFinishCheck"
+    name = "cWBPEFinish"
     description = "a check that cWB PE finished"
 
     def __init__(self, timeout, email=[]):
         super(cWBPEFinishCheck, self).__init__( timeout,
                                                 self.cWBPEFinishCheck,
-                                                name=self.name,
-                                                descripiton=self.description,
                                                 email=email
                                               )
 
@@ -207,6 +213,6 @@ class cWBPEFinishCheck(esUtils.EventSupervisorTask):
         a check that cWB PE finished
         NOT IMPLEMENTED
         """
-        raise NotImplementedError
+        raise NotImplementedError(self.name)
         ### NOTE: cWB PE may not have a cannonical "finish" statement and may only report data
         ###       if this is the case, then we should NOT have a finishCheck.

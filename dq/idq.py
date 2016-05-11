@@ -16,16 +16,23 @@ class IDQStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that iDQ started as expected
     """
-    
-    def __init__(self, graceid, gdb, t0, timeout, ifo, annotate=False, email=[]):
-        self.ifo = ifo
-        self.description = "a check that iDQ GraceDB follow-up started as expected at %s"%(self.ifo)
-        tasks = [idqStartCheck(timeout, ifo, email=email)]
+    name = "idq start"
+ 
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        ifos = options['ifos'].split()
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
+        self.ifos = ifos
+        self.description = "a check that iDQ GraceDB follow-up started as expected at (%s)"%(",".join(self.ifos))
+        tasks = [ idqStartCheck(timeout, ifo, email=email) for ifo in ifos ]
         super(IDQStartItem, self).__init__( graceid,
                                             gdb,
                                             t0,
                                             tasks,
-                                            description=self.description,
                                             annotate=annotate
                                           )     
 
@@ -33,15 +40,13 @@ class idqStartCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ started as expected
     """
-    name = "idqStartCheck"
+    name = "idqStart"
 
     def __init__(self, timeout, ifo, email=[]):
         self.ifo = ifo
         self.description = "a check that iDQ GraceDB follow-up started as expected at %s"%(self.ifo)
         super(idqStartCheck, self).__init__( timeout,
                                              self.idqStartCheck,
-                                             name=self.name,
-                                             description=self.description,
                                              email=email
                                            )
 
@@ -78,31 +83,54 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
     """
     a check that iDQ reported information as expected
     """
+    name = "idq"
 
-    def __init__(self, graceid, gdb, t0, timeout, ifo, classifier, annotate=False, email=[]):
-        self.ifo = ifo
-        self.classifier = classifier
-        description = "a check that iDQ reported information as expected for %s at %s"%(self.classifier, self.ifo)
-        tasks = [idqGlitchFAPCheck(timeout, ifo, classifier, email=email),
-                 idqFAPFrameCheck(timeout, ifo, classifier, email=email),
-                 idqRankFrameCheck(timeout, ifo, classifier, email=email),
-                 idqTimeseriesPlotCheck(timeout, ifo, classifier, email=email),
-                 idqActiveChanCheck(timeout, ifo, classifier, email=email),
-                 idqActiveChanPlotCheck(timeout, ifo, classifier, email=email),
-                 idqTablesCheck(timeout, ifo, classifier, email=email),
-                 idqCalibrationCheck(timeout, ifo, classifier, email=email),
-                 idqCalibrationPlotCheck(timeout, ifo, classifier, email=email),
-                 idqROCCheck(timeout, ifo, classifier, email=email),
-                 idqROCPlotCheck(timeout, ifo, classifier, email=email),
-                 idqCalibStatsCheck(timeout, ifo, classifier, email=email),
-                 idqTrainStatsCheck(timeout, ifo, classifier, email=email),
-                 idqFinishCheck(timeout, ifo, email=email)
-                ]
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+        self.ifo = alert['description'].split()[-1] ### assume a particular format for the log comment
+                                                       ### this is based off iDQ start messages from a single IFO
+
+        self.classifiers = options['classifiers'].split()
+
+        glitch_fap_dt       = float(options['glitch fap dt'])
+        fap_frame_dt        = float(options['fap frame dt'])
+        rank_frame_dt       = float(options['rank frame dt'])
+        timeseries_plot_dt  = float(options['timeseries plot dt'])
+        active_chan_dt      = float(options['active chan dt'])
+        active_chan_plot_dt = float(options['active chan plot dt'])
+        tables_dt           = float(options['table dt'])
+        calib_dt            = float(options['calib dt'])
+        calib_plot_dt       = float(options['calib plot dt'])
+        roc_dt              = float(options['roc dt'])
+        roc_plot_dt         = float(options['roc plot dt'])
+        calib_stats_dt      = float(options['calib stats dt'])
+        train_stats_dt      = float(options['train stats dt'])
+        finish_dt           = float(options['finish dt'])
+
+        email = options['email'].split()
+
+        self.description = "a check that iDQ reported information as expected for (%s) at %s"%(",".join(self.classifiers), self.ifo)
+        tasks = []
+        for classifier in self.classifiers:
+            tasks += [idqGlitchFAPCheck(glitch_fap_dt, self.ifo, classifier, email=email),
+                      idqFAPFrameCheck(fap_frame_dt, self.ifo, classifier, email=email),
+                      idqRankFrameCheck(rank_frame_dt, self.ifo, classifier, email=email),
+                      idqTimeseriesPlotCheck(timeseries_plot_dt, self.ifo, classifier, email=email),
+                      idqActiveChanCheck(active_chan_dt, self.ifo, classifier, email=email),
+                      idqActiveChanPlotCheck(active_chan_plot_dt, self.ifo, classifier, email=email),
+                      idqTablesCheck(tables_dt, self.ifo, classifier, email=email),
+                      idqCalibrationCheck(calib_dt, self.ifo, classifier, email=email),
+                      idqCalibrationPlotCheck(calib_plot_dt, self.ifo, classifier, email=email),
+                      idqROCCheck(roc_dt, self.ifo, classifier, email=email),
+                      idqROCPlotCheck(roc_plot_dt, self.ifo, classifier, email=email),
+                      idqCalibStatsCheck(calib_stats_dt, self.ifo, classifier, email=email),
+                      idqTrainStatsCheck(train_stats_dt, self.ifo, classifier, email=email)
+                     ]
+        tasks.append( idqFinishCheck(finish_dt, self.ifo, email=email) )
         super(IDQItem, self).__init__( graceid,
                                        gdb,
                                        t0,
                                        tasks,
-                                       description=self.description,
                                        annotate=annotate
                                      )
 
@@ -114,7 +142,7 @@ class idqGlichFAPCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported the glitch-FAP as expected
     """
-    name = "idqGlitchFAPCheck"
+    name = "idqGlitchFAP"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -122,8 +150,6 @@ class idqGlichFAPCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported a glitch-FAP for %s at %s"%(self.classifier, self.ifo)
         super(idqGlitchFAPCheck, self).__init__( timeout,
                                                  self.idqGlitchFAPCheck,
-                                                 name=self.name,
-                                                 description=self.description,
                                                  email=email
                                                )
 
@@ -159,7 +185,7 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploads fap timeseries files
     """
-    name = "idqFAPFrameCheck"
+    name = "idqFAPFrame"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -167,8 +193,6 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ uploads fap timeseries frames for %s at %s"%(self.classifier, self.ifo)
         super(idqFAPFrameCheck, self).__init__( timeout,
                                                 self.idqFAPFrameCheck,
-                                                name=self.name,
-                                                description=self.description,
                                                 email=email
                                               )
 
@@ -204,7 +228,7 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploaded rank timeseries files
     """
-    name = "idqRankFrameCheck"
+    name = "idqRankFrame"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -212,8 +236,6 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ uploads rank timeseries frames for %s at %s"%(self.classifier, self.ifo)
         super(idqRankFrameCheck, self).__init__( timeout,
                                                 self.idqRankFrameCheck,
-                                                name=self.name,
-                                                description=self.description,
                                                 email=email
                                               )
 
@@ -249,7 +271,7 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported timeseries plot as expected
     """
-    name = "idqTimeseriesPlotCheck"
+    name = "idqTimeseriesPlot"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -257,8 +279,6 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reproted timeseries information as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTimeseriesPlotCheck, self).__init__( timeout,
                                                       self.idqTimeseriesPlotCheck,
-                                                      name=self.name,
-                                                      description=self.description,
                                                       email=email
                                                     )
 
@@ -294,7 +314,7 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploaded a list of possible active channels
     """
-    name = "idqActiveChanCheck"
+    name = "idqActiveChan"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -302,8 +322,6 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ uploads a list of possible active channels for %s at %s"%(self.classifier, self.ifo)
         super(idqActiveChanCheck, self).__init__( timeout, 
                                                   self.idqActiveChanCheck,
-                                                  name=self.name,
-                                                  description=self.description,
                                                   email=email
                                                 )
 
@@ -339,7 +357,7 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
     """
     check that iDQ uploaded a plot of the possibly active channels
     """
-    name = "idqActiveChanPlotCheck"
+    name = "idqActiveChanPlot"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -347,8 +365,6 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ uploads a plot of possible active channels for %s at %s"%(self.classifier, self.ifo)
         super(idqActiveChanPlotCheck, self).__init__( timeout,
                                                       self.idqActiveChanPlotCheck,
-                                                      name=self.name,
-                                                      description=self.description,
                                                       email=email
                                                     )
 
@@ -387,7 +403,7 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported the xml tables as expected
     """
-    name = "idqTablesCheck"
+    name = "idqTables"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -395,8 +411,6 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported the xml tables as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTablesCheck, self).__init__( timeout,
                                               self.idqTablesCheck,
-                                              name=self.name,
-                                              description=self.description,
                                               email=email
                                             ) 
 
@@ -435,7 +449,7 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported historical calibration as expected
     """
-    name = "idqCalibrationCheck"
+    name = "idqCalibration"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -443,8 +457,6 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported the calibration data as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibrationCheck, self).__init__( timeout, 
                                                    self.idqCalibrationCheck,
-                                                   name=self.name,
-                                                   description=self.description,
                                                    email=email
                                                  )
 
@@ -480,7 +492,7 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported historical calibration plot as expected
     """
-    name = "idqCalibrationPlotCheck"
+    name = "idqCalibrationPlot"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -488,8 +500,6 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported the calibration plot as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibrationPlotCheck, self).__init__( timeout,
                                                        self.idqCalibrationPlotCheck,
-                                                       name=self.name,
-                                                       description=self.description,
                                                        email=email
                                                      )
 
@@ -525,7 +535,7 @@ class idqROCCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported the local ROC data
     """
-    name = "idqROCCheck"
+    name = "idqROC"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -533,8 +543,6 @@ class idqROCCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported the ROC data as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqROCCheck, self).__init__( timeout,
                                            self.idqROCCheck,
-                                           name=self.name,
-                                           description=self.description,
                                            email=email
                                          )
 
@@ -570,7 +578,7 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported the local ROC plot
     """
-    name = "idqROCPlotCheck"
+    name = "idqROCPlot"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -578,8 +586,6 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported the ROC plot as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqROCPlotCheck, self).__init__( timeout,
                                                self.idqROCPlotCheck,
-                                               name=self.name,
-                                               description=self.description,
                                                email=email
                                              )
 
@@ -615,7 +621,7 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ uploaded statistics about when calibration took place
     """
-    name = "idqCalibStatsCheck"
+    name = "idqCalibStats"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -623,8 +629,6 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported the calibration statistics as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibStatsCheck, self).__init__( timeout,
                                                   self.idqCalibStatsCheck,
-                                                  name=self.name,
-                                                  description=self.description,
                                                   email=email
                                                 )
 
@@ -660,7 +664,7 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ uploaded statistics about when training took place
     """
-    name = "idqTrainStatsCheck"
+    name = "idqTrainStats"
 
     def __init__(self, timeout, ifo, classifier, email=[]):
         self.ifo = ifo
@@ -668,8 +672,6 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported the training statistics as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTrainStatsCheck, self).__init__( timeout,
                                                   self.idqTrainStatsCheck,
-                                                  name=self.name,
-                                                  description=self.description,
                                                   email=email
                                                 )
 
@@ -708,15 +710,13 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ finished as expected
     """
-    name = "idqFinishCheck"
+    name = "idqFinish"
 
     def __init__(self, timeout, ifo, email=[]):
         self.ifo = ifo
         self.description = "a check that iDQ finished reporting as expected at %s"%(self.ifo)
         super(idqFinishCheck, self).__init__( timeout,
                                               self.idqFinishCheck,
-                                              name=self.name,
-                                              description=self.description,
                                               email=email
                                             )
 
@@ -745,4 +745,3 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
-

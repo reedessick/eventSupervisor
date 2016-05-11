@@ -13,30 +13,33 @@ class BayesWavePEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesWave PE started
     """
+    name = "bayeswave pe start"
     description = "a check that BayesWave PE started"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [bayeswavePEStartCheck(timeout, email)]
         super(BayesWavePEStartItem, self).__init__( graceid,
                                                     gdb,
                                                     t0,
                                                     tasks,
-                                                    description=self.description,
                                                     annotate=annotate
                                                   )
 
 class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
     """
-    a check that LIB PE started
+    a check that Bayeswave PE started
     """    
-    name = "bayeswavePEStartCheck"
+    name = "bayeswavePEStart"
     description = "a check that BayesWave PE started"
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEStartCheck, self).__init__( timeout,
                                                      self.libPEStartCheck,
-                                                     name=self.name,
-                                                     description=self.description,
                                                      email=email
                                                    )
 
@@ -70,20 +73,32 @@ class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesWave PE produces the expected data and finished
     """
+    name = "bayeswave pe"
     description = "a check that BayesWave PE produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
-        tasks = [bayeswavePEPostSampCheck(timeout, email=email),
-                 bayeswavePEEstimateCheck(timeout, email=email),
-                 bayeswavePEBayesFactorsCheck(timeout, email=email),
-                 bayeswavePESkymapCheck(timeout, tagnames=tagnames, email=email),
-#                 bayeswavePEFinishCheck(timeout, email=email)
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        postsamp_dt = float(options['post samp dt'])
+        estimate_dt = float(options['estimate dt'])
+        bayesFct_dt = float(options['bayes factor dt'])
+        skymap_dt = float(options['skymap dt'])
+        skymap_tagnames = options['skymap tagnames']
+        if skymap_tangames !=None:
+            skymap_tagnames = skymap_tagnames.split()
+
+        email = options['email'].split()
+
+        tasks = [bayeswavePEPostSampCheck(postsamp_dt, email=email),
+                 bayeswavePEEstimateCheck(estimate_dt, email=email),
+                 bayeswavePEBayesFactorsCheck(bayesFct_dt, email=email),
+                 bayeswavePESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
+#                 bayeswavePEFinishCheck(timeout, email=email) ### NOT IMPLEMENTED
                 ]
         super(BayesWavePEItem, self).__init__( graceid, 
                                                gdb,
                                                t0,
                                                tasks,
-                                               description=self.description,
                                                annotate=annotate
                                              )
 
@@ -91,14 +106,12 @@ class bayeswavePEPostSampCheck(esUtils.EventSupervisorTask):
     """
     a check that BayesWave PE posted posterior samples
     """
-    name = "bayeswavePEPostSampCheck"
+    name = "bayeswavePEPostSamp"
     description = "a check that BayesWave PE posted posterior samples"
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEPostSampCheck, self).__init__( timeout,
                                                         self.bayeswavePEPostSampCheck,
-                                                        name=self.name,
-                                                        descripiton=self.description,
                                                         email=email
                                                       )
 
@@ -132,14 +145,12 @@ class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
     """
     a check that BayesWave PE posted Bayes Factors
     """
-    name = "bayeswavePEBayesFactorsCheck"
+    name = "bayeswavePEBayesFactors"
     description = "a check that BayesWave PE posted Bayes Factors"
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEBayesFactorsCheck, self).__init__( timeout,
                                                         self.bayeswavePEBayesFactorsCheck,
-                                                        name=self.name,
-                                                        descripiton=self.description,
                                                         email=email
                                                       )
 
@@ -173,14 +184,12 @@ class bayeswavePEEstimateCheck(esUtils.EventSupervisorTask):
     """
     a check that BayesWave PE posted estimates of parameters
     """
-    name = "bayeswavePEEstimateCheck"
+    name = "bayeswavePEEstimate"
     description = "a check that BayesWave PE posted estimates of parameters"
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEEstimateCheck, self).__init__( timeout,
                                                         self.bayeswavePEEstimateCheck,
-                                                        name=self.name,
-                                                        descripiton=self.description,
                                                         email=email
                                                       )
 
@@ -214,15 +223,13 @@ class bayeswavePESkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that BayesWave PE posted a skymap
     """
-    name = "bayeswavePESkymapCheck"
+    name = "bayeswavePESkymap"
     description = "a check that BayesWave PE posted a skymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(bayeswavePESkymapCheck, self).__init__( timeout,
                                                       self.bayeswavePESkymapCheck,
-                                                      name=self.name,
-                                                      descripiton=self.description,
                                                       email=email
                                                     )
 
@@ -249,14 +256,12 @@ class bayeswavePEFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that BayesWave PE finished
     """
-    name = "bayeswavePEFinishCheck"
+    name = "bayeswavePEFinish"
     description = "a check that BayesWave PE finished"
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEFinishCheck, self).__init__( timeout,
                                                       self.bayeswavePEFinishCheck,
-                                                      name=self.name,
-                                                      descripiton=self.description,
                                                       email=email
                                                     )
 

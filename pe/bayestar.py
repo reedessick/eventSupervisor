@@ -13,15 +13,20 @@ class BayestarStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesStar started as expected
     """
+    name = "bayestar start"
     description = "a check that BAYESTAR started as expected"
 
-    def __init__(self, graceid, gdb, t0, timeout, annotate=False, email=[]):
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        timeout = float(options['dt'])
+        email = options['email'].split()
+
         tasks = [bayestarStartCheck(timeout, email=email)]
         super(BayestarStartItem, self).__item__( graceid,
                                                  gdb,
                                                  t0,
                                                  tasks,
-                                                 description=self.description,
                                                  annotate=annotate
                                                )
 
@@ -29,14 +34,12 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
     """
     a check that bayestar started as expected
     """
-    name = "bayestarStartCheck"
+    name = "bayestarStart"
     description = "a check that bayestar started as expected"
 
     def __init__(self, timeout, email=[]):
         super(bayestarStartCheck, self).__init__( timeout,
                                                   self.bayestarStartCheck,
-                                                  name=self.name,
-                                                  description=self.description,
                                                   email=email
                                                 )
 
@@ -70,17 +73,26 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
     """
     a check that Bayestar produced the expected data and finished
     """
+    name = "bayestar"
     description = "a check that BAYESTAR produced the expected data and finished"
 
-    def __init__(self, graceid, gdb, t0, timeout, tagnames=None, annotate=False, email=[]):
-        tasks = [bayestarSkymapCheck(timeout, tagnames=tagnames, email=email),
-                 bayestarFinishCheck(timeout, email=email)
+    def __init__(self, alert, t0, options, gdb, annotate=False):
+        graceid = alert['uid']
+
+        skymap_dt = float(options['skymap dt'])
+        skymap_tagnames = options['skymap tagnames']
+        if skymap_tangames !=None:
+            skymap_tagnames = skymap_tagnames.split()
+        finish_dt = float(optoins['finish dt'])
+        email = options['email'].split()
+
+        tasks = [bayestarSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
+                 bayestarFinishCheck(finish_dt, email=email)
                 ]
         super(BayestarItem, self).__init__( graceid,
                                             gdb,
                                             t0,
                                             tasks,
-                                            description=self.description,
                                             annotate=annotate
                                           )
 
@@ -88,15 +100,13 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that Bayestar produced a skymap
     """
-    name = "bayestarSkymapCheck"
+    name = "bayestarSkymap"
     description = "a check that bayestar produced a skymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(bayestarSkymapCheck, self).__init__( timeout, 
                                                    self.bayestarSkymapCheck,
-                                                   name=self.name,
-                                                   description=self.description,
                                                    email=email
                                                  )
 
@@ -124,14 +134,12 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that bayestar finished as expected
     """
-    name = "bayestarFinishCheck"
+    name = "bayestarFinish"
     description = "a check that bayestar finished as expected"
 
     def __init__(self, timeout, email=[]):
         super(bayestarFinishCheck, self).__init__( timeout,
                                                    self.bayestarFinishCheck,
-                                                   name=self.name,
-                                                   description=self.description,
                                                    email=email
                                                  )
 
