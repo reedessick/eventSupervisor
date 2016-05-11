@@ -98,9 +98,9 @@ parent_child = {
 ### parent name : [child name]
   'idq start'            : ['idq item'],
   'idqGlitchFAP'         : ['approval processor idq'], ### involves a Task
-  'idqActiveChan'        : ['omega scan idq start'], ### involves a Task
+  'idqActiveChan'        : ['omega scan idq start'], ### involves a Task, needs to be implemented
   'omega scan start'     : ['omega scan'],
-  'omega scan idq start' : ['omega scan idq'],
+  'omega scan idq start' : ['omega scan idq'], ### needs to be implemented
   'segdb2grcdb start'    : ['segdb2grcdb'],
   'bayestar start'       : ['bayestar'],
   'bayeswave pe start'   : ['bayeswave pe'],
@@ -108,6 +108,10 @@ parent_child = {
   'lib pe start'         : ['lib pe'],
   'skymap summary start' : ['skymap summary'],
   }
+
+### for known parent-child relationships, we define functions to determine if the alert matches (a regex?)
+###   we should be able to standardize this and limit the number of special cases
+###   we then have one function that identifies a 'name' based on an alert and then add items as needed based on those names
 
 ### special behavior if certain file types are seen
 fits = [
