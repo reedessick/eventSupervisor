@@ -208,6 +208,9 @@ class FARItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False):
         graceid = alert['uid']
 
+        self.minFAR = float(options['min far'])
+        self.maxFAR = float(options['max far'])
+
         timeout = float(options['dt'])
         email = options['email'].split()
 
@@ -246,8 +249,8 @@ class FARCheck(esUtils.EventSupervisorTask):
 
         if event.has_key("far"): ### check bounds
             far = event['far']
-            big = far > maxFAR
-            sml = far < minFAR
+            big = far > self.axFAR
+            sml = far < self.minFAR
 
             if big:
                 self.warning = "FAR=%.3e > %.3e"%(far, maxFAR)

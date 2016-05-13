@@ -95,12 +95,14 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
 
         any_dt = float(options['any dt'])
 
+        finish_dt = float(options['finish dt'])
+
         email = options['email'].split()
 
         tasks = [segDB2grcDBFlagsCheck(flags_dt, flags, email=email),
                  segDB2grcDBVetoDefCheck(veto_def_dt, veto_defs, email=email),
                  segDB2grcDBAnyCheck(any_dt, email=email),
-                 segDB2grcDBFinishCheck(timeout, email=email)
+                 segDB2grcDBFinishCheck(finish_dt, email=email)
                 ]
         super(SegDB2GrcDBItem, self).__init__( graceid,
                                                gdb, 

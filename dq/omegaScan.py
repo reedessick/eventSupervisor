@@ -34,8 +34,6 @@ class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, chanset='h(t'):
         graceid = alert['uid']
 
-        self.ifos = options['ifos'].split()
-
         timeout = float(options['dt'])
         email = options['email'].split()
 
@@ -158,6 +156,7 @@ class HofTOmegaScanStartItem(OmegaScanStartItem):
     chanset = "h(t)"
 
     def __init__(self, alert, t0, options, gdb, annotate=False):
+        self.ifos = options['ifos'].split()
         super(HofTOmegaScanStartItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)
 
 class HofTOmegaScanItem(OmegaScanItem):
@@ -181,6 +180,7 @@ class AuxOmegaScanStartItem(OmegaScanStartItem):
     chanset = "aux"
 
     def __init__(self, alert, t0, options, gdb, annotate=False):
+        self.ifos = options['ifos'].split()
         super(AuxOmegaScanStartItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)
 
 class AuxOmegaScanItem(OmegaScanItem):

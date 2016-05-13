@@ -30,7 +30,6 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         ignoreInj = bool(options['ignoreInj'])
 
         timeout = float(options['dt'])
-        email = options['email'].split()
 
         tasks = []
         if email:
@@ -54,10 +53,11 @@ class notifyByEmail(esUtils.EventSupervisorTask):
     name = "notifyByEmail"
 
     def __init__(self, timeout, email=[], ignoreInj=False):
+        self.notificationList = email
         self.ignoreInj = ignoreInj
         super(notifyByEmail, self).__init__( timeout, 
                                              self.notifyByEmail,
-                                             email=email
+                                             email=[]
                                            )
 
     def notifyByEmail(self, graceid, gdb, verbose=False, annotate=False ):
@@ -88,7 +88,7 @@ class notifyBySMS(esUtils.EventSupervisorTask):
     name = "notifyBySMS"
 
     def __init__(self, timeout, sms=[], ignoreInj=False):
-        self.sms = sms
+        self.notificationList = sms
         self.ignoreInj = ignoreInj
         super(notifyBySMS, self).__init__( timeout,
                                            self.notifyBySMS,
@@ -123,7 +123,7 @@ class notifyByPhone(esUtils.EventSupervisorTask):
     name = "notifyByPhone"
 
     def __init__(self, timeout, phone=[], ignoreInj=False):
-        self.phone = []
+        self.notificationList = phone
         self.ignoreInj = ignoreInj
         super(notifyByPhone, self).__init__( timeout,
                                              self.notifyByPhone,
