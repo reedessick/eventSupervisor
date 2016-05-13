@@ -146,8 +146,9 @@ if opts.basic:
     #--------------------
     # EventCreationItem
     #--------------------
-    print "EventCreationItem"
+    print "    EventCreationItem"
 
+    ### cwb
     graceid = 'FakeEvent'
     pipeline = 'cwb'
     alert = {
@@ -161,17 +162,45 @@ if opts.basic:
         }
 
     item = basic.EventCreationItem( alert, t0, options, gdb, annotate=annotate )
-
-    ### EventCreationItem
     ###   cWBTriggerCheck
+
+    ### olib
+    graceid = 'FakeEvent'
+    pipeline = 'lib'
+    alert = {
+        'uid' : graceid,
+        'pipeline' : 'pipeline',
+        }
+    t0 = time.time()
+    options = {
+        'dt' : '10.0',
+        'email' : 'a',
+        }
+
+    item = basic.EventCreationItem( alert, t0, options, gdb, annotate=annotate )
     ###   oLIBTriggercheck
+
+    ### gstlal
+    for pipeline in ['gstlal', 'mbtaonline', 'pycbc']:
+        graceid = 'FakeEvent'
+        alert = {
+            'uid' : graceid,
+            'pipeline' : 'pipeline',
+            }
+        t0 = time.time()
+        options = {
+            'dt' : '10.0',
+            'email' : 'a',
+            }
+
+        item = basic.EventCreationItem( alert, t0, options, gdb, annotate=annotate )
     ###   cbcCoincCheck
     ###   cbcPSDCheck
 
     #--------------------
-    # NotifyItem
+    # CreateRateItem
     #--------------------
-    print "CreateRateItem"
+    print "    CreateRateItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -187,13 +216,12 @@ if opts.basic:
         }
 
     item = basic.CreateRateItem( alert, t0, options, gdb, annotate=annotate )
-    ### CreateRateItem
     ###   createRateCheck
 
     #--------------------
-    # NotifyItem
+    # LocalRateItem
     #--------------------
-    print "LocalRateItem"
+    print "    LocalRateItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -209,13 +237,12 @@ if opts.basic:
         }
 
     item = basic.LocalRateItem( alert, t0, options, gdb, annotate=annotate )
-    ### LocalRateItem
     ###   localRateCheck
 
     #--------------------
-    # NotifyItem
+    # FARItem
     #--------------------
-    print "FARItem"
+    print "    FARItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -230,13 +257,12 @@ if opts.basic:
         }
 
     item = basic.FARItem( alert, t0, options, gdb, annotate=annotate )
-    ### FARItem
     ###   FARCheck
 
     #--------------------
-    # NotifyItem
+    # ExternalTriggersItem
     #--------------------
-    print "ExternalTriggersItem"
+    print "    ExternalTriggersItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -249,13 +275,12 @@ if opts.basic:
         }
 
     item = basic.ExternalTriggersItem( alert, t0, options, gdb, annotate=annotate )
-    ### ExternalTriggersItem
     ###   externalTriggersCheck
 
     #--------------------
     # UnblindInjectionsItem
     #--------------------
-    print "UnblindInjectionsItem"
+    print "    UnblindInjectionsItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -268,7 +293,6 @@ if opts.basic:
         }
 
     item = basic.UnblindInjectionsItem( alert, t0, options, gdb, annotate=annotate )
-    ### UnblindInjectionsItem
     ###   unblindInjectionsCheck
 
 #-------------------------------------------------
@@ -280,7 +304,7 @@ if opts.approvalProcessor:
     #--------------------
     # ApprovalProcessroPrelimDQItem
     #--------------------
-    print "ApprovalProcessorPrelimDQItem"
+    print "    ApprovalProcessorPrelimDQItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -294,14 +318,13 @@ if opts.approvalProcessor:
         }
 
     item = approvalProcessor.ApprovalProcessorPrelimDQItem( alert, t0, options, gdb, annotate=annotate )
-    ### ApprovalProcessorPrelimDQItem
     ###   approvalProcessorFARCheck
     ###   approvalProcessorSegDBStartCheck
 
     #--------------------
     # ApprovalProcessorSegDBItem
     #--------------------
-    print "ApprovalProcessorSegDBItem"
+    print "    ApprovalProcessorSegDBItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -316,14 +339,13 @@ if opts.approvalProcessor:
         }
 
     item = approvalProcessor.ApprovalProcessorSegDBItem( alert, t0, options, gdb, annotate=annotate )
-    ### ApprovalProcessorSegDBItem
     ###   approvalProcessorFlagsCheck
     ###   approvalProcessorFinishCheck
 
     #--------------------
     # ApprovalProcessoriDQItem
     #--------------------
-    print "ApprovalProcessoriDQItem"
+    print "    ApprovalProcessoriDQItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -337,13 +359,12 @@ if opts.approvalProcessor:
         }
 
     item = approvalProcessor.ApprovalProcessoriDQItem( alert, t0, options, gdb, annotate=annotate )
-    ### ApprovalProcessoriDQItem
     ###   approvalProcessoriDQglitchFAPCheck
 
     #--------------------
     # ApprovalProcessroVOEventItem
     #--------------------
-    print "ApprovalProcessorVOEventItem"
+    print "    ApprovalProcessorVOEventItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -356,14 +377,13 @@ if opts.approvalProcessor:
         }
 
     item = approvalProcessor.ApprovalProcessorVOEventItem( alert, t0, options, gdb, annotate=annotate )
-    ### ApprovalProcessorVOEventItem
     ###   approvalProcessorVOEventCreationCheck
     ###   approvalProcessorVOEventDistributionCheck
 
     #--------------------
     # ApprovalProcessorGCNItem
     #--------------------
-    print "ApprovalProcessorGCNItem"
+    print "    ApprovalProcessorGCNItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -376,7 +396,6 @@ if opts.approvalProcessor:
         }
 
     item = approvalProcessor.ApprovalProcessorGCNItem( alert, t0, options, gdb, annotate=annotate )
-    ### ApprovalProcessorGCNCheck
     ###   approvalProcessorGCNCreationCheck
     ###   approvalProcessorGCNDistributionCheck
 
@@ -385,16 +404,17 @@ if opts.approvalProcessor:
 ### skymaps
 if opts.skymaps:
     print "testing skymaps/skymaps.py"
-    raise NotImplemented
 
     #--------------------
     # SkymapSanityItem
     #--------------------
-    print "SkymapSanityItem"
+    print "    SkymapSanityItem"
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
+        'file' : 'fake.fits.gz',
+        'object' : {'tagnames':[]},
         }
     t0 = time.time()
     options = {
@@ -403,17 +423,18 @@ if opts.skymaps:
         }
 
     item = skymaps.SkymapSanityItem( alert, t0, options, gdb, annotate=annotate )
-    ### SkumapSanityItem
     ###   skymapSanityCheck
 
     #--------------------
     # PlotSkymapItem
     #--------------------
-    print "PlotSkymapItem"
+    print "    PlotSkymapItem"
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
+        'file' : 'fake.fits.gz',
+        'object' : {'tagnames':[]},
         }
     t0 = time.time()
     options = {
@@ -422,17 +443,18 @@ if opts.skymaps:
         }
 
     item = skymaps.PlotSkymapItem( alert, t0, options, gdb, annotate=annotate )
-    ### PlotSkymapItem
     ###   plotSkymapCheck
 
     #--------------------
     # SkyviewerItem
     #--------------------
-    print "SkyviewerItem"
+    print "    SkyviewerItem"
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
+        'file' : 'fake.fits.gz',
+        'object' : {'tagnames':[]},
         }
     t0 = time.time()
     options = {
@@ -441,7 +463,6 @@ if opts.skymaps:
         }
 
     item = skymaps.SkyviewerItem( alert, t0, options, gdb, annotate=annotate )
-    ### SkyviewerItem
     ###   skyviewerCheck
 
 #-------------------------------------------------
@@ -453,7 +474,7 @@ if opts.skymapSummary:
     #--------------------
     # SkymapSummaryStartItem
     #--------------------
-    print "SkymapSummaryStartItem"
+    print "    SkymapSummaryStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -466,13 +487,12 @@ if opts.skymapSummary:
         }
 
     item = skymapsSummary.SkymapSummaryStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### SkymapSummaryStartItem
     ###   skymapSummaryStartCheck
 
     #--------------------
     # SkymapSummaryItem
     #--------------------
-    print "SkymapSummaryItem"
+    print "    SkymapSummaryItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -485,7 +505,6 @@ if opts.skymapSummary:
         }
 
     item = skymapsSummary.SkymapSummaryItem( alert, t0, options, gdb, annotate=annotate )
-    ### SkymapSummaryItem
     ###   skymapSummaryDataCheck
     ###   skymapSummaryFinishCheck
 
@@ -499,7 +518,7 @@ if opts.bayestar:
     #--------------------
     # BayestarStartItem
     #--------------------
-    print "BayestarStartItem"
+    print "    BayestarStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -512,13 +531,12 @@ if opts.bayestar:
         }
 
     item = bayestar.BayestarStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### BaystarStartItem
     ###   bayestarStartCheck
 
     #--------------------
     # BayestarItem
     #--------------------
-    print "BayestarItem"
+    print "    BayestarItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -532,7 +550,6 @@ if opts.bayestar:
         }
 
     item = bayestar.BayestarItem( alert, t0, options, gdb, annotate=annotate )
-    ### BayestarItem
     ###   bayestarSkymapCheck
     ###   bayestarFinishItem
 
@@ -545,7 +562,7 @@ if opts.bayeswavePE:
     #--------------------
     # BayesWavePEStartItem
     #--------------------
-    print "BayesWavePEStartItem"
+    print "    BayesWavePEStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -558,13 +575,12 @@ if opts.bayeswavePE:
         }
 
     item = bayeswavePE.BayesWavePEStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### BayesWavePEStartItem
     ###   bayeswavePEStartCheck
 
     #--------------------
     # BayesWavePEItem
     #--------------------
-    print "BayesWavePEItem"
+    print "    BayesWavePEItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -581,7 +597,6 @@ if opts.bayeswavePE:
         }
 
     item = bayeswavePE.BayesWavePEItem( alert, t0, options, gdb, annotate=annotate )
-    ### BayesWavePEItem
     ###   bayeswavePEPostSampCheck
     ###   bayeswavePEBayesFactorsCheck
     ###   bayeswavePEEstimateCheck
@@ -598,7 +613,7 @@ if opts.cwbPE:
     #--------------------
     # CWBPEItem
     #--------------------
-    print "CWBPEItem"
+    print "    CWBPEItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -614,7 +629,6 @@ if opts.cwbPE:
         }
 
     item = cwbPE.CWBPEItem( alert, t0, options, gdb, annotate=annotate )
-    ### CWBPEItem
     ###   cWBCEDCheck
     ###   cWBPEEstimateCheck
     ###   cWBPESkymapCheck
@@ -628,7 +642,7 @@ if opts.libPE:
     #--------------------
     # LIBPEStartItem
     #--------------------
-    print "LIBPEStartItem"
+    print "    LIBPEStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -641,13 +655,12 @@ if opts.libPE:
         }
 
     item = libPE.LIBPEStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### LIBPEStartItem
     ###   libPEStartCheck
 
     #--------------------
     # LIBPEItem
     #--------------------
-    print "LIBPEItem"
+    print "    LIBPEItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -664,7 +677,6 @@ if opts.libPE:
         }
 
     item = libPE.LIBPEItem( alert, t0, options, gdb, annotate=annotate )
-    ### LIBPEItem
     ###   libPEBayesFactorsCheck
     ###   libPEPostSampCheck
     ###   libPESkymapCheck
@@ -679,7 +691,7 @@ if opts.lalinf:
     #--------------------
     # LALInfStartItem
     #--------------------
-    print "LALInfStartItem"
+    print "    LALInfStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -692,13 +704,12 @@ if opts.lalinf:
         }
 
     item = lalinf.LALInfStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### LALInfStartItem
     ###   lalinfStartCheck
 
     #--------------------
     # LALInfItem
     #--------------------
-    print "LALInfItem"
+    print "    LALInfItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -714,7 +725,6 @@ if opts.lalinf:
         }
 
     item = lalinf.LALInfItem( alert, t0, options, gdb, annotate=annotate )
-    ### LALInfItem
     ###   lalinfPostSampCheck
     ###   lalinfSkymapCheck
     ###   lalinfFinishCheck
@@ -729,7 +739,7 @@ if opts.dq:
     #--------------------
     # DQSummaryItem
     #--------------------
-    print "DQSummaryItem"
+    print "    DQSummaryItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -742,7 +752,6 @@ if opts.dq:
         }
 
     item = dq.DQSummaryItem( alert, t0, options, gdb, annotate=annotate )
-    ### DQSummaryItem
     ###   dqSummaryCheck
 
 #-------------------------------------------------
@@ -754,7 +763,7 @@ if opts.idq:
     #--------------------
     # IDQStartItem
     #--------------------
-    print "IDQStartItem"
+    print "    IDQStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -768,13 +777,12 @@ if opts.idq:
         }
 
     item = idq.IDQStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### IDQStartItem
     ###   idqStartCheck
 
     #--------------------
     # IDQItem
     #--------------------
-    print "IDQItem"
+    print "    IDQItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -801,7 +809,6 @@ if opts.idq:
         }
 
     item = idq.IDQItem( alert, t0, options, gdb, annotate=annotate )
-    ### IDQItem
     ###   idqGltichFAPCheck
     ###   idqFAPFrameCheck
     ###   idqRankFrameCheck
@@ -825,7 +832,7 @@ if opts.omegaScan:
     #--------------------
     # HofTOmegaScanStartItem
     #--------------------
-    print "HofTOmegaScanStartItem"
+    print "    HofTOmegaScanStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -839,13 +846,12 @@ if opts.omegaScan:
         }
 
     item = omegaScan.HofTOmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### HofTOmegaScanStartItem
     ###   omegaScanStartCheck
 
     #--------------------
     # HofTOmegaScanItem
     #--------------------
-    print "HofTOmegaScanItem"
+    print "    HofTOmegaScanItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -859,14 +865,13 @@ if opts.omegaScan:
         }
 
     item = omegaScan.HofTOmegaScanItem( alert, t0, options, gdb, annotate=annotate )
-    ### HofTOmegaScanItem
     ###   omegaScanDataCheck
     ###   omegaScanFinishCheck
 
     #--------------------
     # AuxOmegaScanStartItem
     #--------------------
-    print "AuxOmegaScanStartItem"
+    print "    AuxOmegaScanStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -880,13 +885,12 @@ if opts.omegaScan:
         }
 
     item = omegaScan.AuxOmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### AuxOmegaScanStartItem
     ###   omegaScanStartCheck
 
     #--------------------
     # AuxOmegaScanItem
     #--------------------
-    print "AuxOmegaScanItem"
+    print "    AuxOmegaScanItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -900,14 +904,13 @@ if opts.omegaScan:
         }
 
     item = omegaScan.AuxOmegaScanItem( alert, t0, options, gdb, annotate=annotate )
-    ### AuxOmegaScanItem
     ###   omegaScanDataCheck
     ###   omegaScanFinishCheck
 
     #--------------------
     # IDQOmegaScanStartItem
     #--------------------
-    print "IDQOmegaScanStartItem"
+    print "    IDQOmegaScanStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -920,13 +923,12 @@ if opts.omegaScan:
         }
 
     item = omegaScan.IDQOmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### IDQOmegaScanStartItem
     ###   omegaScanStartCheck
 
     #--------------------
     # IDQOmegaScanItem
     #--------------------
-    print "IDQOmegaScanItem"
+    print "    IDQOmegaScanItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -940,7 +942,6 @@ if opts.omegaScan:
         }
 
     item = omegaScan.IDQOmegaScanItem( alert, t0, options, gdb, annotate=annotate )
-    ### IDQOmegaScanItem
     ###   omegaScanDataCheck
     ###   omegaScanFinishCheck
 
@@ -953,7 +954,7 @@ if opts.segDB2grcDB:
     #--------------------
     # SegDB2GrcDBStartItem
     #--------------------
-    print "SegDB2GrcDBStartItem"
+    print "    SegDB2GrcDBStartItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -966,13 +967,12 @@ if opts.segDB2grcDB:
         }
 
     item = segDB2grcDB.SegDB2GrcDBStartItem( alert, t0, options, gdb, annotate=annotate )
-    ### SegDB2GrcDBStartItem
     ###   segDB2grcDBStartCheck
 
     #--------------------
     # SegDB2GrcDBItem
     #--------------------
-    print "SegDB2GrcDBItem"
+    print "    SegDB2GrcDBItem"
 
     graceid = 'FakeEvent'
     alert = {
@@ -990,7 +990,6 @@ if opts.segDB2grcDB:
         }
 
     item = segDB2grcDBItem( alert, t0, options, gdb, annotate=annotate )
-    ### SegDB2GrceDBItem
     ###   segDB2grcDBFlagsCheck
     ###   segDB2grcDBVetoDefCheck
     ###   segDB2grcDBAnyCheck
