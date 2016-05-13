@@ -20,6 +20,12 @@ def is_libPEStart( description ):
 class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LIB PE started
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "lib pe start"
     description = "a check that LIB PE started"
@@ -80,6 +86,16 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
 class LIBPEItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LIB PE produces the expected data and finished
+
+    alert:
+        graceid
+    options:
+        post samp dt
+        bayes factor dt
+        skymap dt
+        skymap tagnames
+        finish dt
+        email
     """
     name = "lib pe"
     description = "a check that LIB PE produced the expected data and finished"

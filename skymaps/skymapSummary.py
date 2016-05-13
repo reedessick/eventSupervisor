@@ -24,6 +24,13 @@ def is_skymapSummaryStart( description ):
 class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the autosummary of skymaps started as expected
+
+    alert:
+        graceid
+        fitsname
+    options:
+        dt
+        email
     """
     name = "skymap summary start"
 
@@ -70,6 +77,14 @@ class skymapSummaryStartCheck(esUtils.EventSupervisorTask):
 class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
     """
     a check that autosummary of skymaps ran and reported as expected
+
+    alert:
+        graceid
+        fitsname
+    options:
+        data dt
+        finish dt
+        email
     """
     name = "skymap summary"
 

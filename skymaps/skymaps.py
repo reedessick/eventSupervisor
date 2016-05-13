@@ -23,6 +23,12 @@ import healpy as hp
 class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
     """
     a check for sane and properly formatted skymaps
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "skymap sanity"
 
@@ -123,6 +129,14 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
 class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
     """
     a check that plotting jobs ran and tagged figures properly
+
+    alert:
+        graceid
+        fitsname
+        tagnames
+    options:
+        dt
+        email
     """
     name = "plot skymap"
 
@@ -186,6 +200,14 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
 class SkyviewerItem(esUtils.EventSupervisorQueueItem):
     """
     a check that skyviewer ran and tagged files appropriately
+
+    alert:
+        graceid
+        fitsname
+        tagnames
+    options:
+        dt
+        email
     """
     name = "skyviewer"
 

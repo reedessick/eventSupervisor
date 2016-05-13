@@ -20,6 +20,12 @@ def is_lalinfStart( description ):
 class LALInfStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that LALInference started
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "lalinf start"
     description = "a check that LALInference started"
@@ -78,7 +84,16 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
 
 class LALInfItem(esUtils.EventSupervisorQueueItem):
     """
-    a check that LALInference produces the expected data and finished
+    a check that LALiInference produces the expected data and finished
+
+    alert:
+        graceid
+    options:
+        post samp dt
+        skymap dt
+        skymap tagnames
+        finish dt
+        email
     """
     name = "lalinf"
     description = "a check that LALInference produced the expected data and finished"

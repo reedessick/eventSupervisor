@@ -24,6 +24,13 @@ def is_approvalProcessorSegDBStart( description ):
 class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
     """
     a set of checks for approval_processor's preliminary DQ and vetting
+
+    alert:
+        graceid
+    options:
+        far dt
+        seg start dt
+        email
     """
     name = "approval processor prelim dq"
     description = "a set of checks for approval_processor's preliminary DQ and vetting"
@@ -116,6 +123,14 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
 class approvalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
     """
     check that approval processor completed segment checks
+
+    alert:
+        graceid
+    options:
+        flags dt
+        flags
+        finish dt
+        email
     """
     name = "approval processor segdb"
     description = "a set of checks for approval_processor's segment vetting"
@@ -189,6 +204,13 @@ class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
 class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
     """
     an item for monitoring approval processor's response to iDQ information
+
+    alert:
+        graceid
+        ifo
+    options:
+        dt
+        email
     """
     name = "approval processor idq"
     description = "an item for montitoring approval_processor's response to iDQ information"
@@ -196,12 +218,12 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False):
         graceid = alert['uid']
 
-        ifos = options['ifos'].split()
+        self.ifo = alert['description'].split()[-1]
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [ approvalProcessoriDQglitchFAPCheck(timeout, ifo, email=email) for ifo in ifos ]
+        tasks = [approvalProcessoriDQglitchFAPCheck(timeout, self.ifo, email=email)]
         super(ApprovalProcessoriDQItem, self).__init__( graceid,
                                                         gdb,
                                                         t0,
@@ -237,6 +259,12 @@ class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
 class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
     """
     an item for monitoring VOEvent generation and distribution
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name="approval processor voevent"
     description = "check that approval processor generated and distributed VOEvents"
@@ -300,6 +328,12 @@ class approvalProcessorVOEventDistributionCheck(esUtils.EventSupervisorTask):
 class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
     """
     an item for monitoring GCN generation and distribution
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "approval processor gcn"
     description = "check that approval processor generated and distributed GCNs"

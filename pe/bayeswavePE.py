@@ -19,6 +19,12 @@ def is_bayeswavePEStart( description ):
 class BayesWavePEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesWave PE started
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "bayeswave pe start"
     description = "a check that BayesWave PE started"
@@ -79,6 +85,16 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
 class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesWave PE produces the expected data and finished
+
+    alert:
+        graceid
+    options:
+        post samp dt
+        estimate dt
+        bayes factor dt
+        skymap dt
+        skymap tagnames
+        email
     """
     name = "bayeswave pe"
     description = "a check that BayesWave PE produced the expected data and finished"

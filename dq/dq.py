@@ -16,6 +16,12 @@ import eventSupervisorUtils as esUtils
 class DQSummaryItem(esUtils.EventSupervisorQueueItem):
     """
     a check that a link to the DQ Summary page was posted
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "dq summary"
     description = "a check that the DQ summary page was posted"

@@ -20,6 +20,12 @@ def is_segdb2grcdbStart( description ):
 class SegDB2GrcDBStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that segDB2grcDB started
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "segdb2grcdb start"
     description = "check that segDB2grcDB started"
@@ -79,13 +85,23 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
 class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
     """
     a check that segDB2grcDB uploaded the expected queries and finished
+
+    alert:
+        graceid
+    options:
+        flags dt
+        flags
+        veto def dt
+        veto defs
+        any dt
+        finish dt
+        email
     """
     name = "segdb2grcdb"
     description = "check that segDB2grcDB posted the expected data and finished"
     
     def __init__(self, alert, t0, options, gdb, annotate=False):
         graceid = alert['uid']
-
 
         flags_dt = float(options['flags dt'])
         flags = options['flags'].split()

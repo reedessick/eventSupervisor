@@ -16,6 +16,12 @@ import eventSupervisorUtils as esUtils
 class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that cWB PE started
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "cwb pe start"
     description = "a check that cWB PE started"
@@ -59,6 +65,15 @@ class cWBPEStartCheck(esUtils.EventSupervisorTask):
 class CWBPEItem(esUtils.EventSupervisorQueueItem):
     """
     a check that cWB PE produces the expected data and finished
+
+    alert:
+        graceid
+    options:
+        ced dt
+        estimate dt
+        skymap dt
+        skymap tagnames
+        email
     """
     name = "cwb pe"
     description = "a check that cWB PE produced the expected data and finished"

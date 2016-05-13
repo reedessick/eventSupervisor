@@ -20,6 +20,12 @@ def is_bayestarStart( description ):
 class BayestarStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that BayesStar started as expected
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "bayestar start"
     description = "a check that BAYESTAR started as expected"
@@ -80,6 +86,14 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
 class BayestarItem(esUtils.EventSupervisorQueueItem):
     """
     a check that Bayestar produced the expected data and finished
+
+    alert:
+        graceid
+    options:
+        skymap dt
+        skymap tagnames
+        finish dt
+        email
     """
     name = "bayestar"
     description = "a check that BAYESTAR produced the expected data and finished"

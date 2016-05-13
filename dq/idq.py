@@ -31,6 +31,13 @@ def is_idqActiveChan( description ):
 class IDQStartItem(esUtils.EventSupervisorQueueItem):
     """
     a check that iDQ started as expected
+
+    alert:
+        graceid
+    options:
+        ifos
+        dt
+        email
     """
     name = "idq start"
  
@@ -98,6 +105,26 @@ class idqStartCheck(esUtils.EventSupervisorTask):
 class IDQItem(esUtils.EventSupervisorQueueItem):
     """
     a check that iDQ reported information as expected
+
+    alert:
+        graceid
+        ifo
+    options:
+        table dt
+        glitch fap dt
+        fap frame dt
+        rank frame dt
+        timeseries dt
+        active chan dt
+        active chan plot dt
+        calib dt
+        calib plot dt
+        roc dt
+        roc plot dt
+        calib stats dt
+        train stats dt
+        finish dt
+        email
     """
     name = "idq"
 

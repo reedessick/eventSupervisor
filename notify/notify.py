@@ -16,6 +16,15 @@ import eventSupervisorUtils as esUtils
 class NotifyItem(esUtils.EventSupervisorQueueItem):
     """
     notify folks that a new event was created
+
+    alert:
+        graceid
+    options:
+        dt
+        ignoreInj
+        by email
+        by sms
+        by phone
     """
     name = "notify"
     description = "notify people by email, sms or phone"

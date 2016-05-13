@@ -26,6 +26,13 @@ from lal.gpstime import tconvert
 class EventCreationItem(esUtils.EventSupervisorQueueItem):
     """
     a check for propper event creation and readability of associated trigger files
+
+    alert:
+        graceid
+        pipeline
+    options:
+        dt
+        email
     """
     name = "event creation"
 
@@ -201,6 +208,14 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
 class FARItem(esUtils.EventSupervisorQueueItem):
     """
     a check for propper FAR
+
+    alert:
+        graceid
+    options:
+        min far
+        max far
+        dt
+        email
     """
     name = "far"
     description = "check sanity of reported FAR"
@@ -300,6 +315,18 @@ class FARCheck(esUtils.EventSupervisorTask):
 class LocalRateItem(esUtils.EventSupervisorQueueItem):
     """
     a check for local rate of events submitted to GraceDb around the event's gpstime
+
+    alert:
+        graceid
+        group
+        pipeline
+        search
+    options:
+        win+
+        win-
+        maxRate
+        dt 
+        email
     """
     name = "local rate"
     description = "check local rates of events"
@@ -396,6 +423,18 @@ class localRateCheck(esUtils.EventSupervisorTask):
 class CreateRateItem(esUtils.EventSupervisorQueueItem):
     """
     a check for local rate of events submitted to GraceDb around the event's creation time
+
+    alert:
+        graceid
+        group
+        pipeline
+        search
+    options:
+        win+
+        win-
+        maxRate
+        dt 
+        email
     """
     name = "creation rate"
     description = "check creation rates of events"
@@ -499,6 +538,12 @@ class createRateCheck(esUtils.EventSupervisorTask):
 class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the external triggers search was completed
+
+    alert:
+        graceid
+    options:
+        dt
+        email
     """
     name = "external triggers"
     description = "check that the unblind injection search completed"
@@ -565,6 +610,12 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
 class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the unblind Injections search was completed
+
+    alert:
+        graceid
+    options:
+        dt 
+        email
     """
     name = "unblind injections"
     description = "check that the unblind injection search completed"
