@@ -26,6 +26,7 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
 
     alert:
         graceid
+        fitsname
     options:
         dt
         email
@@ -34,6 +35,7 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
 
     def __init__(self, alert, t0, options, gdb, annotate=False):
         graceid = alert['uid']
+        fitsname = alert['file']
 
         timeout = float(options['dt'])
         email = options['email'].split()
@@ -222,7 +224,7 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
 
         self.description = "check plotting jobs for %s"%self.fitsname
         tasks = [skyviewerCheck(timeout, self.fitsname, self.tagnames, email=email)]
-        super(PlotSkymapItem, self).__init__( graceid,
+        super(SkyviewerItem, self).__init__( graceid,
                                                gdb,
                                                t0,
                                                tasks,
