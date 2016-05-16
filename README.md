@@ -11,6 +11,10 @@ eventSupervisor is organized into several different modules, each corresponding 
 
 The QueueItems defines within each module have a standardized __init__() format, which extracts the required information directly from a config object. In this way, we can standardize how Items are created by passing the same arguments and simply iterating over the Item's names as specified in some directed graph. Furthermore, each QueueItem is responsible for defining the Tasks it needs within the Item's __init__() call. All defined items (subclass of eventSupervisorUtils.EventSupervisorQueueItem) are automatically identified from the modules loded in eventSupervisor.py. In this way, if we add a new Item or module, all that has to be updated is the "directed graph" which defines the parent/child relation ships (and possibly parsing to identify when new log messages satisfy checks).
 
+Furthermore, the email formatting and error catching is handled automatically within EventSupervisorTask.execute() via delegation to a function handle stored as an attribute of the object.
+
 -------------------
 
-need to write a testing suite that makes sure things are built correctly and all the plumbing works! This could be combined with a large-scale functionality test with lvalertMP to observe the whole thing function together.
+We also have a testing suite that checks that all objects are instantiated as expected. This includes both QueueItems and Tasks associated with all modules. Attributes are check via assertion statements but no actual functionality is tested.
+
+The functionality (ie: Task.execute() methods) needs to be tested as well as the automatic redefinition of complete, completedTasks, tasks, and expiration attributes within QueueItem classes needs to be tested. Once this is shown to operate as expected, we can perform full-scale integration and functionality tests with lvalertMP via actual lvalert messages mimicing real GraceDB events.
