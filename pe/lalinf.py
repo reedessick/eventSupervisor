@@ -33,7 +33,7 @@ class LALInfStartItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False):
         graceid = alert['uid']
 
-        timeoutdt = float(options['dt'])
+        timeout = float(options['dt'])
         email = options['email'].split()
 
         tasks = [lalinfStartCheck(timeout, email)]
@@ -104,7 +104,7 @@ class LALInfItem(esUtils.EventSupervisorQueueItem):
         postsamp_dt = float(options['post samp dt'])
         skymap_dt = float(options['skymap dt'])
         skymap_tagnames = options['skymap tagnames']
-        if skymap_tangames !=None:
+        if skymap_tagnames !=None:
             skymap_tagnames = skymap_tagnames.split()
         finish_dt = float(options['finish dt'])
 
@@ -112,7 +112,7 @@ class LALInfItem(esUtils.EventSupervisorQueueItem):
 
 
         tasks = [
-#                 lalinfPostSampCheck(postsamp_dt, email=email), ### NOT IMPLEMENTED
+                 lalinfPostSampCheck(postsamp_dt, email=email), 
                  lalinfSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
                  lalinfFinishCheck(finish_dt, email=email)
                 ]

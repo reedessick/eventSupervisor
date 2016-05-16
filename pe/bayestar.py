@@ -37,7 +37,7 @@ class BayestarStartItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         tasks = [bayestarStartCheck(timeout, email=email)]
-        super(BayestarStartItem, self).__item__( graceid,
+        super(BayestarStartItem, self).__init__( graceid,
                                                  gdb,
                                                  t0,
                                                  tasks,
@@ -103,9 +103,10 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
 
         skymap_dt = float(options['skymap dt'])
         skymap_tagnames = options['skymap tagnames']
-        if skymap_tangames !=None:
+        if skymap_tagnames !=None:
             skymap_tagnames = skymap_tagnames.split()
-        finish_dt = float(optoins['finish dt'])
+        finish_dt = float(options['finish dt'])
+
         email = options['email'].split()
 
         tasks = [bayestarSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),

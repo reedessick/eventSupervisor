@@ -35,13 +35,13 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
 
     def __init__(self, alert, t0, options, gdb, annotate=False):
         graceid = alert['uid']
-        fitsname = alert['file']
+        self.fitsname = alert['file']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        self.description = "check sanity and formatting of %s"%fitsname
-        tasks = [skymapSanityCheck(timeout, fitsname, email=email)]
+        self.description = "check sanity and formatting of %s"%self.fitsname
+        tasks = [skymapSanityCheck(timeout, self.fitsname, email=email)]
         super(SkymapSanityItem, self).__init__( graceid,
                                                 gdb,
                                                 t0,

@@ -52,7 +52,7 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEStartCheck, self).__init__( timeout,
-                                                     self.libPEStartCheck,
+                                                     self.bayeswavePEStartCheck,
                                                      email=email
                                                    )
 
@@ -107,7 +107,7 @@ class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
         bayesFct_dt = float(options['bayes factor dt'])
         skymap_dt = float(options['skymap dt'])
         skymap_tagnames = options['skymap tagnames']
-        if skymap_tangames !=None:
+        if skymap_tagnames !=None:
             skymap_tagnames = skymap_tagnames.split()
 
         email = options['email'].split()
@@ -216,7 +216,7 @@ class bayeswavePEEstimateCheck(esUtils.EventSupervisorTask):
                                                         email=email
                                                       )
 
-    def bayeswavePEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayeswavePEEstimateCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that BayesWave PE posted estimates of parameters
         """

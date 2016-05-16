@@ -70,7 +70,7 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
     name = "cWBTrigger"
 
     def __init__(self, timeout, email=[]):
-        super(cwbTriggerCheck, self).__init__( timeout, 
+        super(cWBTriggerCheck, self).__init__( timeout, 
                                                self.cWBTriggerCheck, 
                                                email=email
                                              )
@@ -149,7 +149,7 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
                                              email=email
                                            )
 
-    def cbcTriggerCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cbcCoincCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         check for coinc.xml file
         """
@@ -229,7 +229,7 @@ class FARItem(esUtils.EventSupervisorQueueItem):
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [FARCheck(timeout, email=email)]
+        tasks = [FARCheck(timeout, maxFAR=self.maxFAR, minFAR=self.minFAR, email=email)]
         super(FARItem, self).__init__( graceid, 
                                        gdb, 
                                        t0, 
@@ -244,11 +244,11 @@ class FARCheck(esUtils.EventSupervisorTask):
     description = "a check for propper FAR"
     name = "FAR"
 
-    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, annotate=False, email=[]):
+    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[]):
         self.maxFAR = maxFAR
         self.minFAR = minFAR
         
-        super(farCheck, self).__init__( timeout, 
+        super(FARCheck, self).__init__( timeout, 
                                         self.FARCheck, 
                                         email=email
                                       )
@@ -362,7 +362,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
     name = "localRate"
 
     def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
-        description = "a check of local rates for %s_%s"%(group, pipline)
+        description = "a check of local rates for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
         self.group = group
@@ -470,7 +470,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
     name = "createRate"
 
     def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
-        description = "a check of creation rate for %s_%s"%(group, pipline)
+        description = "a check of creation rate for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
         self.group = group

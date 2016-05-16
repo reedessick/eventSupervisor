@@ -107,7 +107,7 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
         bayesFct_dt = float(options['bayes factor dt'])
         skymap_dt = float(options['skymap dt'])
         skymap_tagnames = options['skymap tagnames']
-        if skymap_tangames !=None:
+        if skymap_tagnames !=None:
             skymap_tagnames = skymap_tagnames.split()
         finish_dt = float(options['finish dt'])
 

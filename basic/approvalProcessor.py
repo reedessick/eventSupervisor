@@ -39,7 +39,7 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         farTimeout = float(options['far dt'])
-        segTimeout = float(options['seg start dt'])
+        segStartTimeout = float(options['seg start dt'])
         email = options['email'].split()
 
         tasks = [approvalProcessorFARCheck(farTimeout, email=email),
@@ -120,7 +120,7 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
         """
         raise NotImplementedError(self.name)
 
-class approvalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
+class ApprovalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
     """
     check that approval processor completed segment checks
 
@@ -148,7 +148,7 @@ class approvalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
         tasks = [approvalProcessorSegDBFlagsCheck(flags_dt, flags=flags, email=email),
                  approvalProcessorSegDBFinishCheck(finish_dt, email=email)
                 ]
-        super(ApprovalProcessorPrelimDQItem, self).__init__( graceid,
+        super(ApprovalProcessorSegDBItem, self).__init__( graceid,
                                                              gdb,
                                                              t0,
                                                              tasks,
@@ -189,7 +189,7 @@ class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
                                                                  email=email
                                                                )
 
-    def approvalProcessorSegDBFlagsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def approvalProcessorSegDBFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that approvalProcessor finished checking all segments as expected
         NOT IMPLEMENTED
@@ -347,7 +347,7 @@ class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
         tasks = [approvalProcessorGCNCreationCheck(timeout, email=email),
                  approvalProcessorGCNDistributionCheck(timeout, email=email)
                 ]
-        super(ApprovalProcessorVOEventItem, self).__init__( graceid,
+        super(ApprovalProcessorGCNItem, self).__init__( graceid,
                                                             gdb,
                                                             t0,
                                                             tasks,
@@ -383,7 +383,7 @@ class approvalProcessorGCNDistributionCheck(esUtils.EventSupervisorTask):
     name = "approvalProcessorGCNDistribution"
 
     def __init__(self, timeout, email=[]):
-        super(approvalProcessorVOEventDistributionCheck, self).__init__( timeout,
+        super(approvalProcessorGCNDistributionCheck, self).__init__( timeout,
                                                                      self.gcnDistribCheck,
                                                                      email=email
                                                                    )

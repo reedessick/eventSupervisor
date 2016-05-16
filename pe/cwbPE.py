@@ -85,7 +85,7 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
         estimate_dt = float(options['estimate dt'])
         skymap_dt = float(options['skymap dt'])
         skymap_tagnames = options['skymap tagnames']
-        if skymap_tangames !=None:
+        if skymap_tagnames !=None:
             skymap_tagnames = skymap_tagnames.split()
 
         email = options['email'].split()
@@ -106,8 +106,8 @@ class cWBPECEDCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted estimates of parameters
     """
-    name = "cWBPEData"
-    description = "a check that cWB PE posted estimates of parameters"
+    name = "cWBPECED"
+    description = "a check that cWB PE posted a link to a CED page"
 
     def __init__(self, timeout, email=[]):
         super(cWBPECEDCheck, self).__init__( timeout,
@@ -145,7 +145,7 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted estimates of parameters
     """
-    name = "cWBPEstimate"
+    name = "cWBPEEstimate"
     description = "a check that cWB PE posted estimates of parameters"
 
     def __init__(self, timeout, email=[]):

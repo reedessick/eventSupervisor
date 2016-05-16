@@ -28,6 +28,7 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
     alert:
         graceid
         fitsname
+        tagnames
     options:
         dt
         email
@@ -38,12 +39,13 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         self.fitsname = alert['file']
+        self.tagnames = alert['object']['tagnames']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
         self.description = "check that autosummary of skymaps started processing %s"%self.fitsname
-        tasks = [skymapSummaryStartCheck(timeout, fitsname, email=email)]
+        tasks = [skymapSummaryStartCheck(timeout, self.fitsname, tagnames=self.tagnames, email=email)]
         super(SkymapSummaryStartItem, self).__init__( graceid,
                                                       gdb,
                                                       t0,
@@ -58,8 +60,9 @@ class skymapSummaryStartCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSummaryStart"
 
-    def __init__(self, timeout, fitsname, email=[]):
+    def __init__(self, timeout, fitsname, tagnames=[], email=[]):
         self.fitsname = fitsname
+        self.tagnames = tagnames
         self.description = "check that autosummary of skymaps started processing %s"%fitsname
         super(skymapSummaryStartCheck, self).__init__( timeout,
                                                        self.skymapSummaryStartCheck,
@@ -81,6 +84,7 @@ class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
     alert:
         graceid
         fitsname
+        tagnames
     options:
         data dt
         finish dt
@@ -92,14 +96,15 @@ class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         self.fitsname = alert['description'].split()[-1] ### likely to break because I haven't written this yet...
+        self.tagnames = alert['object']['tagnames']
 
         data_dt = float(options['data dt'])
         finish_dt = float(options['finish dt'])
         email = options['email'].split()
 
         self.description = "check that autosummary of skymaps picked up and correctly processed %s"%self.fitsname
-        tasks = [skymapSummaryDataCheck(data_dt, fitsname, email=email),
-                 skymapSummaryFinishCheck(finish_dt, fitsname, email=email)
+        tasks = [skymapSummaryDataCheck(data_dt, self.fitsname, tagnames=self.tagnames, email=email),
+                 skymapSummaryFinishCheck(finish_dt, self.fitsname, tagnames=self.tagnames, email=email)
                 ]
         super(SkymapSummaryItem, self).__init__( graceid,
                                                  gdb,
@@ -114,11 +119,12 @@ class skymapSummaryDataCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSummaryData"
 
-    def __init__(self, timeout, fitsname, email=[]):
+    def __init__(self, timeout, fitsname, tagnames=[], email=[]):
         self.fitsname = fitsname
+        self.tagnames = tagnames
         self.description = "check that autosummary of skymaps generated the expected data for %s"%fitsname
         super(skymapSummaryDataCheck, self).__init__( timeout,
-                                                      self.skymapSummaryStartCheck,
+                                                      self.skymapSummaryDataCheck,
                                                       email=email
                                                     )
 
@@ -135,11 +141,12 @@ class skymapSummaryFinishCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSummaryFinish"
 
-    def __init__(self, timeout, fitsname, email=[]):
+    def __init__(self, timeout, fitsname, tagnames=[], email=[]):
         self.fitsname = fitsname
+        self.tagnames = tagnames
         self.description = "check that autosummary of skymaps finished as expected for %s"%fitsname
         super(skymapSummaryFinishCheck, self).__init__( timeout,
-                                                        self.skymapSummaryStartCheck,
+                                                        self.skymapSummaryFinishCheck,
                                                         email=email
                                                       )
 

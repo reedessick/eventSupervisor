@@ -110,7 +110,7 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
         graceid
         ifo
     options:
-        table dt
+        tables dt
         glitch fap dt
         fap frame dt
         rank frame dt
@@ -135,13 +135,13 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
 
         self.classifiers = options['classifiers'].split()
 
+        tables_dt           = float(options['tables dt'])
         glitch_fap_dt       = float(options['glitch fap dt'])
         fap_frame_dt        = float(options['fap frame dt'])
         rank_frame_dt       = float(options['rank frame dt'])
         timeseries_plot_dt  = float(options['timeseries plot dt'])
         active_chan_dt      = float(options['active chan dt'])
         active_chan_plot_dt = float(options['active chan plot dt'])
-        tables_dt           = float(options['table dt'])
         calib_dt            = float(options['calib dt'])
         calib_plot_dt       = float(options['calib plot dt'])
         roc_dt              = float(options['roc dt'])
@@ -181,7 +181,7 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
 # reported by laldetchar-idq-gdb-timeseries.py
 #---
 
-class idqGlichFAPCheck(esUtils.EventSupervisorTask):
+class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
     """
     a check that iDQ reported the glitch-FAP as expected
     """
