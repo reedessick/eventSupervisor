@@ -115,11 +115,13 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
 
         email = options['email'].split()
 
-        tasks = [segDB2grcDBFlagsCheck(flags_dt, flags, email=email),
-                 segDB2grcDBVetoDefCheck(veto_def_dt, veto_defs, email=email),
-                 segDB2grcDBAnyCheck(any_dt, email=email),
-                 segDB2grcDBFinishCheck(finish_dt, email=email)
-                ]
+        tasks = []
+        if flags:
+            tasks.append( segDB2grcDBFlagsCheck(flags_dt, flags, email=email) )
+        if veto_defs:
+            tasks.append( segDB2grcDBVetoDefCheck(veto_def_dt, veto_defs, email=email) )
+        tasks.append( segDB2grcDBAnyCheck(any_dt, email=email) )
+        tasks.append( segDB2grcDBFinishCheck(finish_dt, email=email) )
         super(SegDB2GrcDBItem, self).__init__( graceid,
                                                gdb, 
                                                t0,
@@ -184,7 +186,7 @@ class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
                                                      email=email
                                                    )
 
-    def segDB2grcDBANyCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def segDB2grcDBAnyCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that segDB2grcDB uploaded the query for any active segments
         NOT IMPLEMENTED

@@ -49,7 +49,7 @@ class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
         self.chanset = chanset
         self.ifos = ifos
 
-        self.description = "a check that OmegaScans were started for %s at (%s)"%(",".join(self.chanset, self.ifos))
+        self.description = "a check that OmegaScans were started for %s at (%s)"%(self.chanset, ",".join(self.ifos))
         tasks = [omegaScanStartCheck(timeout, ifo, chanset, email=email) for ifo in self.ifos]
         super(OmegaScanStartItem, self).__init__( graceid,
                                                   gdb,
@@ -107,8 +107,8 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
         self.chanset = chanset
 
         self.description = "a check that OmegaScans ran as expected for %s at %s"%(self.chanset, self.ifo)
-        tasks = [omegaScanDataCheck(data_dt, ifo, chanset, email=email),
-                 omegaScanFinishCheck(finish_dt, ifo, chanset, email=email)
+        tasks = [omegaScanDataCheck(data_dt, self.ifo, chanset, email=email),
+                 omegaScanFinishCheck(finish_dt, self.ifo, chanset, email=email)
                 ]
         super(OmegaScanItem, self).__init__( graceid,
                                              gdb,
@@ -132,14 +132,14 @@ class omegaScanDataCheck(esUtils.EventSupervisorTask):
                                                   email=email
                                                 )
 
-    def omeagScanDataCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def omegaScanDataCheck(self, graceid, gdb, verbose=False, annotate=False):
         """
         a check that OmegaScans uploaded data
         NOT IMPLEMENTED
         """
         raise NotImplementedError(self.name)
 
-class omegaScansFinishCheck(esUtils.EventSupervisorTask):
+class omegaScanFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that OmegaScans finished as expected
     """

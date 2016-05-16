@@ -37,6 +37,9 @@ from optparse import OptionParser
 
 parser = OptionParser(usage=usage, description=description)
 
+### check everything
+parser.add_option('', '--everything', default=False, action="store_true", help="run tests for everything")
+
 # notify
 parser.add_option("", "--notify", default=False, action="store_true")
 
@@ -66,8 +69,22 @@ parser.add_option("", "--segDB2grcDB", default=False, action="store_true")
 
 opts, args = parser.parse_args()
 
-### set up standard options for QueueItems
+opts.notify            = opts.notify            or opts.everything
+opts.basic             = opts.basic             or opts.everything
+opts.approvalProcessor = opts.approvalProcessor or opts.everything
+opts.skymaps           = opts.skymaps           or opts.everything
+opts.skymapSummary     = opts.skymapSummary     or opts.everything
+opts.bayestar          = opts.bayestar          or opts.everything
+opts.bayeswavePE       = opts.bayeswavePE       or opts.everything
+opts.cwbPE             = opts.cwbPE             or opts.everything
+opts.libPE             = opts.libPE             or opts.everything
+opts.lalinf            = opts.lalinf            or opts.everything
+opts.dq                = opts.dq                or opts.everything
+opts.idq               = opts.idq               or opts.everything
+opts.omegaScan         = opts.omegaScan         or opts.everything
+opts.segDB2grcDB       = opts.segDB2grcDB       or opts.everything
 
+### set up standard options for QueueItems
 #from ligo.gracedb.rest import GraceDb
 #gdb = GraceDb( opts.gracedb_url )
 gdb = None
@@ -76,15 +93,6 @@ annotate = False
 
 #-------------------------------------------------
 
-### want to test the instantiation of all QueueItems and their associated Tasks
-### we should be able to get away with this simply by instantiating the QueueItems and then asserting that their attributes are as expected
-###   -> some of those attributes are Tasks, which we can then check iteratively
-
-### Item instantiation follows : (alert, t0, options, gdb, annotate=annotate)
-
-#-------------------------------------------------
-
-### notify
 if opts.notify:
     print "testing notify/notify.py"
 
@@ -140,7 +148,6 @@ if opts.notify:
 
 #-------------------------------------------------
 
-### basic
 if opts.basic:
     print "testing basic/basic.py"
 
@@ -1508,25 +1515,6 @@ if opts.idq:
 
 #-------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 if opts.omegaScan:
     print "testing dq/omegaScan.py"
 
@@ -1550,15 +1538,24 @@ if opts.omegaScan:
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 1 )
+    assert( len(item.tasks) == 2 ) ### 2 ifos
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
     assert( item.ifos == ['H', 'L'] )
 
     ###   omegaScanStartCheck
-    print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
+    tasks = dict( (task.ifo, task) for task in item.tasks )
+    H = tasks['H']
+    L = tasks['L']
 
-    raise NotImplementedError
+    assert( H.expiration == t0+10.0 )
+    assert( H.email == ['a'] )
+    assert( H.chanset == 'h(t)' )
+
+    assert( L.expiration == t0+10.0 )
+    assert( L.email == ['a'] )
+    assert( L.chanset == 'h(t)' )
+    print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
 
     #--------------------
     # HofTOmegaScanItem
@@ -1567,7 +1564,8 @@ if opts.omegaScan:
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
+        'description' : 'blah blah blah H1',
         }
     t0 = time.time()
     options = {
@@ -1580,17 +1578,28 @@ if opts.omegaScan:
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 1 )
+    assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
+    assert( item.ifo == 'H1' )
 
+    ### check tasks
+    tasks = dict( (task.name, task) for task in item.tasks )
+    data = tasks['omegaScanData']
+    finish = tasks['omegaScanFinish']
     ###   omegaScanDataCheck
+    assert( data.expiration == t0+10.0 )
+    assert( data.email == ['a'] )
+    assert( data.ifo == 'H1' )
+    assert( data.chanset == 'h(t)' )
     print "        WARNING: omegaScanDataCheck Task.execute() not implemented and not tested"
 
     ###   omegaScanFinishCheck
+    assert( finish.expiration == t0+20.0 )
+    assert( finish.email == ['a'] )
+    assert( finish.ifo == 'H1' )
+    assert( finish.chanset == 'h(t)' )
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
-
-    raise NotImplementedError
 
     #--------------------
     # AuxOmegaScanStartItem
@@ -1599,36 +1608,7 @@ if opts.omegaScan:
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
-        }
-    t0 = time.time()
-    options = {
-        'data dt'   : '10.0',
-        'finish dt' : '10.0',
-        'email' : 'a',
-        }
-
-    item = omegaScan.AuxOmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
-    assert( item.graceid == graceid )
-    assert( item.annotate == annotate )
-    assert( item.complete == False )
-    assert( len(item.tasks) == 1 )
-    assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
-
-    ###   omegaScanStartCheck
-    print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
-
-    raise NotImplementedError
-
-    #--------------------
-    # AuxOmegaScanItem
-    #--------------------
-    print "    AuxOmegaScanItem"
-
-    graceid = 'FakeEvent'
-    alert = {
-        'uid' : graceid
+        'uid' : graceid,
         }
     t0 = time.time()
     options = {
@@ -1637,21 +1617,71 @@ if opts.omegaScan:
         'email' : 'a',
         }
 
+    item = omegaScan.AuxOmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.complete == False )
+    assert( len(item.tasks) == 2 ) ### 2 ifos
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+10.0 )
+    assert( item.ifos == ['H', 'L'] )
+
+    ###   omegaScanStartCheck
+    tasks = dict( (task.ifo, task) for task in item.tasks )
+    H = tasks['H']
+    L = tasks['L']
+
+    assert( H.expiration == t0+10.0 )
+    assert( H.email == ['a'] )
+    assert( H.chanset == 'aux' )
+
+    assert( L.expiration == t0+10.0 )
+    assert( L.email == ['a'] )
+    assert( L.chanset == 'aux' )
+    print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
+
+    #--------------------
+    # AuxOmegaScanItem
+    #--------------------
+    print "    AuxOmegaScanItem"
+
+    graceid = 'FakeEvent'
+    alert = {
+        'uid' : graceid,
+        'description' : 'blah blah blah H1',
+        }
+    t0 = time.time()
+    options = {
+        'data dt'   : '10.0',
+        'finish dt' : '20.0',
+        'email' : 'a',
+        }
+
     item = omegaScan.AuxOmegaScanItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 1 )
+    assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
+    assert( item.ifo == "H1" )
 
+    tasks = dict( (task.name, task) for task in item.tasks )
+    data = tasks['omegaScanData']
+    finish = tasks['omegaScanFinish']
     ###   omegaScanDataCheck
+    assert( data.expiration == t0+10.0 )
+    assert( data.email == ['a'] )
+    assert( data.ifo == 'H1' )
+    assert( data.chanset == 'aux' )
     print "        WARNING: omegaScanDataCheck Task.execute() not implemented and not tested"
 
     ###   omegaScanFinishCheck
-    print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
-
-    raise NotImplementedError
+    assert( finish.expiration == t0+20.0 )
+    assert( finish.email == ['a'] )
+    assert( finish.ifo == 'H1' )
+    assert( finish.chanset == 'aux' )
+    print "        WARNING: omegaScanDataCheck Task.execute() not implemented and not tested"
 
     #--------------------
     # IDQOmegaScanStartItem
@@ -1660,7 +1690,8 @@ if opts.omegaScan:
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
+        'description' : 'blah blah blah H1',
         }
     t0 = time.time()
     options = {
@@ -1675,11 +1706,15 @@ if opts.omegaScan:
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
-
+    assert( item.ifos == ['H1'] )
+    
     ###   omegaScanStartCheck
+    task = item.tasks[0]
+    assert( task.expiration == t0+10.0 )
+    assert( task.email == ['a'] )
+    assert( task.ifo == 'H1' )
+    assert( task.chanset == 'idq' )
     print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
-
-    raise NotImplementedError
 
     #--------------------
     # IDQOmegaScanItem
@@ -1688,12 +1723,13 @@ if opts.omegaScan:
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
+        'description' : 'blah de dah H1',
         }
     t0 = time.time()
     options = {
         'data dt'   : '10.0',
-        'finish dt' : '10.0',
+        'finish dt' : '20.0',
         'email' : 'a',
         }
 
@@ -1701,17 +1737,27 @@ if opts.omegaScan:
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 1 )
+    assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
+    assert( item.ifo == "H1" )
 
+    tasks = dict( (task.name, task) for task in item.tasks )
+    data = tasks['omegaScanData']
+    finish = tasks['omegaScanFinish']
     ###   omegaScanDataCheck
+    assert( data.expiration == t0+10.0 )
+    assert( data.email == ['a'] )
+    assert( data.ifo == 'H1' )
+    assert( data.chanset == 'idq' )
     print "        WARNING: omegaScanDataCheck Task.execute() not implemented and not tested"
 
     ###   omegaScanFinishCheck
+    assert( finish.expiration == t0+20.0 )
+    assert( finish.email == ['a'] )
+    assert( finish.ifo == "H1" )
+    assert( finish.chanset == "idq" )
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
-
-    raise NotImplementedError
 
     print "    omegaScan.py passed all tests sucessfully!"
 
@@ -1744,9 +1790,10 @@ if opts.segDB2grcDB:
     assert( item.expiration == t0+10.0 )
 
     ###   segDB2grcDBStartCheck
+    task = item.tasks[0]
+    assert( task.expiration == t0+10.0 )
+    assert( task.email == ['a'] )
     print "        WARNING: segDB2grcDBStartCheck Task.execute() not implemented and not tested"
-
-    raise NotImplementedError
 
     #--------------------
     # SegDB2GrcDBItem
@@ -1761,33 +1808,46 @@ if opts.segDB2grcDB:
     options = {
         'flags dt'   : '10.0',
         'flags' : 'H1:DMT-ANALYSIS_READY:1',
-        'vetoDef dt'   : '10.0',
-        'vet def' : '',
-        'any dt'   : '10.0',
-        'finish dt' : '10.0',
+        'veto def dt'   : '20.0',
+        'veto defs' : 'vetoDef1',
+        'any dt'   : '30.0',
+        'finish dt' : '40.0',
         'email' : 'a',
         }
 
-    item = segDB2grcDBItem( alert, t0, options, gdb, annotate=annotate )
+    item = segDB2grcDB.SegDB2GrcDBItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 1 )
+    assert( len(item.tasks) == 4 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
 
+    tasks = dict( (task.name, task) for task in item.tasks )
+    flags = tasks['segDB2grcDBFlags']
+    vetoDef = tasks['segDB2grcDBVetoDef']
+    anySeg = tasks['segDB2grcDBAny']
+    finish = tasks['segDB2grcDBFinish']
     ###   segDB2grcDBFlagsCheck
+    assert( flags.expiration == t0+10.0 )
+    assert( flags.email == ['a'] )
+    assert( flags.flags == ['H1:DMT-ANALYSIS_READY:1'] )
     print "        WARNING: segDB2grcDBFlagsCheck Task.execute() not implemented and not tested"
 
     ###   segDB2grcDBVetoDefCheck
+    assert( vetoDef.expiration == t0+20.0 )
+    assert( vetoDef.email == ['a'] )
+    assert( vetoDef.vetoDefs == ['vetoDef1'] )
     print "        WARNING: segDB2grcDBVetoDefCheck Task.execute() not implemented and not tested"
 
     ###   segDB2grcDBAnyCheck
+    assert( anySeg.expiration == t0+30.0 )
+    assert( anySeg.email == ['a'] )
     print "        WARNING: segDB2grcDBAnyFinishCheck Task.execute() not implemented and not tested"
 
     ###   segDB2grcDBFinishCheck
+    assert( finish.expiration == t0+40.0 )
+    assert( finish.email == ['a'] )
     print "        WARNING: segDB2grcDBFinishCheck Task.execute() not implemented and not tested"
-
-    raise NotImplementedError
 
     print "    segDB2grcDB.py passed all tests sucessfully!"
