@@ -18,3 +18,13 @@ Furthermore, the email formatting and error catching is handled automatically wi
 We also have a testing suite that checks that all objects are instantiated as expected. This includes both QueueItems and Tasks associated with all modules. Attributes are check via assertion statements but no actual functionality is tested.
 
 The functionality (ie: Task.execute() methods) needs to be tested as well as the automatic redefinition of complete, completedTasks, tasks, and expiration attributes within QueueItem classes needs to be tested. Once this is shown to operate as expected, we can perform full-scale integration and functionality tests with lvalertMP via actual lvalert messages mimicing real GraceDB events.
+
+-------------------
+
+To Do:
+  -- test Task.execute() and how attributes change accordingly.
+  -- test Item.execute() and how attributes change (may only need to do this once because it is shared code)
+  -- improve logging so that statements go into one big log as well as separate logs for each GraceID. 
+  -- implement latency tools for Tasks: return how long after the event was created before the Task was completed.
+  -- document new architecture, including flow charts showing inheritence and how parseAlert works. Be clear about how to add new Items/Tasks and what needs to be modified in parseAlert to support that.
+  -- add ability to remove Items from the queue if alerts are received that render them unnecessary.
