@@ -417,7 +417,7 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        figname = "%s_%s(.*)_chanstrip-(.*)-(.*).%s"%(self.ifo, self.classifier)
+        figname = "%s_%s(.*)_chanstrip-(.*)-(.*).png"%(self.ifo, self.classifier)
         fragment = "iDQ channel strip chart for %s at %s"%(self.classifier, self.ifo)
         self.warning, action_required = check4file( graceid,
                                                     gdb,
