@@ -22,7 +22,7 @@ qid = {} ### queueItemDict
 
 #-------------------------------------------------
 
-from ligo.lvalert import lvalertMPutils as utils
+from ligoMP.lvalert import lvalertMPutils as utils
 import eventSupervisorUtils as esUtils
 
 ### notification and alerts

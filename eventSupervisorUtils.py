@@ -3,7 +3,7 @@ author = "reed.essick@ligo.org"
 
 #---------------------------------------------------------------------------------------------------
 
-from ligo.lvalert import lvalertMPutils as utils
+from ligoMP.lvalert import lvalertMPutils as utils
 
 import subprocess as sp
 
