@@ -235,6 +235,11 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
         queue.insert( item )
         queueByGraceID[graceid].insert( item )
     
+    ### update queue.complete
+    ### we don't need to update queueByGraceID[graceid].complete because it should *always* be zero
+    ### managing that is the responsibility of parseAlert, not interactiveQueue!
+    queue.complete += completed
+
     return completed
 
 #------------------------
