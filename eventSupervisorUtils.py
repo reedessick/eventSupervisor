@@ -24,8 +24,10 @@ def writeGDBLog( gdb, graceid, message, tagnames=[] ):
 def emailWarning(subject, body, email):
     """
     issue an email to the addresses specified
+
+    delegates to lvalertMPutils.sendEmail
     """
-    sp.Popen(["mail", "-s", subject, " ".join(email)], stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE).communicate(body)
+    utils.sendEmail( email, body, subject )
 
 #---------------------------------------------------------------------------------------------------
 
