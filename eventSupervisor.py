@@ -23,6 +23,8 @@ qid = {} ### queueItemDict
 #-------------------------------------------------
 
 from ligoMP.lvalert import lvalertMPutils as utils
+from ligoMP.lvalert.commands import parseCommand
+
 import eventSupervisorUtils as esUtils
 
 ### notification and alerts
@@ -153,6 +155,10 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
 
     Importantly, this function will ignore anything with "event_supervisor" in the tagnames
     """
+    ### determine if this is a command and delegate accordingly
+    if alert['uid'] == 'command':
+        return parseCommand( queue, queuebyGraceID, alert, t0 )
+
     ### grab alert type
     alert_type = alert['alert_type']
 
@@ -240,7 +246,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     ### managing that is the responsibility of parseAlert, not interactiveQueue!
     queue.complete += completed
 
-    return completed
+    return completed ### not strictly necessary because it's never captured...
 
 #------------------------
 # parser for update alerts based on description
