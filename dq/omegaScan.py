@@ -69,11 +69,10 @@ class omegaScanStartCheck(esUtils.EventSupervisorTask):
         self.chanset = chanset
         self.description = "a check that OmegaScans were started for %s at %s"%(chanset, ifo)
         super(omegaScanStartCheck, self).__init__( timeout,
-                                                  self.omegaScanStartCheck,
                                                   email=email
                                                 )
 
-    def omegaScanStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def omegaScanStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that OmegaScans were started
         NOT IMPLEMENTED
@@ -128,11 +127,10 @@ class omegaScanDataCheck(esUtils.EventSupervisorTask):
         self.chanset = chanset
         self.description = "a check that OmegaScans posted data for %s at %s"%(chanset, ifo)
         super(omegaScanDataCheck, self).__init__( timeout, 
-                                                  self.omegaScanDataCheck,
                                                   email=email
                                                 )
 
-    def omegaScanDataCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def omegaScanData(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that OmegaScans uploaded data
         NOT IMPLEMENTED
@@ -150,11 +148,10 @@ class omegaScanFinishCheck(esUtils.EventSupervisorTask):
         self.chanset = chanset
         self.description = "a check that OmegaScans finished for %s at %s"%(chanset, ifo)
         super(omegaScanFinishCheck, self).__init__( timeout,
-                                                    self.omegaScanFinishCheck,
                                                     email=email
                                                   )
 
-    def omegaScanFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def omegaScanFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that OmegaScans finished
         NOT IMPLEMENTED

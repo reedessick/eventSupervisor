@@ -49,11 +49,10 @@ class dqSummaryCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(dqSummaryCheck, self).__init__( timeout,
-                                              self.dqSummaryCheck,
                                               email=email
                                             )
 
-    def dqSummaryCheck(self, graceid, gdb, verbose=False, annotate=False ):
+    def dqSummary(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that a link to the DQ Summary page was posted
         NOT IMPLEMENTED

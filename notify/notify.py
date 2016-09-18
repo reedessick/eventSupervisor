@@ -65,11 +65,10 @@ class notifyByEmail(esUtils.EventSupervisorTask):
         self.notificationList = email
         self.ignoreInj = ignoreInj
         super(notifyByEmail, self).__init__( timeout, 
-                                             self.notifyByEmail,
                                              email=[]
                                            )
 
-    def notifyByEmail(self, graceid, gdb, verbose=False, annotate=False ):
+    def notifyByEmail(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         notify folks by email
         """
@@ -100,11 +99,10 @@ class notifyBySMS(esUtils.EventSupervisorTask):
         self.notificationList = sms
         self.ignoreInj = ignoreInj
         super(notifyBySMS, self).__init__( timeout,
-                                           self.notifyBySMS,
                                            email=[]
                                          )
 
-    def notifyBySMS(self, graceid, gdb, verbose=False, annotate=False ):
+    def notifyBySMS(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         notify folks by SMS
         """
@@ -135,11 +133,10 @@ class notifyByPhone(esUtils.EventSupervisorTask):
         self.notificationList = phone
         self.ignoreInj = ignoreInj
         super(notifyByPhone, self).__init__( timeout,
-                                             self.notifyByPhone,
                                              email=[]
                                            )
 
-    def notifyByPhone(self, graceid, gdb, verbose=False, annotate=False ):
+    def notifyByPhone(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         notify folks by phone
         """

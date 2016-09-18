@@ -221,20 +221,20 @@ class EventSupervisorTask(utils.Task):
     this basic object manages execution via delegation to a functionHandle supplied when instantiated
     child classes may simply define their execution commands directly as part of the class definition
     """
-    name = "event supervisor task"
+    name = "eventSupervisorTask"
     description = "a task for event supervisor"
 
-    def __init__(self, timeout, functionHandle, email=[], *args, **kwargs ):
+    def __init__(self, timeout, email=[], **kwargs ):
         self.email = email
         self.warning = None
-        super(EventSupervisorTask, self).__init__(timeout, functionHandle, *args, **kwargs)
+        super(EventSupervisorTask, self).__init__(timeout, **kwargs)
 
     def execute(self, graceid, gdb, verbose=False, annotate=False):
         """
         perform associated function call
         """
         try:
-            if self.functionHandle( graceid, gdb, verbose=verbose, annotate=annotate, *self.args, **self.kwargs ):
+            if getattr(self, self.name)( graceid, gdb, verbose=verbose, annotate=annotate, **self.kwargs ):
                 if self.email:
                     subject = "%s: %s requires attention"%(graceid, self.name)
                     url = "URL" ### extrace from gdb instance!
@@ -246,3 +246,9 @@ class EventSupervisorTask(utils.Task):
                 url = "URL" ### extrace from gdb instance!
                 body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, name, url, description, traceback.format_exc())
                 emailWarning(subject, body, email=self.email)
+
+    def eventSupervisorTask(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
+        '''
+        required for syntactic completion of this class
+        '''
+        pass

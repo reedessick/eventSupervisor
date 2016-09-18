@@ -53,11 +53,10 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(segDB2grcDBStartCheck, self).__init__( timeout,
-                                                     self.segDB2grcDBStartCheck,
                                                      email=email
                                                    )
 
-    def segDB2grcDBStartCheck(self, graceid, gdb, verbose=False, annotate=False ):
+    def segDB2grcDBStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that segDB2grcDB started
         """
@@ -139,11 +138,10 @@ class segDB2grcDBFlagsCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, flags, email=[]):
         self.flags = flags
         super(segDB2grcDBFlagsCheck, self).__init__( timeout,
-                                                     self.segDB2grcDBFlagsCheck,
                                                      email=email
                                                    )
 
-    def segDB2grcDBFlagsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def segDB2grcDBFlags(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that segDB2grcDB uploaded the expected individual flags
         NOT IMPLEMENTED
@@ -161,11 +159,10 @@ class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, vetoDefs, email=[]):
         self.vetoDefs = vetoDefs
         super(segDB2grcDBVetoDefCheck, self).__init__( timeout,
-                                                     self.segDB2grcDBVetoDefCheck,
                                                      email=email
                                                    )
 
-    def segDB2grcDBVetoDefCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def segDB2grcDBVetoDef(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that segDB2grcDB uploaded the expected individual flags
         NOT IMPLEMENTED
@@ -182,11 +179,10 @@ class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(segDB2grcDBAnyCheck, self).__init__( timeout,
-                                                     self.segDB2grcDBAnyCheck,
                                                      email=email
                                                    )
 
-    def segDB2grcDBAnyCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def segDB2grcDBAny(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that segDB2grcDB uploaded the query for any active segments
         NOT IMPLEMENTED
@@ -203,11 +199,10 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(segDB2grcDBFinishCheck, self).__init__( timeout,
-                                                     self.segDB2grcDBFinishCheck,
-                                                     email=email
-                                                   )
+                                                      email=email
+                                                    )
 
-    def segDB2grcDBFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def segDB2grcDBFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that segDB2grcDB finished
         """

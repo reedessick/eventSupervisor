@@ -49,11 +49,10 @@ class cWBPEStartCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(cWBPEStartCheck, self).__init__( timeout,
-                                               self.cWBPEStartCheck,
                                                email=email
                                              )
 
-    def cWBPEStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cWBPEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that cWB PE started
         NOT IMPLEMENTED
@@ -111,11 +110,10 @@ class cWBPECEDCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(cWBPECEDCheck, self).__init__( timeout,
-                                                  self.cWBPECEDCheck,
                                                   email=email
                                                 )
 
-    def cWBPECEDCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cWBPECED(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that cWB PE posted posterior samples
         """
@@ -150,11 +148,10 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(cWBPEEstimateCheck, self).__init__( timeout,
-                                                  self.cWBPEEstimateCheck,
                                                   email=email
                                                 )
 
-    def cWBPEEstimateCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cWBPEEstimate(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that cWB PE posted posterior samples
         """
@@ -190,11 +187,10 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(cWBPESkymapCheck, self).__init__( timeout,
-                                                self.cWBPESkymapCheck,
                                                 email=email
                                               )
 
-    def cWBPESkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cWBPESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that cWB PE posted a skymap
         looks for the existence of a skymap and the correct tagnames
@@ -223,11 +219,10 @@ class cWBPEFinishCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(cWBPEFinishCheck, self).__init__( timeout,
-                                                self.cWBPEFinishCheck,
                                                 email=email
                                               )
 
-    def cWBPEFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cWBPEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that cWB PE finished
         NOT IMPLEMENTED

@@ -52,11 +52,10 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEStartCheck, self).__init__( timeout,
-                                                     self.bayeswavePEStartCheck,
                                                      email=email
                                                    )
 
-    def bayeswavePEStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayeswavePEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that BayesWave PE started
         """
@@ -134,11 +133,10 @@ class bayeswavePEPostSampCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEPostSampCheck, self).__init__( timeout,
-                                                        self.bayeswavePEPostSampCheck,
                                                         email=email
                                                       )
 
-    def bayeswavePEPostSampCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayeswavePEPostSamp(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that BayesWave PE posted posterior samples
         """
@@ -173,11 +171,10 @@ class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEBayesFactorsCheck, self).__init__( timeout,
-                                                        self.bayeswavePEBayesFactorsCheck,
                                                         email=email
                                                       )
 
-    def bayeswavePEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayeswavePEBayesFactors(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that BayesWave PE posted Bayes Factors
         """
@@ -212,11 +209,10 @@ class bayeswavePEEstimateCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEEstimateCheck, self).__init__( timeout,
-                                                        self.bayeswavePEEstimateCheck,
                                                         email=email
                                                       )
 
-    def bayeswavePEEstimateCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayeswavePEEstimate(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that BayesWave PE posted estimates of parameters
         """
@@ -252,11 +248,10 @@ class bayeswavePESkymapCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(bayeswavePESkymapCheck, self).__init__( timeout,
-                                                      self.bayeswavePESkymapCheck,
                                                       email=email
                                                     )
 
-    def bayeswavePESkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayeswavePESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that BayesWave PE posted a skymap
         """
@@ -284,11 +279,10 @@ class bayeswavePEFinishCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayeswavePEFinishCheck, self).__init__( timeout,
-                                                      self.bayeswavePEFinishCheck,
                                                       email=email
                                                     )
 
-    def bayeswavePEFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayeswavePEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that BayesWave PE finished
         NOT IMPLEMENTED

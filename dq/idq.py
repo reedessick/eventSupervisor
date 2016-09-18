@@ -69,11 +69,10 @@ class idqStartCheck(esUtils.EventSupervisorTask):
         self.ifo = ifo
         self.description = "a check that iDQ GraceDB follow-up started as expected at %s"%(self.ifo)
         super(idqStartCheck, self).__init__( timeout,
-                                             self.idqStartCheck,
                                              email=email
                                            )
 
-    def idqStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ started as expected
         """
@@ -192,11 +191,10 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported a glitch-FAP for %s at %s"%(self.classifier, self.ifo)
         super(idqGlitchFAPCheck, self).__init__( timeout,
-                                                 self.idqGlitchFAPCheck,
                                                  email=email
                                                )
 
-    def idqGlitchFAPCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqGlitchFAP(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported the gltich-FAP as expected
         """
@@ -235,11 +233,10 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ uploads fap timeseries frames for %s at %s"%(self.classifier, self.ifo)
         super(idqFAPFrameCheck, self).__init__( timeout,
-                                                self.idqFAPFrameCheck,
                                                 email=email
                                               )
 
-    def idqFAPFrameCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqFAPFrame(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check that iDQ uploads fap timeseries files
         """
@@ -278,11 +275,10 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ uploads rank timeseries frames for %s at %s"%(self.classifier, self.ifo)
         super(idqRankFrameCheck, self).__init__( timeout,
-                                                self.idqRankFrameCheck,
                                                 email=email
                                               )
 
-    def idqRankFrameCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqRankFrame(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check that iDQ uploads rank timeseries files
         """
@@ -321,11 +317,10 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reproted timeseries information as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTimeseriesPlotCheck, self).__init__( timeout,
-                                                      self.idqTimeseriesPlotCheck,
                                                       email=email
                                                     )
 
-    def idqTimeseriesPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqTimeseriesPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported timeseries information as expected
         """
@@ -364,11 +359,10 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ uploads a list of possible active channels for %s at %s"%(self.classifier, self.ifo)
         super(idqActiveChanCheck, self).__init__( timeout, 
-                                                  self.idqActiveChanCheck,
                                                   email=email
                                                 )
 
-    def idqActiveChanCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqActiveChan(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check that iDQ uploaded a list of possible active channels
         """
@@ -407,11 +401,10 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ uploads a plot of possible active channels for %s at %s"%(self.classifier, self.ifo)
         super(idqActiveChanPlotCheck, self).__init__( timeout,
-                                                      self.idqActiveChanPlotCheck,
                                                       email=email
                                                     )
 
-    def idqActiveChanPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqActiveChanPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check that iDQ uploaded a plot of possible active channels
         """
@@ -453,11 +446,10 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported the xml tables as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTablesCheck, self).__init__( timeout,
-                                              self.idqTablesCheck,
                                               email=email
                                             ) 
 
-    def idqTablesCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqTables(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported the xml tables as expected
         """
@@ -499,11 +491,10 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported the calibration data as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibrationCheck, self).__init__( timeout, 
-                                                   self.idqCalibrationCheck,
                                                    email=email
                                                  )
 
-    def idqCalibrationCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqCalibration(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported preformance metrics as expected
         """
@@ -542,11 +533,10 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported the calibration plot as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibrationPlotCheck, self).__init__( timeout,
-                                                       self.idqCalibrationPlotCheck,
                                                        email=email
                                                      )
 
-    def idqCalibrationPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqCalibrationPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported preformance metrics as expected
         """
@@ -585,11 +575,10 @@ class idqROCCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported the ROC data as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqROCCheck, self).__init__( timeout,
-                                           self.idqROCCheck,
                                            email=email
                                          )
 
-    def idqROCCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqROC(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported preformance metrics as expected
         """
@@ -628,11 +617,10 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported the ROC plot as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqROCPlotCheck, self).__init__( timeout,
-                                               self.idqROCPlotCheck,
                                                email=email
                                              )
 
-    def idqROCPlotCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqROCPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported preformance metrics as expected
         """
@@ -671,11 +659,10 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported the calibration statistics as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibStatsCheck, self).__init__( timeout,
-                                                  self.idqCalibStatsCheck,
                                                   email=email
                                                 )
 
-    def idqCalibStatsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqCalibStats(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported preformance metrics as expected
         """
@@ -714,11 +701,10 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
         self.classifier = classifier
         self.description = "a check that iDQ reported the training statistics as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTrainStatsCheck, self).__init__( timeout,
-                                                  self.idqTrainStatsCheck,
                                                   email=email
                                                 )
 
-    def idqTrainStatsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def idqTrainStats(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ reported preformance metrics as expected
         """
@@ -759,11 +745,10 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
         self.ifo = ifo
         self.description = "a check that iDQ finished reporting as expected at %s"%(self.ifo)
         super(idqFinishCheck, self).__init__( timeout,
-                                              self.idqFinishCheck,
                                               email=email
                                             )
 
-    def idqFinishCheck(self, graceid, gdb, verbose=False, annoate=False):
+    def idqFinish(self, graceid, gdb, verbose=False, annoate=False, **kwargs):
         """
         a check that iDQ finished as expected
         """

@@ -53,11 +53,10 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayestarStartCheck, self).__init__( timeout,
-                                                  self.bayestarStartCheck,
                                                   email=email
                                                 )
 
-    def bayestarStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayestarStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that bayestar started as expected
         """
@@ -129,11 +128,10 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(bayestarSkymapCheck, self).__init__( timeout, 
-                                                   self.bayestarSkymapCheck,
                                                    email=email
                                                  )
 
-    def bayestarSkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayestarSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that bayestar produced a skymap
         looks for the existence of a skymap and the correct tagnames
@@ -162,11 +160,10 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(bayestarFinishCheck, self).__init__( timeout,
-                                                   self.bayestarFinishCheck,
                                                    email=email
                                                  )
 
-    def bayestarFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def bayestarFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that bayestar finished as expected
         """

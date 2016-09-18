@@ -53,11 +53,10 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(lalinfStartCheck, self).__init__( timeout,
-                                               self.lalinfStartCheck,
                                                email=email
                                              )
 
-    def lalinfStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def lalinfStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LALInference started
         """
@@ -132,11 +131,10 @@ class lalinfPostSampCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(lalinfPostSampCheck, self).__init__( timeout,
-                                                   self.lalinfPostSampCheck,
                                                    email=email
                                                  )
 
-    def lalinfPostSampCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def lalinfPostSamp(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LALInference posted posterior samples
         NOT IMPLEMENTED
@@ -170,11 +168,10 @@ class lalinfSkymapCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(lalinfSkymapCheck, self).__init__( timeout,
-                                                 self.lalinfSkymapCheck,
                                                  email=email
                                                )
 
-    def lalinfSkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def lalinfSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LALInference posted a skymap
         """
@@ -200,11 +197,10 @@ class lalinfFinishCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(lalinfFinishCheck, self).__init__( timeout,
-                                                 self.lalinfFinishCheck,
                                                  email=email
                                                )
 
-    def lalinfFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def lalinfFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LALInference finished
         """

@@ -59,11 +59,10 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
         super(skymapSanityCheck, self).__init__( timeout,
-                                                 self.skymapSanityCheck,
                                                  email=email
                                                )
     
-    def skymapSanityCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def skymapSanity(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check the skymap for sane and proper formatting
         checks that normalization is correct and that map is in Equatorial (C) coordinates
@@ -171,11 +170,10 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
         self.fitsname = fitsname
         self.tagnames = sorted(tagnames)
         super(plotSkymapCheck, self).__init__( timeout,
-                                               self.plotSkymapCheck,
                                                email=email
                                              )
 
-    def plotSkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def plotSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that plotting jobs ran and tagged figures properly
         """
@@ -242,11 +240,10 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
         self.fitsname = fitsname
         self.tagnames = sorted(tagnames)
         super(skyviewerCheck, self).__init__( timeout,
-                                              self.skyviewerCheck,
                                               email=email
                                             )
 
-    def skyviewerCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def skyviewer(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that plotting jobs ran and tagged figures properly
         """

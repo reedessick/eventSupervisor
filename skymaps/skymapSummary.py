@@ -65,11 +65,10 @@ class skymapSummaryStartCheck(esUtils.EventSupervisorTask):
         self.tagnames = tagnames
         self.description = "check that autosummary of skymaps started processing %s"%fitsname
         super(skymapSummaryStartCheck, self).__init__( timeout,
-                                                       self.skymapSummaryStartCheck,
                                                        email=email
                                                      )
 
-    def skymapSummaryStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def skymapSummaryStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that skymap autosummary started as expected
         NOT IMPLEMENTED
@@ -124,11 +123,10 @@ class skymapSummaryDataCheck(esUtils.EventSupervisorTask):
         self.tagnames = tagnames
         self.description = "check that autosummary of skymaps generated the expected data for %s"%fitsname
         super(skymapSummaryDataCheck, self).__init__( timeout,
-                                                      self.skymapSummaryDataCheck,
                                                       email=email
                                                     )
 
-    def skymapSummaryDataCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def skymapSummaryData(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that skymap autosummary generated the expected data
         NOT IMPLEMENTED
@@ -146,11 +144,10 @@ class skymapSummaryFinishCheck(esUtils.EventSupervisorTask):
         self.tagnames = tagnames
         self.description = "check that autosummary of skymaps finished as expected for %s"%fitsname
         super(skymapSummaryFinishCheck, self).__init__( timeout,
-                                                        self.skymapSummaryFinishCheck,
                                                         email=email
                                                       )
 
-    def skymapSummaryFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def skymapSummaryFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that skymap autosummary finished as expected
         NOT IMPLEMENTED

@@ -53,11 +53,10 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(libPEStartCheck, self).__init__( timeout,
-                                               self.libPEStartCheck,
                                                email=email
                                              )
 
-    def libPEStartCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def libPEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LIB PE started
         """
@@ -134,11 +133,10 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(libPEPostSampCheck, self).__init__( timeout,
-                                                  self.libPEPostSampCheck,
                                                   email=email
                                                 )
 
-    def libPEPostSampCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def libPEPostSamp(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LIB PE posted posterior samples
         NOTE: this is likely associated with the same log message as libPEFinishCheck 
@@ -168,11 +166,10 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(libPEBayesFactorsCheck, self).__init__( timeout,
-                                                  self.libPEBayesFactorsCheck,
                                                   email=email
                                                 )
 
-    def libPEBayesFactorsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def libPEBayesFactors(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LIB PE posted Bayes Factors
         """
@@ -209,11 +206,10 @@ class libPESkymapCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
         super(libPESkymapCheck, self).__init__( timeout,
-                                                self.libPESkymapCheck,
                                                 email=email
                                               )
 
-    def libPESkymapCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def libPESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LIB PE posted a skymap
         looks for the existence of a skymap and the correct tagnames
@@ -242,11 +238,10 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(libPEFinishCheck, self).__init__( timeout,
-                                                self.libPEFinishCheck,
                                                 email=email
                                               )
 
-    def libPEFinishCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def libPEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LIB PE finished
         """
@@ -271,4 +266,3 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
-

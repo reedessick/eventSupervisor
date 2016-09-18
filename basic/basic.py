@@ -71,11 +71,10 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(cWBTriggerCheck, self).__init__( timeout, 
-                                               self.cWBTriggerCheck, 
                                                email=email
                                              )
 
-    def cWBTriggerCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cWBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         query GraceDB to check for proper event creation
         we check:
@@ -108,11 +107,10 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(oLIBTriggerCheck, self).__init__( timeout, 
-                                                self.oLIBTriggerCheck, 
                                                 email=email
                                               )
 
-    def oLIBTriggerCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def oLIBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         event creation sanity check for oLIB
         we check:
@@ -145,11 +143,10 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(cbcCoincCheck, self).__init__( timeout, 
-                                             self.cbcCoincCheck, 
                                              email=email
                                            )
 
-    def cbcCoincCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cbcCoinc(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check for coinc.xml file
         """
@@ -178,11 +175,10 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, email=[]):
         super(cbcPSDCheck, self).__init__( timeout, 
-                                           self.cbcPSDCheck, 
                                            email=email
                                          )
 
-    def cbcPSDCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def cbcPSD(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check for psd.xml.gz file
         """
@@ -242,18 +238,17 @@ class FARCheck(esUtils.EventSupervisorTask):
     a check for propper FAR
     """
     description = "a check for propper FAR"
-    name = "FAR"
+    name = "far"
 
     def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[]):
         self.maxFAR = maxFAR
         self.minFAR = minFAR
         
         super(FARCheck, self).__init__( timeout, 
-                                        self.FARCheck, 
                                         email=email
                                       )
 
-    def FARCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def far(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check the sanity of the reported FAR
         """
@@ -369,11 +364,10 @@ class localRateCheck(esUtils.EventSupervisorTask):
         self.pipeline = pipeline
         self.search = search
         super(localRateCheck, self).__init__( timeout, 
-                                              self.localRateCheck, 
                                               email=email
                                             )
 
-    def localRateCheck(self, graceid, gdb, verbose=None, annotate=False):
+    def localRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
         """
         check the local rate of triggers submitted to GraceDB
         checks only around the event's gpstime : (gpstime-self.mWin, gpstime+self.pWin)
@@ -457,11 +451,11 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
 
         tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ]
         super(CreateRateItem, self).__init__( graceid,
-                                             gdb,
-                                             t0,
-                                             tasks,
-                                             annotate=annotate
-                                           )
+                                              gdb,
+                                              t0,
+                                              tasks,
+                                              annotate=annotate
+                                            )
 
 class createRateCheck(esUtils.EventSupervisorTask):
     """
@@ -477,11 +471,10 @@ class createRateCheck(esUtils.EventSupervisorTask):
         self.pipeline = pipeline
         self.search = search
         super(createRateCheck, self).__init__( timeout,
-                                              self.createRateCheck,
                                               email=email
                                             )
 
-    def createRateCheck(self, graceid, gdb, verbose=None, annotate=False):
+    def createRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
         """
         check the local rate of triggers submitted to GraceDB
         checks only around the event's creation time : (t-self.mWin, t+self.pWin)
@@ -567,18 +560,17 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
     a check that the external triggers seach was completed
     """
     description = "a check that the external triggers search was completed"
-    name = "ExternalTriggers"
+    name = "externalTriggers"
 
     def __init__(self, timeout, email=[]):
         """
         a check that the external triggers search was completed
         """
         super(externalTriggersCheck, self).__init__( timeout, 
-                                                     self.externalTriggersCheck, 
                                                      email=email
                                                    )
     
-    def externalTriggersCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def externalTriggers(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that the external triggers search was completed
         """
@@ -646,11 +638,10 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
         a check that the unblind injections search was completed
         """
         super(unblindInjectionsCheck, self).__init__( timeout, 
-                                                      self.unblindInjectionsCheck, 
                                                       email=email
                                                     )
 
-    def unblindInjectionsCheck(self, graceid, gdb, verbose=False, annotate=False):
+    def unblindInjections(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that the unblind injections search was completed
         """
