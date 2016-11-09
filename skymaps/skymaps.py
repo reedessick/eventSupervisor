@@ -1,11 +1,9 @@
 description = "a module housing checks of skymaps functionality"
-author = "reed.essick@ligo.org"
+author      = "reed.essick@ligo.org"
 
 #---------------------------------------------------------------------------------------------------
 
-import sys
-sys.path.append("../")
-import eventSupervisorUtils as esUtils
+import eventSupervisor.eventSupervisorUtils as esUtils
 
 import numpy as np
 import healpy as hp

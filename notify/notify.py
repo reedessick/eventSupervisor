@@ -1,11 +1,9 @@
 description = "a module housing notification and alerting checks for event_supervisor"
-author = "reed.essick@ligo.org"
+author      = "reed.essick@ligo.org"
 
 #---------------------------------------------------------------------------------------------------
 
-import sys
-sys.path.append("../")
-import eventSupervisorUtils as esUtils
+import eventSupervisor.eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 

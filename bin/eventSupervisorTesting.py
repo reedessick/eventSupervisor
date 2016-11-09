@@ -1,31 +1,31 @@
 #!/usr/bin/python
-usage = "eventSupervisorTesting.py [--options]"
+usage       = "eventSupervisorTesting.py [--options]"
 description = "a module containing testing routines for the event supervisor toolkits"
-author = "reed.essick@ligo.org"
+author      = "reed.essick@ligo.org"
 
 #-------------------------------------------------
 
-import eventSupervisor as es
-import eventSupervisorUtils as esUtils
+import eventSupervisor.eventSupervisor as es
+import eventSupervisor.eventSupervisorUtils as esUtils
 
-from notify import notify
+from eventSupervisor.notify import notify
 
-from basic import basic
-from basic import approvalProcessor
+from eventSupervisor.basic import basic
+from eventSupervisor.basic import approvalProcessor
 
-from skymaps import skymaps
-from skymaps import skymapSummary
+from eventSupervisor.skymaps import skymaps
+from eventSupervisor.skymaps import skymapSummary
 
-from pe import bayestar
-from pe import bayeswavePE
-from pe import cwbPE
-from pe import libPE
-from pe import lalinf
+from eventSupervisor.pe import bayestar
+from eventSupervisor.pe import bayeswavePE
+from eventSupervisor.pe import cwbPE
+from eventSupervisor.pe import libPE
+from eventSupervisor.pe import lalinf
 
-from dq import dq
-from dq import idq
-from dq import omegaScan
-from dq import segDB2grcDB
+from eventSupervisor.dq import dq
+from eventSupervisor.dq import idq
+from eventSupervisor.dq import omegaScan
+from eventSupervisor.dq import segDB2grcDB
 
 #------------------------
 
