@@ -1,9 +1,9 @@
-description = ""
-author = "reed.essick@ligo.org"
+description = "a module containing utility methods and class declarations"
+author      = "reed.essick@ligo.org"
 
 #---------------------------------------------------------------------------------------------------
 
-from ligoMP.lvalert import lvalertMPutils as utils
+from lvalertMP.lvalert import lvalertMPutils as utils
 
 import subprocess as sp
 

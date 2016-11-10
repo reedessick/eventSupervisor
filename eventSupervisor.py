@@ -1,5 +1,5 @@
 description = "a module containing checks and parsing logic used within event_supervisor"
-author = "reed.essick@ligo.org"
+author      = "reed.essick@ligo.org"
 
 #-------------------------------------------------
 
@@ -22,8 +22,8 @@ qid = {} ### queueItemDict
 
 #-------------------------------------------------
 
-from ligoMP.lvalert import lvalertMPutils as utils
-from ligoMP.lvalert.commands import parseCommand
+from lvalertMP.lvalert import lvalertMPutils as utils
+from lvalertMP.lvalert.commands import parseCommand
 
 import eventSupervisorUtils as esUtils
 
