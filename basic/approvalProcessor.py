@@ -38,12 +38,12 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
 
         ### extrac params
         farTimeout      = float(options['far dt'])
-        segStartTimeout = float(options['seg start dt'])
+#        segStartTimeout = float(options['seg start dt'])
         email           = options['email'].split()
 
         ### generate tasks
         tasks = [approvalProcessorFARCheck(farTimeout, email=email, logDir=logDir),
-                 approvalProcessorSegDBStartCheck(segStartTimeout, email=email, logDir=logDir)
+#                 approvalProcessorSegDBStartCheck(segStartTimeout, email=email, logDir=logDir)
                 ]
 
         ### wrap up instantiation
@@ -92,7 +92,7 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
 
                     ### post message
                     if verbose:
-                        logger.debug( "    "+message )
+                        logger.debug( message )
                     if annotate:
                         esUtils.writeGDBLog( gdb, graceid, message )
 

@@ -94,8 +94,8 @@ new = [
   'unblind injections',
   'dq summary',
   'idq start',
-  'hoft omega scan start',
-  'aux omega scan start',
+  'h1 omega scan start',
+  'l1 omega scan start',
   'segdb2grcdb start',
   'notify',
   'bayestar start',
@@ -114,8 +114,8 @@ parent_child = {
   'idqGlitchFAP'          : ['approval processor idq'], 
   'idqActiveChan'         : ['idq omega scan start'], 
   'hoft omega scan start' : ['hoft omega scan'],
-  'aux omega scan start'  : ['aux omega scan'],
-  'idq omega scan start'  : ['idq omega scan'], 
+  'h1 omega scan start'   : ['h1 omega scan'],
+  'l1 omega scan start'   : ['l1 omega scan'], 
   'segdb2grcdb start'     : ['segdb2grcdb'],
   'bayestar start'        : ['bayestar'],
   'bayeswave pe start'    : ['bayeswave pe'],
@@ -174,7 +174,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     logDir = config.get('general', 'log_directory') if config.has_option('general','log_directory') else '.'
     
     if config.has_option('general', 'gracedb'):
-        gdb = GraceDb( config.get('general', 'gracedb') )
+        gdb = GraceDb( config.get('general', 'gracedb') ) ### FIXME: enable this to work with lvalertTest's FakeDb!
     else:
         gdb = GraceDb()
 
@@ -299,16 +299,16 @@ def parseUpdate( alert ):
         return 'idqActiveChan'
 
     ### hoft omega scan start
-    elif omegaScan.is_hoftOmegaScanStart( description ):
-        return 'hoft omega scan start'
+    elif omegaScan.is_l1OmegaScanStart( description ):
+        return 'l1 omega scan start'
 
     ### aux omega scan start
-    elif omegaScan.is_auxOmegaScanStart( description ):
-        return 'aux omega scan start'
+    elif omegaScan.is_h1OmegaScanStart( description ):
+        return 'h1 omega scan start'
 
     ### idq omega scan start
-    elif omegaScan.is_idqOmegaScanStart( description ):
-        return 'idq omega scan start'
+#    elif omegaScan.is_idqOmegaScanStart( description ):
+#        return 'idq omega scan start'
     
     ### segdb2grcdb start
     elif segdb2grcdb.is_segdb2grcdbStart( description ):

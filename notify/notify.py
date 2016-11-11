@@ -3,6 +3,7 @@ author      = "reed.essick@ligo.org"
 
 #---------------------------------------------------------------------------------------------------
 
+from lvalertMP.lvalert.lvalertMPutils import sendEmail
 import eventSupervisor.eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
@@ -31,9 +32,9 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         ### extract parameters from config file
-        email = options['by email'].split() ### addresses to ping
-        sms   = options['by sms'].split()   ### phone numbers to ping (really, via email)
-        phone = options['by phone'].split() ### phone numbers to ping with voice?
+        email = options['by email'].split() if options.has_key('by email') else [] ### addresses to ping
+        sms   = options['by sms'].split()   if options.has_key('by sms')   else [] ### phone numbers to ping (really, via email)
+        phone = options['by phone'].split() if options.has_key('by phone') else [] ### phone numbers to ping with voice?
 
         ignoreInj = bool(options['ignoreInj']) ### whether we ignore things labeled as injections
 
@@ -44,8 +45,10 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         if email: ### only add if the list is not empty
             tasks.append( notifyByEmail(timeout, email=email, ignoreInj=ignoreInj, logDir=logDir) )
         if sms:
+            raise NotImplementedError('currently do not support sms specifically, try using email')
             tasks.append( notifyBySMS(timeout, sms=sms, ignoreInj=ignoreInj, logDir=logDir) )
         if phone:
+            raise NotImplementedError('currently do not suport phone')
             tasks.append( notifyByPhone(timeout, phone=phone, ignoreInj=ignoreInj, logDir=logDir) )
 
         ### wrap up instantiation
@@ -81,18 +84,21 @@ class notifyByEmail(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        if self.ignoreInj:
-            if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
-                if verbose:
-                    logger.debug( "labeled INJ -> ignoring" )
+        if self.notificationList:
+            body    = "%s/events/view/%s"%(gdb.service_url, graceid)
+            subject = "new GraceDb Event: %s"%graceid
+            if self.ignoreInj:
+                if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
+                    if verbose:
+                        logger.debug( "labeled INJ -> ignoring" )
+
+                else:
+                    if verbose:
+                        logger.debug( "not labeled INJ -> sending emails" )
+                    sendEmail( self.notificationList, body, subject )
 
             else:
-                if verbose:
-                    logger.debug( "not labeled INJ -> sending emails" )
-                raise NotImplementedError
-
-        else:
-            raise NotImplementedError ### send email notification
+                sendEmail( self.notificationList, body, subject )
 
         return False ### action_required = False
                      ### all message are sent from within this function, so nothing else is necessary
@@ -121,19 +127,20 @@ class notifyBySMS(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        if self.ignoreInj:
-            if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
+        if self.notificationList:
+            if self.ignoreInj:
+                if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
 
-                if verbose:
-                    logger.debug( "labeled INJ -> ignoring" )
+                    if verbose:
+                        logger.debug( "labeled INJ -> ignoring" )
+
+                else:
+                    if verbose:
+                        logger.debug( "not labeled INJ -> sending emails" )
+                    raise NotImplementedError(self.name)
 
             else:
-                if verbose:
-                    logger.debug( "not labeled INJ -> sending emails" )
-                raise NotImplementedError
-
-        else:
-            raise NotImplementedError ### send SMS notification
+                raise NotImplementedError(self.name)
 
         return False ### action_required = False
                      ### all message are sent from within this function, so nothing else is necessary
@@ -170,10 +177,10 @@ class notifyByPhone(esUtils.EventSupervisorTask):
             else:
                 if verbose:
                     logger.debug( "not labeled INJ -> sending emails" )
-                raise NotImplementedError
+                raise NotImplementedError(self.name)
 
         else:
-            raise NotImplementedError ### send phone notification
+            raise NotImplementedError(self.name) ### send phone notification
 
         return False ### action_required = False
                      ### all message are sent from within this function, so nothing else is necessary

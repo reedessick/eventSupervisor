@@ -121,7 +121,7 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
         veto_def_dt = float(options['veto def dt'])
         veto_defs = options['veto defs'].split()
 
-        any_dt = float(options['any dt'])
+        any_dt = float(options['any dt']) if options.has_key('any dt') else None
 
         finish_dt = float(options['finish dt'])
 
@@ -129,11 +129,13 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
 
         ### generate tasks
         tasks = []
-        if flags:
-            tasks.append( segDB2grcDBFlagsCheck(flags_dt, flags, email=email, logDir=logDir) )
-        if veto_defs:
-            tasks.append( segDB2grcDBVetoDefCheck(veto_def_dt, veto_defs, email=email, logDir=logDir) )
-        tasks.append( segDB2grcDBAnyCheck(any_dt, email=email, logDir=logDir) )
+        for flag in flags:
+            tasks.append( segDB2grcDBFlagCheck(flags_dt, flag, email=email, logDir=logDir) )
+        for veto_def in veto_defs:
+            raise NotImplementedError('currently cannot monitor veto definer queries')
+            tasks.append( segDB2grcDBVetoDefCheck(veto_def_dt, veto_def, email=email, logDir=logDir) )
+        if any_dt!=None:
+            tasks.append( segDB2grcDBAnyCheck(any_dt, email=email, logDir=logDir) )
         tasks.append( segDB2grcDBFinishCheck(finish_dt, email=email, logDir=logDir) )
 
         ### wrap up instantiation
@@ -145,27 +147,54 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
                                                warnings=warnings,
                                              )
 
-class segDB2grcDBFlagsCheck(esUtils.EventSupervisorTask):
+class segDB2grcDBFlagCheck(esUtils.EventSupervisorTask):
     """
     a check that segDB2grcDB uploaded the expected individual flags
     """
     description = "check that segDB2grcDB posted the expected individual flags"
-    name        = "segDB2grcDBFlags"
+    name        = "segDB2grcDBFlag"
 
-    def __init__(self, timeout, flags, email=[], logDir='.'):
-        self.flags = flags
-        super(segDB2grcDBFlagsCheck, self).__init__( timeout,
+    def __init__(self, timeout, flag, email=[], logDir='.'):
+        self.flag = flag
+        super(segDB2grcDBFlagCheck, self).__init__( timeout,
                                                      email=email,
                                                      logDir=logDir,
                                                    )
 
-    def segDB2grcDBFlags(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
+    def segDB2grcDBFlag(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        a check that segDB2grcDB uploaded the expected individual flags
-        NOT IMPLEMENTED
+        a check that segDB2grcDB uploaded the expected individual flags by requiring xml.gz files to exist (with expected nomenclature)
         """
-        raise NotImplementedError(self.name)
-        ### raise a warning if the query failed, too
+        if verbose:
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
+        flagname = flag.split(":")
+        flagname = "%s-%s-(.*)-(.*).xml.gz"%(flagname[0], "_".join(flagname[1:]))
+        self.warning, action_required = esUtils.check4file( graceid,
+                                                            gdb,
+                                                            flagname,
+                                                            regex=True,
+                                                            tagnames=None,
+                                                            verbose=verbose,
+                                                            logFragment=None,
+                                                            logRegex=False,
+                                                            logTag=logger.name if verbose else None,
+                                                          )
+        if verbose or annotate:
+            ### format message
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+
+            ### post message
+            if verbose:
+                logger.debug( message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+
+        return action_required
 
 class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
     """
@@ -174,8 +203,8 @@ class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
     description = "check that segDB2grcDB posted the expected Veto-Definer summaries"
     name        = "segDB2grcDBVetoDef"
 
-    def __init__(self, timeout, vetoDefs, email=[], logDir='.'):
-        self.vetoDefs = vetoDefs
+    def __init__(self, timeout, vetoDef, email=[], logDir='.'):
+        self.vetoDef = vetoDef
         super(segDB2grcDBVetoDefCheck, self).__init__( timeout,
                                                      email=email,
                                                      logDir=logDir,
@@ -186,12 +215,16 @@ class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
         a check that segDB2grcDB uploaded the expected individual flags
         NOT IMPLEMENTED
         """
+        if verbose:
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
         raise NotImplementedError(self.name)
         ### raise a warning if query failed, too
 
 class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
     """
-    a check that segDB2grcDB uploaded the expected query of any active segments
+    a check that segDB2grcDB uploaded the expected query of any active segments by searching for associated json file
     """
     description = "check that segDB2grcDB posted the expected summaries of all active flags"
     name        = "segDB2grcDBAny"
@@ -205,10 +238,36 @@ class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
     def segDB2grcDBAny(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that segDB2grcDB uploaded the query for any active segments
-        NOT IMPLEMENTED
         """
-        raise NotImplementedError(self.name)
-        ### raised a warning if query failed, too
+        if verbose:
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
+        jsonname = "allActive-(.*)-(.*).json"
+        self.warning, action_required = esUtils.check4file( graceid,
+                                                            gdb,
+                                                            jsonname,
+                                                            regex=True,
+                                                            tagnames=None,
+                                                            verbose=verbose,
+                                                            logFragment=None,
+                                                            logRegex=False,
+                                                            logTag=logger.name if verbose else None,
+                                                          )
+        if verbose or annotate:
+            ### format message
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+
+            ### post message
+            if verbose:
+                logger.debug( message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+
+        return action_required
 
 class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
     """
