@@ -22,6 +22,8 @@ qid = {} ### queueItemDict
 
 #-------------------------------------------------
 
+import logging
+
 from lvalertMP.lvalert import lvalertMPutils as utils
 from lvalertMP.lvalert.commands import parseCommand
 
@@ -159,6 +161,9 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     if alert['uid'] == 'command':
         return parseCommand( queue, queuebyGraceID, alert, t0 )
 
+    ### set up logger
+    logger = logging.getLogger('iQ.parseAlert') ### propagate to iQ's logger
+
     ### grab alert type
     alert_type = alert['alert_type']
 
@@ -236,11 +241,12 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     #--------------------
     if items and (not queueByGraceID.has_key(graceid)): ### ensure queues are set up
         queueByGraceID[graceid] = utils.SortedQueue()
-
+        
     for item in items: ### add items to queues
         queue.insert( item )
         queueByGraceID[graceid].insert( item )
-    
+        logger.debug( 'added QueueItem=%s'%item.name ) ### print to logger
+
     ### update queue.complete
     ### we don't need to update queueByGraceID[graceid].complete because it should *always* be zero
     ### managing that is the responsibility of parseAlert, not interactiveQueue!

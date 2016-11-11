@@ -4,12 +4,36 @@ author      = "reed.essick@ligo.org"
 #---------------------------------------------------------------------------------------------------
 
 from lvalertMP.lvalert import lvalertMPutils as utils
+from lvalertMP.lvalert.lvalertMPutils import genLogname
+from lvalertMP.lvalert.lvalertMPutils import genFormatter
 
 import subprocess as sp
 
 import traceback
 
 import re
+
+#---------------------------------------------------------------------------------------------------
+
+def genTaskLogger( directory, name, logTag='iQ', graceiD=None ):
+    """
+    returns a logger set up for Tasks
+    """
+    logger = logging.getLogger('%s.%s'%(logTag, name))
+
+    if graceid: ### specify the graceid logger specifically
+        logname = genLogname(directory, graceid)
+
+        for handler in logger.handlers: ### ensure it doesn't already exist to avoid repeated log statements
+            if isinstance(handler, logger.FileHandler) and handler.baseFilename==logname:
+                break
+
+        else: ### handler doesn't exist, so we add it
+            handler = logging.FileHandler( logname )
+            handler.setFormatter( genFormatter() )
+            logger.addHandler( logger )
+
+    return logger
 
 #---------------------------------------------------------------------------------------------------
 
@@ -33,12 +57,14 @@ def emailWarning(subject, body, email):
 
 ### some basic look-up utilities
 
-def isINJ( graceid, gdb, verbose=False ):
+def isINJ( graceid, gdb, verbose=False, logTag='iQ' ):
     """
     determines if the event is labeled as an injection
     """
     if verbose:
-        print( graceid, "    looking up labels" )
+        logger = logging.getLogger('%s.isINJ'%logTag) ### inheritance of loggers controlled by kwarg
+        logger.debug( "looking up labels" )
+
     labels = gracedb.labels( gdb_id ).json()['labels']
 
     if verbose:
@@ -53,7 +79,7 @@ def isINJ( graceid, gdb, verbose=False ):
     else:
         return "INJ" in [label['name'] for label in labels]
 
-def filename2log( filename, logs, verbose=False ):
+def filename2log( filename, logs, verbose=False, logTag='iQ' ):
     """
     finds the log associated with a given filename
     """
@@ -61,23 +87,25 @@ def filename2log( filename, logs, verbose=False ):
                            ### this means we will get the most recent version of files, if multiple exist
         if filename == log['filename']: ### this is the log message associated with that filename
             if verbose:
-                print( "    %s assoicated with log message : %d"%(filename, log['N']) )
+                logger = logging.getLogger('%s.filename2log'%logTag) ### inheritance of loggers controlled by kwarg
+                logger.debug( "%s assoicated with log message : %d"%(filename, log['N']) )
             return log
     else:
         raise ValueError( "could not find %s in association with any log messages"%(filename) )
 
-def check4log( graceid, gdb, fragment, tagnames=None, verbose=False, regex=False ):
+def check4log( graceid, gdb, fragment, tagnames=None, regex=False, verbose=False, logTag='iQ' ):
     """
     checks for the fragment in the logs for this graceid
 
     return action_required
     """
     if verbose:
-        print( "    retrieving log messages" )
+        logger = logging.getLogger('%s.check4log'%logTag)
+        logger.debug( "retrieving log messages" )
     logs = gdb.logs( graceid ).json()['log']
 
     if verbose:
-        print( "    parsing log" )
+        logger.debug( "parsing log" )
 
     if regex: ### use regular expressions
         template = re.complile( fragment )
@@ -102,7 +130,7 @@ def check4log( graceid, gdb, fragment, tagnames=None, verbose=False, regex=False
         else:
             return True ### action_required = True (could not find log)
 
-def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=False, logFragment=None, logRegex=False ):
+def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=None, logRegex=False, verbose=False, logTag='iQ' ):
     """
     checks for the existence of a file and that it is tagged correctly
     if tagnames==None, we ignore check for tagnames
@@ -112,8 +140,9 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=Fals
     return warning, action_required
     """
     if verbose:
-        print( "    retrieving filenames" )
-    files = gdb.files( graceid ).json().keys() ### query for files
+        logger = logging.getLogger('%s.check4file'%logTag)
+        logger.debug( "    retrieving filenames" )
+    files = gdb.files( graceid ).json().keys()
 
     if regex: ### use regular expressions
         template = re.compile( filename )
@@ -135,7 +164,7 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=Fals
 
         if (check_tagnames) or (check_logFrament):
             if verbose:
-                print( "    retrieving log messages" )
+                logger.debug( "retrieving log messages" )
             logs = gdb.logs( graceid ).json()['log']
             log = filename2log( fitsname, logs, verbose=verbose )
 
@@ -210,12 +239,14 @@ class EventSupervisorQueueItem(utils.QueueItem):
     name = "event supervisor item"
     description = "a series of connected tasks for event supervisor"
 
-    def __init__(self, graceid, gdb, t0, tasks, annotate=False, warnings=False):
+    def __init__(self, graceid, gdb, t0, tasks, annotate=False, warnings=False, logDir='.'):
         self.graceid = graceid
         self.gdb = gdb
 
         self.warnings = warnings
         self.annotate = annotate
+
+        self.logDir = logDir
 
         for task in tasks:
             if not isinstance(task, EventSupervisorTask):
@@ -257,9 +288,10 @@ class EventSupervisorTask(utils.Task):
     name = "eventSupervisorTask"
     description = "a task for event supervisor"
 
-    def __init__(self, timeout, email=[], **kwargs ):
+    def __init__(self, timeout, email=[], logDir='.', **kwargs ):
         self.email = email
         self.warning = None
+        self.logDir = logDir
         super(EventSupervisorTask, self).__init__(timeout, **kwargs)
 
     def execute(self, graceid, gdb, verbose=False, annotate=False, warnings=False):

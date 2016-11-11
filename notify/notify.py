@@ -64,11 +64,12 @@ class notifyByEmail(esUtils.EventSupervisorTask):
     description = "notify folks by email that a new event was created"
     name        = "notifyByEmail"
 
-    def __init__(self, timeout, email=[], ignoreInj=False):
+    def __init__(self, timeout, email=[], ignoreInj=False, logDir='.'):
         self.notificationList = email
         self.ignoreInj        = ignoreInj
         super(notifyByEmail, self).__init__( timeout, 
-                                             email=[]
+                                             email=[],
+                                             logDir=logDir,
                                            )
 
     def notifyByEmail(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -76,15 +77,20 @@ class notifyByEmail(esUtils.EventSupervisorTask):
         notify folks by email
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-        if self.ignoreInj: ### ingore anything labeled "INJ"
-            if esUtils.isINJ( graceid, gdb, verbose=verbose ): ### determine if this event is labeled "INJ"
+            ### set up logger
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
+        if self.ignoreInj:
+            if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
                 if verbose:
-                    print( "    labeled INJ -> ignoring" )
+                    logger.info( "labeled INJ -> ignoring" )
+
             else:
                 if verbose:
-                    print( "    not labeled INJ -> sending emails" )
-                raise NotImplementedError ### send email notification
+                    logger.info( "not labeled INJ -> sending emails" )
+                raise NotImplementedError
+
         else:
             raise NotImplementedError ### send email notification
 
@@ -98,11 +104,12 @@ class notifyBySMS(esUtils.EventSupervisorTask):
     description = "notify folks by SMS that a new event was created"
     name        = "notifyBySMS"
 
-    def __init__(self, timeout, sms=[], ignoreInj=False):
+    def __init__(self, timeout, sms=[], ignoreInj=False, logDir='.'):
         self.notificationList = sms
         self.ignoreInj        = ignoreInj
         super(notifyBySMS, self).__init__( timeout,
-                                           email=[]
+                                           email=[],
+                                           logDir=logDir,
                                          )
 
     def notifyBySMS(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -110,15 +117,21 @@ class notifyBySMS(esUtils.EventSupervisorTask):
         notify folks by SMS
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-        if self.ignoreInj: ### ignore anything labeled "INJ"
-            if esUtils.isINJ( graceid, gdb, verbose=verbose ): ### determine if this event is labeled "INJ"
+            ### set up logger
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
+        if self.ignoreInj:
+            if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
+
                 if verbose:
-                    print( "    labeled INJ -> ignoring" )
+                    logger.info( "labeled INJ -> ignoring" )
+
             else:
                 if verbose:
-                    print( "    not labeled INJ -> sending emails" )
-                raise NotImplementedError ### send SMS notification
+                    logger.info( "not labeled INJ -> sending emails" )
+                raise NotImplementedError
+
         else:
             raise NotImplementedError ### send SMS notification
 
@@ -132,11 +145,12 @@ class notifyByPhone(esUtils.EventSupervisorTask):
     description = "notify folks by phone that a new event was created"
     name        = "notifyByPhone"
 
-    def __init__(self, timeout, phone=[], ignoreInj=False):
+    def __init__(self, timeout, phone=[], ignoreInj=False, logDir='.'):
         self.notificationList = phone
         self.ignoreInj        = ignoreInj
         super(notifyByPhone, self).__init__( timeout,
-                                             email=[]
+                                             email=[],
+                                             logDir=logDir,
                                            )
 
     def notifyByPhone(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -144,15 +158,20 @@ class notifyByPhone(esUtils.EventSupervisorTask):
         notify folks by phone
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-        if self.ignoreInj: ### ignore anything labeled "INJ"
-            if esUtils.isINJ( graceid, gdb, verbose=verbose ): ### determine if this event is labeled "INJ"
+            ### set up logger
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
+        if self.ignoreInj:
+            if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
+
                 if verbose:
-                    print( "    labeled INJ -> ignoring" )
+                    logger.info( "labeled INJ -> ignoring" )
             else:
                 if verbose:
-                    print( "    not labeled INJ -> sending emails" )
-                raise NotImplementedError ### send phone notification
+                    logger.info( "not labeled INJ -> sending emails" )
+                raise NotImplementedError
+
         else:
             raise NotImplementedError ### send phone notification
 
