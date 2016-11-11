@@ -21,10 +21,10 @@ class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
         dt
         email
     """
-    name = "cwb pe start"
     description = "a check that cWB PE started"
+    name        = "cwb pe start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
@@ -35,15 +35,16 @@ class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
                                               gdb,
                                               t0,
                                               tasks,
-                                              annotate=annotate
+                                              annotate=annotate,
+                                              warnings=warnings,
                                             )
 
 class cWBPEStartCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE started
     """    
-    name = "cWBPEStart"
     description = "a check that cWB PE started"
+    name        = "cWBPEStart"
 
     def __init__(self, timeout, email=[]):
         super(cWBPEStartCheck, self).__init__( timeout,
@@ -72,10 +73,10 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
         skymap tagnames
         email
     """
-    name = "cwb pe"
     description = "a check that cWB PE produced the expected data and finished"
+    name        = "cwb pe"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
         ced_dt = float(options['ced dt'])
@@ -96,15 +97,16 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
                                          gdb,
                                          t0,
                                          tasks,
-                                         annotate=annotate
+                                         annotate=annotate,
+                                         warnings=warnings,
                                        )
 
 class cWBPECEDCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted estimates of parameters
     """
-    name = "cWBPECED"
     description = "a check that cWB PE posted a link to a CED page"
+    name        = "cWBPECED"
 
     def __init__(self, timeout, email=[]):
         super(cWBPECEDCheck, self).__init__( timeout,
@@ -141,8 +143,8 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted estimates of parameters
     """
-    name = "cWBPEEstimate"
     description = "a check that cWB PE posted estimates of parameters"
+    name        = "cWBPEEstimate"
 
     def __init__(self, timeout, email=[]):
         super(cWBPEEstimateCheck, self).__init__( timeout,
@@ -179,8 +181,8 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE posted a skymap
     """
-    name = "cWBPESkymap"
     description = "a check that cWB PE posted a skymap"
+    name        = "cWBPESkymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
@@ -212,8 +214,8 @@ class cWBPEFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that cWB PE finished
     """
-    name = "cWBPEFinish"
     description = "a check that cWB PE finished"
+    name        = "cWBPEFinish"
 
     def __init__(self, timeout, email=[]):
         super(cWBPEFinishCheck, self).__init__( timeout,
