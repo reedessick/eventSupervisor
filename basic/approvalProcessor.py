@@ -33,7 +33,7 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
     description = "a set of checks for approval_processor's preliminary DQ and vetting"
     name        = "approval processor prelim dq"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extrac params
@@ -42,8 +42,8 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
         email           = options['email'].split()
 
         ### generate tasks
-        tasks = [approvalProcessorFARCheck(farTimeout, email=email),
-                 approvalProcessorSegDBStartCheck(segStartTimeout, email=email)
+        tasks = [approvalProcessorFARCheck(farTimeout, email=email, logDir=logDir),
+                 approvalProcessorSegDBStartCheck(segStartTimeout, email=email, logDir=logDir)
                 ]
 
         ### wrap up instantiation
@@ -62,9 +62,10 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
     description = "checks for approval processor FAR messages"
     name        = "approvalProcessorFAR"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(approvalProcessorFARCheck, self).__init__( timeout, 
-                                                         email=email
+                                                         email=email,
+                                                         logDir=logDir,
                                                        )
 
     def approvalProcessorFAR(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -73,12 +74,13 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
         """
         ### note, we do not delegate to esUtils.check4log because there are multiple possible messages
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving log messages" )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+            logger.debug( "retrieving log messages" )
         logs = gdb.logs( graceid ).json()['log']
 
         if verbose:
-            print( "    parsing log" )
+            logger.debug( "parsing log" )
         for log in logs: 
             comment = log['comment']
             if ("Candidate event has low enough FAR" in comment) \
@@ -90,7 +92,7 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
 
                     ### post message
                     if verbose:
-                        print( "    "+message )
+                        logger.debug( "    "+message )
                     if annotate:
                         esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -102,7 +104,7 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -115,9 +117,10 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
     description = "a check that approvalProcessor started checking segments as expected"
     name        = "approvalProcessorSegDBStart"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(approvalProcessorSegDBStartCheck, self).__init__( timeout, 
-                                                                email=email
+                                                                email=email,
+                                                                logDir=logDir,
                                                               )
 
     def approvalProcessorSegDBStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -142,7 +145,7 @@ class ApprovalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
     description = "a set of checks for approval_processor's segment vetting"
     name        = "approval processor segdb"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=warnings):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extract params
@@ -154,8 +157,8 @@ class ApprovalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [approvalProcessorSegDBFlagsCheck(flags_dt, flags=flags, email=email),
-                 approvalProcessorSegDBFinishCheck(finish_dt, email=email)
+        tasks = [approvalProcessorSegDBFlagsCheck(flags_dt, flags=flags, email=email, logDir=logDir),
+                 approvalProcessorSegDBFinishCheck(finish_dt, email=email, logDir=logDir)
                 ]
 
         ### wrap up instantiation
@@ -174,10 +177,11 @@ class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
     description = "a check that approvalProcessor checked all the segment/flags as expected"
     name        = "approvalProcessorSegDBFlags"
 
-    def __init__(self, timeout, flags=[], email=[]):
+    def __init__(self, timeout, flags=[], email=[], logDir='.'):
         self.flags = flags 
         super(approvalProcessorSegDBFlagsCheck, self).__init__( timeout,
-                                                                email=email
+                                                                email=email,
+                                                                logDir=logDir,
                                                               )
 
     def approvalProcessorSegDBFlags(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -194,9 +198,10 @@ class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
     description = "a check that approvalProcessor finished checking segments as expected"
     name        = "approvalProcessorSegDBFinish"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(approvalProcessorSegDBFinishCheck, self).__init__( timeout,
-                                                                 email=email
+                                                                 email=email,
+                                                                 logDir=logDir
                                                                )
 
     def approvalProcessorSegDBFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -225,7 +230,7 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
     description = "an item for montitoring approval_processor's response to iDQ information"
     name        = "approval processor idq"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         self.ifo = alert['description'].split()[-1]
@@ -233,7 +238,7 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [approvalProcessoriDQglitchFAPCheck(timeout, self.ifo, email=email)]
+        tasks = [approvalProcessoriDQglitchFAPCheck(timeout, self.ifo, email=email, logDir=logDir)]
         super(ApprovalProcessoriDQItem, self).__init__( graceid,
                                                         gdb,
                                                         t0,
@@ -249,10 +254,11 @@ class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
     description = "checks that approval processor recognized iDQ glitchFAP messages correctly"
     name        = "approvalProcessoriDQglitchFAP"
 
-    def __init__(self, timeout, ifo, email=[]):
+    def __init__(self, timeout, ifo, email=[], logDir='.'):
         self.ifo = ifo
         super(approvalProcessoriDQglitchFAPCheck, self).__init__( timeout,
-                                                             email=email
+                                                             email=email,
+                                                             logDir=logDir,
                                                            )
 
     def approvalProcessoriDQglitchFAP(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -279,7 +285,7 @@ class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
     description = "check that approval processor generated and distributed VOEvents"
     name        = "approval processor voevent"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extract params
@@ -287,8 +293,8 @@ class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [approvalProcessorVOEventCreationCheck(timeout, email=email),
-                 approvalProcessorVOEventDistributionCheck(timeout, email=email)
+        tasks = [approvalProcessorVOEventCreationCheck(timeout, email=email, logDir=logDir),
+                 approvalProcessorVOEventDistributionCheck(timeout, email=email, logDir=logDir)
                 ]
 
         ### wrap up instantiation
@@ -307,9 +313,10 @@ class approvalProcessorVOEventCreationCheck(esUtils.EventSupervisorTask):
     description = "a check that approval processor created the expected VOEvent"
     name        = "approvalProcessorVOEventCreation"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(approvalProcessorVOEventCreationCheck, self).__init__( timeout,
-                                                                     email=email
+                                                                     email=email,
+                                                                     logDir=logDir,
                                                                    )
 
     def approvalProcessorVOEventCreation(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -326,9 +333,10 @@ class approvalProcessorVOEventDistributionCheck(esUtils.EventSupervisorTask):
     description = "a check that approval processor distributed the VOEvent"
     name = "approvalProcessorVOEventDistribution"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(approvalProcessorVOEventDistributionCheck, self).__init__( timeout,
-                                                                     email=email
+                                                                     email=email,
+                                                                     logDir=logDir,
                                                                    )
 
     def approvalProcessorVOEventDistribution(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -351,7 +359,7 @@ class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
     description = "check that approval processor generated and distributed GCNs"
     name        = "approval processor gcn"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extract params
@@ -359,8 +367,8 @@ class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [approvalProcessorGCNCreationCheck(timeout, email=email),
-                 approvalProcessorGCNDistributionCheck(timeout, email=email)
+        tasks = [approvalProcessorGCNCreationCheck(timeout, email=email, logDir=logDir),
+                 approvalProcessorGCNDistributionCheck(timeout, email=email, logDir=logDir)
                 ]
 
         ### wrap up instantiation
@@ -379,9 +387,10 @@ class approvalProcessorGCNCreationCheck(esUtils.EventSupervisorTask):
     description = "a check that approval processor created the expected GCN"
     name        = "approvalProcessorGCNCreation"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(approvalProcessorGCNCreationCheck, self).__init__( timeout,
-                                                                 email=email
+                                                                 email=email,
+                                                                 logDir=logDir,
                                                                )
 
     def approvalProcessorGCNCreation(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -399,9 +408,10 @@ class approvalProcessorGCNDistributionCheck(esUtils.EventSupervisorTask):
     description = "a check that approval processor distributed the GCN"
     name        = "approvalProcessorGCNDistribution"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(approvalProcessorGCNDistributionCheck, self).__init__( timeout,
-                                                                     email=email
+                                                                     email=email,
+                                                                     logDir=logDir,
                                                                    )
 
     def approvalProcessorGCNDistribution(self, graceid, gdb, verbose=False, annotate=False, **kwargs):

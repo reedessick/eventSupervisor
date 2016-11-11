@@ -28,13 +28,13 @@ class LALInfStartItem(esUtils.EventSupervisorQueueItem):
     description = "a check that LALInference started"
     name        = "lalinf start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [lalinfStartCheck(timeout, email)]
+        tasks = [lalinfStartCheck(timeout, email, logDir=logDir)]
         super(LALInfStartItem, self).__init__( graceid,
                                                gdb,
                                                t0,
@@ -50,23 +50,25 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
     description = "a check that LALInference started"
     name        = "lalinfStart"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(lalinfStartCheck, self).__init__( timeout,
-                                               email=email
-                                             )
+                                                email=email,
+                                                logDir=logDir,
+                                              )
 
     def lalinfStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LALInference started
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-        if not esUtils.check4log( graceid, gdb, "LALInference online estimation started", verbose=verbose ):
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "LALInference online estimation started", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found LALInference starting message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -75,7 +77,7 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( "    "+self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -96,7 +98,7 @@ class LALInfItem(esUtils.EventSupervisorQueueItem):
     description = "a check that LALInference produced the expected data and finished"
     name        = "lalinf"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         postsamp_dt = float(options['post samp dt'])
@@ -110,9 +112,9 @@ class LALInfItem(esUtils.EventSupervisorQueueItem):
 
 
         tasks = [
-                 lalinfPostSampCheck(postsamp_dt, email=email), 
-                 lalinfSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
-                 lalinfFinishCheck(finish_dt, email=email)
+                 lalinfPostSampCheck(postsamp_dt, email=email, logDir=logDir), 
+                 lalinfSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir),
+                 lalinfFinishCheck(finish_dt, email=email, logDir=logDir)
                 ]
         super(LALInfItem, self).__init__( graceid, 
                                           gdb,
@@ -129,9 +131,10 @@ class lalinfPostSampCheck(esUtils.EventSupervisorTask):
     description = "a check that LALInference posted posterior samples"
     name        = "lalinfPostSamp"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(lalinfPostSampCheck, self).__init__( timeout,
-                                                   email=email
+                                                   email=email,
+                                                   logDir=logDir,
                                                  )
 
     def lalinfPostSamp(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -142,17 +145,18 @@ class lalinfPostSampCheck(esUtils.EventSupervisorTask):
         raise NotImplementedError("not sure what the posterior_samples filename is for lalinference follow-ups...")
 
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid ) 
+            logger.info( "%s : %s"%(graceid, self.description) )
 
         filename = "posterior_samples.dat"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required
@@ -165,25 +169,30 @@ class lalinfSkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that LALInference posted a skymap"
     name        = "lalinfSkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[]):
+    def __init__(self, timeout, tagnames=None, email=[], logDir='.'):
         self.tagnames = tagnames
         super(lalinfSkymapCheck, self).__init__( timeout,
-                                                 email=email
+                                                 email=email,
+                                                 logDir=logDir,
                                                )
 
     def lalinfSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that LALInference posted a skymap
         """
+        if verbose:
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
         fitsname = "LALInference_skymap.fits.gz"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required
@@ -195,9 +204,10 @@ class lalinfFinishCheck(esUtils.EventSupervisorTask):
     description = "a check that LALInference finished"
     name        = "lalinfFinish"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(lalinfFinishCheck, self).__init__( timeout,
-                                                 email=email
+                                                 email=email,
+                                                 logDir=logDir,
                                                )
 
     def lalinfFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -205,13 +215,14 @@ class lalinfFinishCheck(esUtils.EventSupervisorTask):
         a check that LALInference finished
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-        if not esUtils.check4log( graceid, gdb, "LALInference online estimation finished", verbose=verbose ):
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "LALInference online estimation finished", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found LALInference completion message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -220,7 +231,7 @@ class lalinfFinishCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True

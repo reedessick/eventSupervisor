@@ -27,13 +27,13 @@ class BayesWavePEStartItem(esUtils.EventSupervisorQueueItem):
     description = "a check that BayesWave PE started"
     name        = "bayeswave pe start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [bayeswavePEStartCheck(timeout, email)]
+        tasks = [bayeswavePEStartCheck(timeout, email, logDir=logDir)]
         super(BayesWavePEStartItem, self).__init__( graceid,
                                                     gdb,
                                                     t0,
@@ -49,9 +49,10 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
     description = "a check that BayesWave PE started"
     name        = "bayeswavePEStart"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(bayeswavePEStartCheck, self).__init__( timeout,
-                                                     email=email
+                                                     email=email,
+                                                     logDir=logDir,
                                                    )
 
     def bayeswavePEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -59,13 +60,14 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
         a check that BayesWave PE started
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-        if not esUtils.check4log( graceid, gdb, "BayesWaveBurst launched", verbose=verbose ):
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "BayesWaveBurst launched", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found BayesWave PE starting message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -74,7 +76,7 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -97,7 +99,7 @@ class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
     description = "a check that BayesWave PE produced the expected data and finished"
     name        = "bayeswave pe"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         postsamp_dt = float(options['post samp dt'])
@@ -110,11 +112,11 @@ class BayesWavePEItem(esUtils.EventSupervisorQueueItem):
 
         email = options['email'].split()
 
-        tasks = [bayeswavePEPostSampCheck(postsamp_dt, email=email),
-                 bayeswavePEEstimateCheck(estimate_dt, email=email),
-                 bayeswavePEBayesFactorsCheck(bayesFct_dt, email=email),
-                 bayeswavePESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
-#                 bayeswavePEFinishCheck(timeout, email=email) ### NOT IMPLEMENTED
+        tasks = [bayeswavePEPostSampCheck(postsamp_dt, email=email, logDir=logDir),
+                 bayeswavePEEstimateCheck(estimate_dt, email=email, logDir=logDir),
+                 bayeswavePEBayesFactorsCheck(bayesFct_dt, email=email, logDir=logDir),
+                 bayeswavePESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir),
+#                 bayeswavePEFinishCheck(timeout, email=email, logDir=logDir) ### NOT IMPLEMENTED
                 ]
         super(BayesWavePEItem, self).__init__( graceid, 
                                                gdb,
@@ -131,9 +133,10 @@ class bayeswavePEPostSampCheck(esUtils.EventSupervisorTask):
     description = "a check that BayesWave PE posted posterior samples"
     name        = "bayeswavePEPostSamp"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(bayeswavePEPostSampCheck, self).__init__( timeout,
-                                                        email=email
+                                                        email=email,
+                                                        logDir=logDir,
                                                       )
 
     def bayeswavePEPostSamp(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -141,14 +144,15 @@ class bayeswavePEPostSampCheck(esUtils.EventSupervisorTask):
         a check that BayesWave PE posted posterior samples
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid ) 
+            logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "BWB Follow-up results", verbose=verbose ):
+        if not esUtils.check4log( graceid, gdb, "BWB Follow-up results", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found Bayeswave link to follow-up results"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -157,7 +161,7 @@ class bayeswavePEPostSampCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -169,9 +173,10 @@ class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
     description = "a check that BayesWave PE posted Bayes Factors"
     name        = "bayeswavePEBayesFactors"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(bayeswavePEBayesFactorsCheck, self).__init__( timeout,
-                                                        email=email
+                                                        email=email,
+                                                        logDir=logDir,
                                                       )
 
     def bayeswavePEBayesFactors(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -179,14 +184,15 @@ class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
         a check that BayesWave PE posted Bayes Factors
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "BWB Bayes Factors", verbose=verbose ):
+        if not esUtils.check4log( graceid, gdb, "BWB Bayes Factors", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found Bayeswave BayesFactors message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -195,7 +201,7 @@ class bayeswavePEBayesFactorsCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( "    "+self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -207,9 +213,10 @@ class bayeswavePEEstimateCheck(esUtils.EventSupervisorTask):
     description = "a check that BayesWave PE posted estimates of parameters"
     name        = "bayeswavePEEstimate"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(bayeswavePEEstimateCheck, self).__init__( timeout,
-                                                        email=email
+                                                        email=email,
+                                                        logDir=logDir,
                                                       )
 
     def bayeswavePEEstimate(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -217,14 +224,15 @@ class bayeswavePEEstimateCheck(esUtils.EventSupervisorTask):
         a check that BayesWave PE posted estimates of parameters
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "BWB parameter estimation", verbose=verbose ):
+        if not esUtils.check4log( graceid, gdb, "BWB parameter estimation", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found Bayeswave BayesFactors message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -233,7 +241,7 @@ class bayeswavePEEstimateCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( "    "+self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -245,10 +253,11 @@ class bayeswavePESkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that BayesWave PE posted a skymap"
     name        = "bayeswavePESkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[]):
+    def __init__(self, timeout, tagnames=None, email=[], logDir='.'):
         self.tagnames = tagnames
         super(bayeswavePESkymapCheck, self).__init__( timeout,
-                                                      email=email
+                                                      email=email,
+                                                      logDir=logDir,
                                                     )
 
     def bayeswavePESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -256,16 +265,17 @@ class bayeswavePESkymapCheck(esUtils.EventSupervisorTask):
         a check that BayesWave PE posted a skymap
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         fitsname = "BW_skymap.fits"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
             if verbose:
-                print( "    "+message )
+                logger( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required
@@ -277,9 +287,10 @@ class bayeswavePEFinishCheck(esUtils.EventSupervisorTask):
     name = "bayeswavePEFinish"
     description = "a check that BayesWave PE finished"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(bayeswavePEFinishCheck, self).__init__( timeout,
-                                                      email=email
+                                                      email=email,
+                                                      logDir=logDir,
                                                     )
 
     def bayeswavePEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):

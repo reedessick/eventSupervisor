@@ -27,7 +27,7 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
     description = "notify people by email, sms or phone"
     name        = "notify"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extract parameters from config file
@@ -42,11 +42,11 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         ### generate tasks
         tasks = []
         if email: ### only add if the list is not empty
-            tasks.append( notifyByEmail(timeout, email=email, ignoreInj=ignoreInj) )
+            tasks.append( notifyByEmail(timeout, email=email, ignoreInj=ignoreInj, logDir=logDir) )
         if sms:
-            tasks.append( notifyBySMS(timeout, sms=sms, ignoreInj=ignoreInj) )
+            tasks.append( notifyBySMS(timeout, sms=sms, ignoreInj=ignoreInj, logDir=logDir) )
         if phone:
-            tasks.append( notifyByPhone(timeout, phone=phone, ignoreInj=ignoreInj) )
+            tasks.append( notifyByPhone(timeout, phone=phone, ignoreInj=ignoreInj, logDir=logDir) )
 
         ### wrap up instantiation
         super(NotifyItem, self).__init__( graceid,
@@ -84,11 +84,11 @@ class notifyByEmail(esUtils.EventSupervisorTask):
         if self.ignoreInj:
             if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
                 if verbose:
-                    logger.info( "labeled INJ -> ignoring" )
+                    logger.debug( "labeled INJ -> ignoring" )
 
             else:
                 if verbose:
-                    logger.info( "not labeled INJ -> sending emails" )
+                    logger.debug( "not labeled INJ -> sending emails" )
                 raise NotImplementedError
 
         else:
@@ -125,11 +125,11 @@ class notifyBySMS(esUtils.EventSupervisorTask):
             if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
 
                 if verbose:
-                    logger.info( "labeled INJ -> ignoring" )
+                    logger.debug( "labeled INJ -> ignoring" )
 
             else:
                 if verbose:
-                    logger.info( "not labeled INJ -> sending emails" )
+                    logger.debug( "not labeled INJ -> sending emails" )
                 raise NotImplementedError
 
         else:
@@ -166,10 +166,10 @@ class notifyByPhone(esUtils.EventSupervisorTask):
             if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=self.logTag ):
 
                 if verbose:
-                    logger.info( "labeled INJ -> ignoring" )
+                    logger.debug( "labeled INJ -> ignoring" )
             else:
                 if verbose:
-                    logger.info( "not labeled INJ -> sending emails" )
+                    logger.debug( "not labeled INJ -> sending emails" )
                 raise NotImplementedError
 
         else:

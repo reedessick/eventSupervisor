@@ -168,7 +168,10 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     alert_type = alert['alert_type']
 
     ### general options
-    annotate = config.has_option('general', 'annotate') and config.getbool('general', 'annotate')
+    annotate = config.getbool('general', 'annotate')
+    warnings = config.getbool('general', 'warnings')
+
+    logDir = config.get('general', 'log_directory') if config.has_option('general','log_directory') else '.'
     
     if config.has_option('general', 'gracedb'):
         gdb = GraceDb( config.get('general', 'gracedb') )
@@ -184,7 +187,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     if alert_type=="new":
         for name in new: ### iterate through names that neeed to be added
             if config.has_section( name ):
-                items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
+                items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir ) )
         completed = 0
 
     else: ### need to parse this further
@@ -206,7 +209,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
                 if filename.strip('.gz').endswidth('.fits'):
                     for name in fits:
                         if config.has_section( name ):
-                            items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
+                            items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir ) )
 
                 else:
                     pass ### not sure what to do here... are there other file types that require special action?
@@ -219,7 +222,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
             ### determine new QueueItems that need to be added based on this update
             for name in parent_child[update_name]:
                 if config.has_section( name ):
-                    items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate ) )
+                    items.append( qid[name]( alert, t0, dict( config.options( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir ) )
 
             ### determine which QueueItems/Tasks need to be marked complete based on this update
             ###  >>>>>>>>>>>>>>>>>> HOW DO WE DO THIS CLEANLY? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

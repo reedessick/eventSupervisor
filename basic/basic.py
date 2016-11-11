@@ -35,7 +35,7 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
     """
     name = "event creation"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid  = alert['uid']
         pipeline = alert['pipeline']
         self.description = "check %s event creation and trigger files"%(pipeline)
@@ -46,12 +46,12 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
 
         ### generate task instances
         if pipeline=="cwb":
-            tasks = [cWBTriggerCheck(timeout, email=email)]
+            tasks = [cWBTriggerCheck(timeout, email=email, logDir=logDir)]
         elif pipeline=="lib":
-            tasks = [oLIBTriggerCheck(timeout, email=email)]
+            tasks = [oLIBTriggerCheck(timeout, email=email, logDir=logDir)]
         elif pipeline in ["gstlal", "mbtaonline", "gstlal-spiir", "pycbc"]:
-            tasks = [cbcCoincCheck(timeout, email=email), 
-                     cbcPSDCheck(timeout, email=email)
+            tasks = [cbcCoincCheck(timeout, email=email, logDir=logDir), 
+                     cbcPSDCheck(timeout, email=email, logDir=logDir)
                     ]
         else:
             raise ValueError("pipeline=%s not understood"%pipeline)
@@ -72,9 +72,10 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
     description = "a check of the trigger.txt file for cWB events"
     name        = "cWBTrigger"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(cWBTriggerCheck, self).__init__( timeout, 
-                                               email=email
+                                               email=email,
+                                               logDir=logDir,
                                              )
 
     def cWBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -84,12 +85,13 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
             trigger_gpstime.txt
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving event details" )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+            logger.debug( "    retrieving event details" )
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
         filename = "trigger_%.4f.txt"%event['gpstime'] ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -99,7 +101,7 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -112,9 +114,10 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     description ="a check of the trigger.json file for oLIB events"
     name        = "oLIBTrigger"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(oLIBTriggerCheck, self).__init__( timeout, 
-                                                email=email
+                                                email=email,
+                                                logDir=logDir,
                                               )
 
     def oLIBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -124,12 +127,13 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
             gpstime-.\.json
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving event details" )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+            logger.debug( "retrieving event details" )
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
         template = ("%.2f-d.json"%event['gpstime']).replace(".","\.").replace("d",".") ### NOTE: may be fragile
-        self.warning, action_required = check4file( graceid, gdb, template, tagnames=None, verbose=verbose, regex=True )
+        self.warning, action_required = check4file( graceid, gdb, template, tagnames=None, verbose=verbose, regex=True, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -139,7 +143,7 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -152,9 +156,10 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
     description = "check coinc.xml file for CBC events"
     name        = "cbcCoinc"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(cbcCoincCheck, self).__init__( timeout, 
-                                             email=email
+                                             email=email,
+                                             logDir=logDir,
                                            )
 
     def cbcCoinc(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -162,10 +167,11 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
         check for coinc.xml file
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
         filename = "coinc.xml"
-        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -175,7 +181,7 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -188,9 +194,10 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
     description = "check psd.xml.gz file for CBC events"
     name        = "cbcPSD"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(cbcPSDCheck, self).__init__( timeout, 
-                                           email=email
+                                           email=email,
+                                           logDir=logDir,
                                          )
 
     def cbcPSD(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -198,9 +205,11 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
         check for psd.xml.gz file
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+
         filename = "psd.xml.gz"
-        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -210,7 +219,7 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -235,7 +244,7 @@ class FARItem(esUtils.EventSupervisorQueueItem):
     description = "check sanity of reported FAR"
     name        = "far"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extract parameters from config file
@@ -246,7 +255,7 @@ class FARItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [FARCheck(timeout, maxFAR=self.maxFAR, minFAR=self.minFAR, email=email)]
+        tasks = [FARCheck(timeout, maxFAR=self.maxFAR, minFAR=self.minFAR, email=email, logDir=logDir)]
 
         ### wrap up instantiation
         super(FARItem, self).__init__( graceid, 
@@ -264,12 +273,13 @@ class FARCheck(esUtils.EventSupervisorTask):
     description = "a check for propper FAR"
     name        = "far"
 
-    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[]):
+    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[], logDir='.'):
         self.maxFAR = maxFAR
         self.minFAR = minFAR
         
         super(FARCheck, self).__init__( timeout, 
-                                        email=email
+                                        email=email,
+                                        logDir=logDir,
                                       )
 
     def far(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -277,8 +287,9 @@ class FARCheck(esUtils.EventSupervisorTask):
         check the sanity of the reported FAR
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving event details" )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+            logger.debug( "retrieving event details" )
         event = gdb.event( gdb_id ).json()
 
         if event.has_key("far"): ### ensure FAR exists
@@ -295,7 +306,7 @@ class FARCheck(esUtils.EventSupervisorTask):
 
                     ### post message
                     if verbose:
-                        print( message )
+                        logger.debug( message )
                     if annotate:
                         esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -308,7 +319,7 @@ class FARCheck(esUtils.EventSupervisorTask):
 
                     ### post message
                     if verbose:
-                        print( message )
+                        logger.debug( message )
                     if annotate:
                         gdb.writeGDBLog( gdb, graceid, message )
 
@@ -321,7 +332,7 @@ class FARCheck(esUtils.EventSupervisorTask):
 
                     ### post message
                     if verbose:
-                        print( message )
+                        logger.debug( message )
                     if annotate:
                         gdb.writeGDBLog( gdb, graceid, message )
 
@@ -335,7 +346,7 @@ class FARCheck(esUtils.EventSupervisorTask):
 
                 ### post message
                 if verbose:
-                    print( message )
+                    logger.warn( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -364,7 +375,7 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
     description = "check local rates of events"
     name        = "local rate"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid  = alert['uid']
         group    = alert['group']
         pipeline = alert['pipeline']
@@ -382,7 +393,7 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### gnerate tasks
-        tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ] 
+        tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir) ] 
 
         ### wrap up instantiation
         super(LocalRateItem, self).__init__( graceid, 
@@ -399,7 +410,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
     """
     name = "localRate"
 
-    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.'):
         description = "a check of local rates for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
@@ -407,7 +418,8 @@ class localRateCheck(esUtils.EventSupervisorTask):
         self.pipeline = pipeline
         self.search   = search
         super(localRateCheck, self).__init__( timeout, 
-                                              email=email
+                                              email=email,
+                                              logDir=logDir,
                                             )
 
     def localRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
@@ -416,7 +428,8 @@ class localRateCheck(esUtils.EventSupervisorTask):
         checks only around the event's gpstime : (gpstime-self.mWin, gpstime+self.pWin)
         """
         if verbose:
-            report( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
         ### get this event
         if verbose:
@@ -426,9 +439,8 @@ class localRateCheck(esUtils.EventSupervisorTask):
         ### get event time
         event_time = float(gdb_entry['gpstime'])
         if verbose:
-            print( "    gpstime : %.6f"%(event_time) )
-        if verbose:
-            report( "    retrieving neighbors within [%.6f-%.6f, %.6f+%6f]"%(event_time, mWin, event_time, pWin) )
+            logger.debug( "gpstime : %.6f"%(event_time) )
+            logger.debug( "retrieving neighbors within [%.6f-%.6f, %.6f+%6f]"%(event_time, mWin, event_time, pWin) )
 
         ### count the number of neighbors
         count = 0
@@ -445,7 +457,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
 
                 ### post message
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message=message )  
 
@@ -458,7 +470,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
 
                 ### post message
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     message = "event_supervisor : "+message
                     esUtils.writeGDBLog( gdb, graceid, message )
@@ -484,7 +496,7 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
     description = "check creation rates of events"
     name        = "creation rate"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
         group = alert['group']
         pipeline = alert['pipeline']
@@ -502,7 +514,7 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ]
+        tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir) ]
 
         ### wrap up instantiation
         super(CreateRateItem, self).__init__( graceid,
@@ -519,7 +531,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
     """
     name = "createRate"
 
-    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[]):
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.'):
         description = "a check of creation rate for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
@@ -527,7 +539,8 @@ class createRateCheck(esUtils.EventSupervisorTask):
         self.pipeline = pipeline
         self.search   = search
         super(createRateCheck, self).__init__( timeout,
-                                              email=email
+                                              email=email,
+                                              logDir=logDir,
                                             )
 
     def createRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
@@ -536,23 +549,19 @@ class createRateCheck(esUtils.EventSupervisorTask):
         checks only around the event's creation time : (t-self.mWin, t+self.pWin)
         """
         if verbose:
-            report( "%s : %s"%(graceid, self.description) )
-
-        ### get this event
-        if verbose:
-            print( "    retrieving information about this event" )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+            logger.debug( "retrieving information about this event" )
         gdb_entry = gdb.event( graceid ).json()
 
         ### get event time
         event_time = tconvert( gdb_entry['created'] )
-        if verbose: 
-            print( "    %s -> %.3f"%(gdb_entry['created'], event_time) )
-
         winstart = tconvert( np.floor(event_time-mWin ), form="%Y-%m-%d %H:%M:%S" )
         winstop  = tconvert( np.ceil( event_time+pWin ), form="%Y-%m-%d %H:%M:%S" )
 
         if verbose:
-            print( "\tretrieving neighbors within [%s, %s]"%(winstart, winstop) )
+            logger.debug( "%s -> %.3f"%(gdb_entry['created'], event_time) )
+            logger.debug( "retrieving neighbors within [%s, %s]"%(winstart, winstop) )
 
         ### count the number of neighbors
         count = 0
@@ -569,7 +578,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
 
                 ### post messsage
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message=message )
 
@@ -582,7 +591,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
 
                 ### post message
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -605,7 +614,7 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
     description = "check that the unblind injection search completed"
     name        = "external triggers"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extract params from config
@@ -613,7 +622,7 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [externalTriggersCheck(timeout, email=email)]
+        tasks = [externalTriggersCheck(timeout, email=email, logDir=logDir)]
 
         ### wrap up instantiation
         super(ExternalTriggersItem, self).__init__( graceid, 
@@ -631,12 +640,13 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
     description = "a check that the external triggers search was completed"
     name        = "externalTriggers"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         """
         a check that the external triggers search was completed
         """
         super(externalTriggersCheck, self).__init__( timeout, 
-                                                     email=email
+                                                     email=email,
+                                                     logDir=logDir,
                                                    )
     
     def externalTriggers(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -644,16 +654,17 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
         a check that the external triggers search was completed
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "Coincidence search complete", verbose=verbose ): ### check for log message
+        if not esUtils.check4log( graceid, gdb, "Coincidence search complete", verbose=verbose, logTag=logger.name if verbose else None ): ### check for log message
             self.warning = "found external triggers coinc search completion message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
 
                 ### post message
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -666,7 +677,7 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
 
                 ### post message
                 if verbose:
-                    print( "    "+self.warning )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -689,7 +700,7 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
     description = "check that the unblind injection search completed"
     name        = "unblind injections"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### exract parameters from config
@@ -697,7 +708,7 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [unblindInjectionsCheck(timeout, email=email)]
+        tasks = [unblindInjectionsCheck(timeout, email=email, logDir=logDir)]
 
         ### wrap up instantiation
         super(UnblindInjectionsItem, self).__init__( graceid, 
@@ -715,12 +726,13 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
     description = "a check that the unblind injections search was completed"
     name        = "unblindInjections"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         """
         a check that the unblind injections search was completed
         """
         super(unblindInjectionsCheck, self).__init__( timeout, 
-                                                      email=email
+                                                      email=email,
+                                                      logDir=logDir,
                                                     )
 
     def unblindInjections(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -729,27 +741,29 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
         """
         ### NOTE: we do not delegate to esUtils.check4log here because we need to look for mutliple logs...
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-            print( "    retrieving log messages" )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+            logger.debug( "retrieving log messages" )
         logs = gdb.logs( graceid ).json()['log']
 
         if verbose:
-            print( "    parsing log" )
+            logger.debug( "parsing log" )
 
-        if esUtils.check4log( graceid, gdb, "No unblind injections in window", verbose=verbose ): ### check for log message
+        if esUtils.check4log( graceid, gdb, "No unblind injections in window", verbose=verbose, logTag=logger.name if verbose else None ): ### check for log message
             self.warning = "process reported that no unblind injections were found"
             if verbose or annotate:
                 message = "no action required : "+self.warning
 
                 ### post message
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
             return False ### action_required = False
 
-        print( "    WARNING: we do not currently know how to parse out statements when there *is* an unblind injection...raising an alarm anyway" )
+        if verbose:
+            logger.warn( "we do not currently know how to parse out statements when there *is* an unblind injection...raising an alarm anyway" )
 
         self.warning = "could not find a statement about unblind injections"
         if verbose or annotate:
@@ -757,7 +771,7 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 

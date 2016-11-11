@@ -1518,6 +1518,9 @@ if opts.idq:
 if opts.omegaScan:
     print "testing dq/omegaScan.py"
 
+    print "        >>>>>>>>>>>>>>>>> WARNING: testing not implemented <<<<<<<<<<<<<<<<<<<<<<<"
+
+    '''
     #--------------------
     # HofTOmegaScanStartItem
     #--------------------
@@ -1760,6 +1763,7 @@ if opts.omegaScan:
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
 
     print "    omegaScan.py passed all tests sucessfully!"
+    '''
 
 #-------------------------------------------------
 

@@ -28,13 +28,13 @@ class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
     description = "a check that LIB PE started"
     name        = "lib pe start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=warnings):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [libPEStartCheck(timeout, email)]
+        tasks = [libPEStartCheck(timeout, email, logDir=logDir)]
         super(LIBPEStartItem, self).__init__( graceid,
                                               gdb,
                                               t0,
@@ -50,9 +50,10 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
     description = "a check that LIB PE started"
     name        = "libPEStart"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(libPEStartCheck, self).__init__( timeout,
-                                               email=email
+                                               email=email,
+                                               logDir=logDir,
                                              )
 
     def libPEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -60,13 +61,14 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
         a check that LIB PE started
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
-        if not esUtils.check4log( graceid, gdb, "LIB Parameter estimation started.", verbose=verbose ):
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "LIB Parameter estimation started.", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found LIB PE starting message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -75,7 +77,7 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( "    "+self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -98,7 +100,7 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
     description = "a check that LIB PE produced the expected data and finished"
     name        = "lib pe"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         postsamp_dt = float(options['post samp dt'])
@@ -111,10 +113,10 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
 
         email = options['email'].split()
 
-        tasks = [libPEPostSampCheck(postsamp_dt, email=email),
-                 libPEBayesFactorsCheck(bayesFct_dt, email=email),
-                 libPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email),
-                 libPEFinishCheck(finish_dt, email=email)
+        tasks = [libPEPostSampCheck(postsamp_dt, email=email, logDir=logDir),
+                 libPEBayesFactorsCheck(bayesFct_dt, email=email, logDir=logDir),
+                 libPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir),
+                 libPEFinishCheck(finish_dt, email=email, logDir=logDir)
                 ]
         super(LIBPEItem, self).__init__( graceid, 
                                          gdb,
@@ -131,9 +133,10 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
     description = "a check that LIB PE posted posterior samples"
     name        = "libPEPostSamp"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(libPEPostSampCheck, self).__init__( timeout,
-                                                  email=email
+                                                  email=email,
+                                                  logDir=logDir,
                                                 )
 
     def libPEPostSamp(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -143,16 +146,17 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
               and it is not clear that we should seprate them as we have...
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         filename = "posterior_samples.dat"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
             if verbose:
-                print( "    "+message )
+                logger.debug( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required
@@ -164,9 +168,10 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
     description = "a check that LIB PE posted Bayes Factors"
     name        = "libPEBayesFactors"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(libPEBayesFactorsCheck, self).__init__( timeout,
-                                                  email=email
+                                                  email=email,
+                                                  logDir=logDir,
                                                 )
 
     def libPEBayesFactors(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -174,14 +179,15 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
         a check that LIB PE posted Bayes Factors
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "LIB PE summary", verbose=verbose ):
+        if not esUtils.check4log( graceid, gdb, "LIB PE summary", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found LIB PE BayesFactors message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -190,7 +196,7 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -203,10 +209,11 @@ class libPESkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that LIB PE posted a skymap"
     name        = "libPESkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[]):
+    def __init__(self, timeout, tagnames=None, email=[], logDir='.'):
         self.tagnames = tagnames
         super(libPESkymapCheck, self).__init__( timeout,
-                                                email=email
+                                                email=email,
+                                                logDir=logDir,
                                               )
 
     def libPESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -215,16 +222,17 @@ class libPESkymapCheck(esUtils.EventSupervisorTask):
         looks for the existence of a skymap and the correct tagnames
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         fitsname = "LIB_skymap.fits.gz"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
             if verbose:
-                print( "    "+message )
+                logger.debug( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required
@@ -236,9 +244,10 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
     description = "a check that LIB PE finished"
     name        = "libPEFinish"
 
-    def __init__(self, timeout, email=[]):
+    def __init__(self, timeout, email=[], logDir='.'):
         super(libPEFinishCheck, self).__init__( timeout,
-                                                email=email
+                                                email=email,
+                                                logDir=logDir,
                                               )
 
     def libPEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -246,14 +255,15 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
         a check that LIB PE finished
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "LIB Parameter estimation finished.", verbose=verbose ):
+        if not esUtils.check4log( graceid, gdb, "LIB Parameter estimation finished.", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found LIB PE completion message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -262,7 +272,7 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True

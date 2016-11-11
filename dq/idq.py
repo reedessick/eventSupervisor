@@ -39,7 +39,7 @@ class IDQStartItem(esUtils.EventSupervisorQueueItem):
     """
     name = "idq start"
  
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
 
         ### extract params
@@ -51,7 +51,7 @@ class IDQStartItem(esUtils.EventSupervisorQueueItem):
         self.description = "a check that iDQ GraceDB follow-up started as expected at (%s)"%(",".join(self.ifos))
 
         ### generate tasks
-        tasks = [ idqStartCheck(timeout, ifo, email=email) for ifo in self.ifos ]
+        tasks = [ idqStartCheck(timeout, ifo, email=email, logDir=logDir) for ifo in self.ifos ]
 
         ### wrap up instantiation
         super(IDQStartItem, self).__init__( graceid,
@@ -68,11 +68,12 @@ class idqStartCheck(esUtils.EventSupervisorTask):
     """
     name = "idqStart"
 
-    def __init__(self, timeout, ifo, email=[]):
+    def __init__(self, timeout, ifo, email=[], logDir='.'):
         self.ifo = ifo
         self.description = "a check that iDQ GraceDB follow-up started as expected at %s"%(self.ifo)
         super(idqStartCheck, self).__init__( timeout,
-                                             email=email
+                                             email=email,
+                                             logDir=logDir,
                                            )
 
     def idqStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -80,10 +81,11 @@ class idqStartCheck(esUtils.EventSupervisorTask):
         a check that iDQ started as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
         template = "Started searching for iDQ information within [(.*), (.*)] at %s"%(self.ifo)
-        if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True ): ### look for log message
+        if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True, logTag=logger.name if verbose else None ): ### look for log message
             self.warning = "found iDQ starting message at %s"%(self.ifo)
 
             if verbose or annotate:
@@ -91,7 +93,7 @@ class idqStartCheck(esUtils.EventSupervisorTask):
 
                 ### post message
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -103,7 +105,7 @@ class idqStartCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -138,7 +140,7 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
     """
     name = "idq"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
         graceid = alert['uid']
         self.ifo = alert['description'].split()[-1] ### assume a particular format for the log comment
                                                        ### this is based off iDQ start messages from a single IFO
@@ -168,21 +170,21 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
         ### generate tasks
         tasks = []
         for classifier in self.classifiers:
-            tasks += [idqGlitchFAPCheck(glitch_fap_dt, self.ifo, classifier, email=email),
-                      idqFAPFrameCheck(fap_frame_dt, self.ifo, classifier, email=email),
-                      idqRankFrameCheck(rank_frame_dt, self.ifo, classifier, email=email),
-                      idqTimeseriesPlotCheck(timeseries_plot_dt, self.ifo, classifier, email=email),
-                      idqActiveChanCheck(active_chan_dt, self.ifo, classifier, email=email),
-                      idqActiveChanPlotCheck(active_chan_plot_dt, self.ifo, classifier, email=email),
-                      idqTablesCheck(tables_dt, self.ifo, classifier, email=email),
-                      idqCalibrationCheck(calib_dt, self.ifo, classifier, email=email),
-                      idqCalibrationPlotCheck(calib_plot_dt, self.ifo, classifier, email=email),
-                      idqROCCheck(roc_dt, self.ifo, classifier, email=email),
-                      idqROCPlotCheck(roc_plot_dt, self.ifo, classifier, email=email),
-                      idqCalibStatsCheck(calib_stats_dt, self.ifo, classifier, email=email),
-                      idqTrainStatsCheck(train_stats_dt, self.ifo, classifier, email=email)
+            tasks += [idqGlitchFAPCheck(glitch_fap_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqFAPFrameCheck(fap_frame_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqRankFrameCheck(rank_frame_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqTimeseriesPlotCheck(timeseries_plot_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqActiveChanCheck(active_chan_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqActiveChanPlotCheck(active_chan_plot_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqTablesCheck(tables_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqCalibrationCheck(calib_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqCalibrationPlotCheck(calib_plot_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqROCCheck(roc_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqROCPlotCheck(roc_plot_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqCalibStatsCheck(calib_stats_dt, self.ifo, classifier, email=email, logDir=logDir),
+                      idqTrainStatsCheck(train_stats_dt, self.ifo, classifier, email=email, logDir=logDir)
                      ]
-        tasks.append( idqFinishCheck(finish_dt, self.ifo, email=email) )
+        tasks.append( idqFinishCheck(finish_dt, self.ifo, email=email, logDir=logDir) )
 
         ### wrap up instantiation
         super(IDQItem, self).__init__( graceid,
@@ -203,12 +205,13 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
     """
     name = "idqGlitchFAP"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported a glitch-FAP for %s at %s"%(self.classifier, self.ifo)
         super(idqGlitchFAPCheck, self).__init__( timeout,
-                                                 email=email
+                                                 email=email,
+                                                 logDir=logDir,
                                                )
 
     def idqGlitchFAP(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -216,7 +219,8 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported the gltich-FAP as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "minimum glitch-FAP for %s at %s within [(.*), (.*)] is (.*)"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid, 
@@ -226,7 +230,8 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames, 
                                                     verbose=verbose, 
                                                     logFragment=fragment, 
-                                                    logRegex=True 
+                                                    logRegex=True,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -237,7 +242,7 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -249,12 +254,13 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
     """
     name = "idqFAPFrame"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ uploads fap timeseries frames for %s at %s"%(self.classifier, self.ifo)
         super(idqFAPFrameCheck, self).__init__( timeout,
-                                                email=email
+                                                email=email,
+                                                logDir=logDir,
                                               )
 
     def idqFAPFrame(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -262,7 +268,8 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
         check that iDQ uploads fap timeseries files
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         framename = "%s_idq_%s_fap(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ fap timeseries for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid, 
@@ -272,7 +279,8 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames, 
                                                     verbose=verbose, 
                                                     logFragment=fragment, 
-                                                    logRegex=True 
+                                                    logRegex=True,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -283,7 +291,7 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -295,12 +303,13 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
     """
     name = "idqRankFrame"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ uploads rank timeseries frames for %s at %s"%(self.classifier, self.ifo)
         super(idqRankFrameCheck, self).__init__( timeout,
-                                                email=email
+                                                email=email,
+                                                logDir=logDir,
                                               )
 
     def idqRankFrame(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -308,7 +317,8 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
         check that iDQ uploads rank timeseries files
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid ) 
+            logger.info( "%s : %s"%(graceid, self.description) )
         framename = "%s_idq_%s_rank(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ glitch-rank frame for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -318,7 +328,8 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=True
+                                                    logRegex=True,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -329,7 +340,7 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -341,12 +352,13 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
     """
     name = "idqTimeseriesPlot"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reproted timeseries information as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTimeseriesPlotCheck, self).__init__( timeout,
-                                                      email=email
+                                                      email=email,
+                                                      logDir=logDir,
                                                     )
 
     def idqTimeseriesPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -354,7 +366,8 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported timeseries information as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid ) 
+            logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_timeseries-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ fap and glitch-rank timeseries plot for %s at %s:"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -364,7 +377,8 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=True
+                                                    logRegex=True,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -375,7 +389,7 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -387,12 +401,13 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
     """
     name = "idqActiveChan"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ uploads a list of possible active channels for %s at %s"%(self.classifier, self.ifo)
         super(idqActiveChanCheck, self).__init__( timeout, 
-                                                  email=email
+                                                  email=email,
+                                                  logDir=logDir,
                                                 )
 
     def idqActiveChan(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -400,7 +415,8 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
         check that iDQ uploaded a list of possible active channels
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s_chanlist(.*)-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ (possible) active channels for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -410,7 +426,8 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -421,7 +438,7 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -433,12 +450,13 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
     """
     name = "idqActiveChanPlot"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ uploads a plot of possible active channels for %s at %s"%(self.classifier, self.ifo)
         super(idqActiveChanPlotCheck, self).__init__( timeout,
-                                                      email=email
+                                                      email=email,
+                                                      logDir=logDir,
                                                     )
 
     def idqActiveChanPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -446,7 +464,8 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
         check that iDQ uploaded a plot of possible active channels
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_chanstrip-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ channel strip chart for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -456,7 +475,8 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if logger else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -467,7 +487,7 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -482,12 +502,13 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
     """
     name = "idqTables"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported the xml tables as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTablesCheck, self).__init__( timeout,
-                                              email=email
+                                              email=email,
+                                              logDir=logDir,
                                             ) 
 
     def idqTables(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -495,7 +516,8 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported the xml tables as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         filename = "%s_idq_%s(.*)-(.*)-(.*).xml.gz"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ glitch tables %s:"%(self.ifo) ### NOTE: this is bad... but it's what we have at the moment within iDQ
         self.warning, action_required = check4file( graceid,
@@ -505,7 +527,8 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -516,7 +539,7 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -531,12 +554,13 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
     """
     name = "idqCalibration"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported the calibration data as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibrationCheck, self).__init__( timeout, 
-                                                   email=email
+                                                   email=email,
+                                                   logDir=logDir,
                                                  )
 
     def idqCalibration(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -544,7 +568,8 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported preformance metrics as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_calib-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ calibration sanity check for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -554,7 +579,8 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None
                                                   )
         if verbose or annotate:
             ### format message
@@ -565,7 +591,7 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -577,12 +603,13 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
     """
     name = "idqCalibrationPlot"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported the calibration plot as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibrationPlotCheck, self).__init__( timeout,
-                                                       email=email
+                                                       email=email,
+                                                       logDir=logDir,
                                                      )
 
     def idqCalibrationPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -590,7 +617,8 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported preformance metrics as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_calib-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ calibration sanity check figure for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -600,7 +628,8 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None
                                                   )
         if verbose or annotate:
             ### format message
@@ -611,7 +640,7 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -623,12 +652,13 @@ class idqROCCheck(esUtils.EventSupervisorTask):
     """
     name = "idqROC"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported the ROC data as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqROCCheck, self).__init__( timeout,
-                                           email=email
+                                           email=email,
+                                           logDir=logDir,
                                          )
 
     def idqROC(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -636,7 +666,8 @@ class idqROCCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported preformance metrics as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_ROC-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local ROC curves for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -646,7 +677,8 @@ class idqROCCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -657,7 +689,7 @@ class idqROCCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -669,12 +701,13 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
     """
     name = "idqROCPlot"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported the ROC plot as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqROCPlotCheck, self).__init__( timeout,
-                                               email=email
+                                               email=email,
+                                               logDir=logDir,
                                              )
 
     def idqROCPlot(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -682,7 +715,8 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported preformance metrics as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_ROC-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local ROC figure for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -692,7 +726,8 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -703,7 +738,7 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -715,12 +750,13 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
     """
     name = "idqCalibStats"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported the calibration statistics as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqCalibStatsCheck, self).__init__( timeout,
-                                                  email=email
+                                                  email=email,
+                                                  logDir=logDir,
                                                 )
 
     def idqCalibStats(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -728,7 +764,8 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported preformance metrics as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_calibStats-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local calibration vital statistics for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -738,7 +775,8 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -749,7 +787,7 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -761,12 +799,13 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
     """
     name = "idqTrainStats"
 
-    def __init__(self, timeout, ifo, classifier, email=[]):
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.'):
         self.ifo = ifo
         self.classifier = classifier
         self.description = "a check that iDQ reported the training statistics as expected for %s at %s"%(self.classifier, self.ifo)
         super(idqTrainStatsCheck, self).__init__( timeout,
-                                                  email=email
+                                                  email=email,
+                                                  logDir=logDir,
                                                 )
 
     def idqTrainStats(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -774,7 +813,8 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
         a check that iDQ reported preformance metrics as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_trainStats-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local training vital statistics for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
@@ -784,7 +824,8 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
                                                     tagnames=self.tagnames,
                                                     verbose=verbose,
                                                     logFragment=fragment,
-                                                    logRegex=False
+                                                    logRegex=False,
+                                                    logTag=logger.name if verbose else None,
                                                   )
         if verbose or annotate:
             ### format message
@@ -795,7 +836,7 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+message )
+                logger.debug( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -810,11 +851,12 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
     """
     name = "idqFinish"
 
-    def __init__(self, timeout, ifo, email=[]):
+    def __init__(self, timeout, ifo, email=[], logDir='.'):
         self.ifo = ifo
         self.description = "a check that iDQ finished reporting as expected at %s"%(self.ifo)
         super(idqFinishCheck, self).__init__( timeout,
-                                              email=email
+                                              email=email,
+                                              logDir=logDir,
                                             )
 
     def idqFinish(self, graceid, gdb, verbose=False, annoate=False, **kwargs):
@@ -822,17 +864,18 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
         a check that iDQ finished as expected
         """
         if verbose:
-            print( "%s : %s"%(graceid, self.description) )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger.info( "%s : %s"%(graceid, self.description) )
 
         template = "Finished searching for iDQ information within [(.*), (.*)] at %s"%(self.ifo) ### use regex
-        if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True ):
+        if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True, logTag=logger.name if verbose else None ):
             self.warning = "found iDQ completion message at %s"%(self.ifo)
             if verbose or annotate:
                 message = "no action required : "+self.warning
 
                 ### post message
                 if verbose:
-                    print( "    "+message )
+                    logger.debug( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -844,7 +887,7 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                print( "    "+self.warning )
+                logger.debug( "    "+self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
