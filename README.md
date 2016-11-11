@@ -28,3 +28,8 @@ To Do:
   - document new architecture, including flow charts showing inheritence and how parseAlert works. Be clear about how to add new Items/Tasks and what needs to be modified in parseAlert to support that.
   - add ability to remove Items from the queue if alerts are received that render them unnecessary.
     - we should give all Tasks a "satisfy" method or something which takes in a log message (or lvalert or something) and determines whether the Task is complete. This will be extremely useful when identifying which QueueItems are done as new alerts come in as well as obviating latency tools.
+  - implement a more "fluid" way to denote the directed graph connecting the follow-up.
+    - want to avoid the hard coded key:value pairs currently within eventSupervisor.py
+    - want some sort of Parent:Child relationship with the edge length connecting the nodes to be the expected delay time
+    - we then can have a "compiler" that takes the directed graph and writes the appropriate eventSupervisor config file
+      - eg: this can ensure that chansets are identical in "l1 omega scan start" and "l1 omega scan

@@ -2,9 +2,9 @@
 
 notify/notify
     NotifyItem
-        notifyByEmail					***
-        notifyBySMS					***
-        notifyByPhone					***
+        notifyByEmail					
+        notifyBySMS					*** leave unimplemented for the time being
+        notifyByPhone					*** leave unimplemented for the time being
 
 basic/basic
     EventCreationItem
@@ -23,7 +23,7 @@ basic/basic
         createRateCheck
 
     ExternalTriggersItem
-        externalTriggersCheck
+        externalTriggersCheck				*** don't know what it looks like when we do find one...
 
     UnblindInjectionsItem
         unblindInjectionsCheck				*** unkown statement when there is something there
@@ -32,24 +32,24 @@ basic/basic
 basic/approvalProcessor
     ApprovalProcessorPrelimDQItem
         approvalProcessorFARCheck
-        approvalProcessorSegDBStartCheck		***
+        approvalProcessorSegDBStartCheck		*** leave unimplemented for the time being
     ApprovalProcessorSegDBItem
-        approvalProcessorSegDBFlagsCheck		***
-        approvalProcessorSegDBFinishCheck		***
+        approvalProcessorSegDBFlagsCheck		*** leave unimplemented for the time being
+        approvalProcessorSegDBFinishCheck		*** leave unimplemented for the time being
     ApprovalProcessoriDQItem
-        approvalProcessoriDQglitchFAPCheck		***
+        approvalProcessoriDQglitchFAPCheck		*** leave unimplemented for the time being
     ApprovalProcessorVOEventItem
-        approvalProcessorVOEventCreationCheck		***
-        approvalProcessorVOEventDistributionCheck	***
+        approvalProcessorVOEventCreationCheck		*** leave unimplemented for the time being
+        approvalProcessorVOEventDistributionCheck	*** leave unimplemented for the time being
     ApprovalProcessorGCNItem
-        approvalProcessorGCNCreationCheck		***
-        approvalProcessorGCNDistributionCheck		***
+        approvalProcessorGCNCreationCheck		*** leave unimplemented for the time being
+        approvalProcessorGCNDistributionCheck		*** leave unimplemented for the time being
 
-    labeling?						***
+    labeling?						*** leave unimplemented for the time being
 
 dq/dq
     DQSummaryItem
-        dqSummaryCheck					***
+        dqSummaryCheck					*** don't know what this looks like...
 
 dq/idq
     IDQStartItem
@@ -74,18 +74,17 @@ dq/segDB2grcDB
     SegDB2GrcDBStartItem
         segDB2grcDBStartCheck
     SegDB2GrcDBItem
-        segDB2grcDBFlagsCheck				*** probably want to add in deadtime estimates as a check, too
-        segDB2grcDBVetoDefCheck				***
-        segDB2grcDBAnyCheck				***
+        segDB2grcDBFlagsCheck				
+        segDB2grcDBVetoDefCheck				*** leave this unimplemented for the moment
+        segDB2grcDBAnyCheck				
         segDB2grcDBFinishCheck
 
-dq/omegaScan						all these are inherited for certain channel sets (which are hard coded?). 
-							we should only use the parent classes and never the hard-coded children (and remove those?)
+dq/omegaScan					
     OmegaScanStartItem
-        omegaScanStartCheck				***
+        omegaScanStartCheck				
     OmegaScanItem
-        omegaScanDataCheck				***
-        omegaScanFinishCheck				***
+        omegaScanDataCheck				
+        omegaScanFinishCheck				
 
 skymaps/skymaps
     SkymapSanityItem
@@ -97,10 +96,10 @@ skymaps/skymaps
 
 skymaps/skymapSummary
     SkymapSummaryStartItem
-        skymapSummaryStartCheck				***
+        skymapSummaryStartCheck				*** leave this unimplemented until new skymapSummaries are running
     SkymapSummaryItem
-        skymapSummaryDatacheck 				***
-        skymapSummaryFinishCheck			***
+        skymapSummaryDatacheck 				*** leave this unimplemented until new skymapSummaries are running
+        skymapSummaryFinishCheck			*** leave this unimplemented until new skymapSummaries are running
 
 pe/bayestar
     BayestarStartItem
@@ -132,7 +131,7 @@ pe/lalinf
     LALInfStartItem
         lalinfStartCheck
     LALInfItem
-        lalinfPostSampCheck				***
+        lalinfPostSampCheck				*** no known statement?
         lalinfSkymapCheck
         lalinfFinishCheck
 
