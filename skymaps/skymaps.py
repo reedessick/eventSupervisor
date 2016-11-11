@@ -31,20 +31,25 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skymap sanity"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
         self.fitsname = alert['file']
+        self.description = "check sanity and formatting of %s"%self.fitsname
 
+        ### extract parameters from config
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        self.description = "check sanity and formatting of %s"%self.fitsname
+        ### generate tasks
         tasks = [skymapSanityCheck(timeout, self.fitsname, email=email)]
+
+        ### wrap up instantiation
         super(SkymapSanityItem, self).__init__( graceid,
                                                 gdb,
                                                 t0,
                                                 tasks,
-                                                annotate=annotate
+                                                annotate=annotate,
+                                                warnings=warnings,
                                               )
 
 class skymapSanityCheck(esUtils.EventSupervisorTask):
@@ -68,6 +73,8 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
             print( "    downloading %s"%(self.fitsname) )
+
+        ### download the fits file
         file_obj = open(self.fitsname, "w")
         file_obj.write( gdb.files( graceid, self.fitsname ).read() )
         file_obj.close()
@@ -77,48 +84,60 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
         post, header = hp.read_map( self.fitsname, h=True )
         header = dict(header)
 
-        normed = np.sum(post) == 1.0
-        coord = header['COORDSYS'] == 'C'
+        normed = np.sum(post) == 1.0      ### does it sum to 1?
+        coord = header['COORDSYS'] == 'C' ### is it in Equatorial Celestial coordinates?
 
         if normed and coord:
             self.warning = "%s is properly normalized and in Equatorial coordinates"%self.fitsname
             if verbose or annotate:
                 message = "no action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return False ### action_required = False
 
         elif normed:
             self.warning = "%s is not in Equatorial coordinates"%self.fitsname
             if verbose or annotate:
                 message = "no action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return True ### action_required = False
 
         elif coord:
             self.warning = "%s is not properly normalized"%self.fitsname
             if verbose or annotate:
                 message = "action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return True ### action_required = True
 
         else:
             self.warning = "%s is not properly normalized and is not in Equatorial coordinates"%self.fitsname
             if verbose or annotate:
                 message = "action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     message = "event_supervisor : "+message
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return True ### action_required = True
 
 #-------------------------------------------------
@@ -139,23 +158,28 @@ class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
     """
     name = "plot skymap"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
-
         self.fitsname = alert['file']
         self.tagnames = alert['object']['tagnames']
 
+        self.description = "check plotting jobs for %s"%self.fitsname
+
+        ### extract parameters from config
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        self.description = "check plotting jobs for %s"%self.fitsname
+        ### generate tasks
         tasks = [plotSkymapCheck(timeout, self.fitsname, self.tagnames, email=email)]
+
+        ### wrap up instantiation
         super(PlotSkymapItem, self).__init__( graceid,
-                                               gdb,
-                                               t0,
-                                               tasks,
-                                               annotate=annotate
-                                             )
+                                              gdb,
+                                              t0,
+                                              tasks,
+                                              annotate=annotate,
+                                              warnings=warnings,
+                                            )
 
 class plotSkymapCheck(esUtils.EventSupervisorTask):
     """
@@ -178,17 +202,22 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
 
-        figname = "%s.png"%(self.fitsname.split('.')[0])
-        self.warning, action_required = check4file( graceid, gdb, figname, tagnames=self.tagnames, verbose=verbose )
+        figname = "%s.png"%(self.fitsname.split('.')[0]) ### NOTE: this may be fragile
+        self.warning, action_required = check4file( graceid, gdb, figname, tagnames=self.tagnames, verbose=verbose ) ### loog for the figure
+
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 #-------------------------------------------------
@@ -209,23 +238,28 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skyviewer"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
-
         self.fitsname = alert['file']
         self.tagnames = alert['object']['tagnames']
 
+        self.description = "check plotting jobs for %s"%self.fitsname
+
+        ### extract parameters from config
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        self.description = "check plotting jobs for %s"%self.fitsname
+        ### generate tasks
         tasks = [skyviewerCheck(timeout, self.fitsname, self.tagnames, email=email)]
+
+        ### wrap up instantiation
         super(SkyviewerItem, self).__init__( graceid,
-                                               gdb,
-                                               t0,
-                                               tasks,
-                                               annotate=annotate
-                                             )
+                                             gdb,
+                                             t0,
+                                             tasks,
+                                             annotate=annotate,
+                                             warnings=warnings,
+                                           )
 
 class skyviewerCheck(esUtils.EventSupervisorTask):
     """
@@ -248,17 +282,21 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
             print( "    retrieving files")
-        files = gdb.files( graceid ).json().keys()
 
-        jsonname = "%s.json"%(self.fitsname.strip(".gz").strip(".fits"))
+        jsonname = "%s.json"%(self.fitsname.strip(".gz").strip(".fits")) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose )
+
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required

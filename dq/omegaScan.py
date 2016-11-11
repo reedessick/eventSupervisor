@@ -38,9 +38,10 @@ class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
     """
     name = "omega scan start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, chanset='h(t)', ifos=[]):
+    def __init__(self, alert, t0, options, gdb, chanset='h(t)', ifos=[], annotate=False, warnings=False):
         graceid = alert['uid']
 
+        ### extract params
         timeout = float(options['dt'])
         email = options['email'].split()
 
@@ -48,12 +49,17 @@ class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
         self.ifos = ifos
 
         self.description = "a check that OmegaScans were started for %s at (%s)"%(self.chanset, ",".join(self.ifos))
+
+        ### generate tasks
         tasks = [omegaScanStartCheck(timeout, ifo, chanset, email=email) for ifo in self.ifos]
+
+        ### wrap up instantiation
         super(OmegaScanStartItem, self).__init__( graceid,
                                                   gdb,
                                                   t0,
                                                   tasks,
-                                                  annotate=annotate
+                                                  annotate=annotate,
+                                                  warnings=warnings,
                                                 )
 
 class omegaScanStartCheck(esUtils.EventSupervisorTask):
@@ -91,7 +97,7 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
     """
     name = "omega scan"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, chanset='h(t)'):
+    def __init__(self, alert, t0, options, gdb, chanset='h(t)', annotate=False, warnings=False):
         graceid = alert['uid']
 
         self.ifo = alert['description'].split()[-1]  ### need to parse this out of the alert!
@@ -111,7 +117,8 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
                                              gdb,
                                              t0,
                                              tasks,
-                                             annotate=annotate
+                                             annotate=annotate,
+                                             warnings=warnings,
                                            )
 
 class omegaScanDataCheck(esUtils.EventSupervisorTask):
@@ -158,6 +165,9 @@ class omegaScanFinishCheck(esUtils.EventSupervisorTask):
 
 #---------------------------------------------------------------------------------------------------
 
+### deprecated! I don't like how hard-coded these are...
+
+'''
 #------------------------
 # h(t)
 #------------------------
@@ -264,3 +274,4 @@ class IDQOmegaScanItem(OmegaScanItem):
 
     def __init__(self, alert, t0, options, gdb, annotate=False):
         super(IDQOmegaScanItem, self).__init__(alert, t0, options, gdb, annotate=annotate, chanset=self.chanset)
+'''

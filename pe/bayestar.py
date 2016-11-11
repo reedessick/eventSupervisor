@@ -25,10 +25,10 @@ class BayestarStartItem(esUtils.EventSupervisorQueueItem):
         dt
         email
     """
-    name = "bayestar start"
     description = "a check that BAYESTAR started as expected"
+    name        = "bayestar start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
@@ -39,15 +39,16 @@ class BayestarStartItem(esUtils.EventSupervisorQueueItem):
                                                  gdb,
                                                  t0,
                                                  tasks,
-                                                 annotate=annotate
+                                                 annotate=annotate,
+                                                 warnings=warnings,
                                                )
 
 class bayestarStartCheck(esUtils.EventSupervisorTask):
     """
     a check that bayestar started as expected
     """
-    name = "bayestarStart"
     description = "a check that bayestar started as expected"
+    name        = "bayestarStart"
 
     def __init__(self, timeout, email=[]):
         super(bayestarStartCheck, self).__init__( timeout,
@@ -92,10 +93,10 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
         finish dt
         email
     """
-    name = "bayestar"
     description = "a check that BAYESTAR produced the expected data and finished"
+    name        = "bayestar"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
         skymap_dt = float(options['skymap dt'])
@@ -113,15 +114,16 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
                                             gdb,
                                             t0,
                                             tasks,
-                                            annotate=annotate
+                                            annotate=annotate,
+                                            warnings=warnings,
                                           )
 
 class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that Bayestar produced a skymap
     """
-    name = "bayestarSkymap"
     description = "a check that bayestar produced a skymap"
+    name        = "bayestarSkymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
@@ -153,8 +155,8 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that bayestar finished as expected
     """
-    name = "bayestarFinish"
     description = "a check that bayestar finished as expected"
+    name        = "bayestarFinish"
 
     def __init__(self, timeout, email=[]):
         super(bayestarFinishCheck, self).__init__( timeout,

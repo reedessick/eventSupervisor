@@ -14,6 +14,7 @@ from lal.gpstime import tconvert
 #---------------------------------------------------------------------------------------------------
 
 ### methods to identify updates by description
+### not needed here
 
 #---------------------------------------------------------------------------------------------------
 
@@ -34,13 +35,16 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
     """
     name = "event creation"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
-        graceid = alert['uid']
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+        graceid  = alert['uid']
         pipeline = alert['pipeline']
+        self.description = "check %s event creation and trigger files"%(pipeline)
 
+        ### extract parameters from config file
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        ### generate task instances
         if pipeline=="cwb":
             tasks = [cWBTriggerCheck(timeout, email=email)]
         elif pipeline=="lib":
@@ -52,12 +56,13 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
         else:
             raise ValueError("pipeline=%s not understood"%pipeline)
 
-        self.description = "check %s event creation and trigger files"%(pipeline)
+        ### wrap  up instantiation
         super(EventCreationItem, self).__init__( graceid, 
                                                  gdb,
                                                  t0, 
                                                  tasks, 
-                                                 annotate=annotate 
+                                                 annotate=annotate,
+                                                 warnings=warnings,
                                                 )
 
 class cWBTriggerCheck(esUtils.EventSupervisorTask):
@@ -65,7 +70,7 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
     check for cWB event creation, checking the trigger.txt file
     """
     description = "a check of the trigger.txt file for cWB events"
-    name = "cWBTrigger"
+    name        = "cWBTrigger"
 
     def __init__(self, timeout, email=[]):
         super(cWBTriggerCheck, self).__init__( timeout, 
@@ -81,27 +86,31 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
             print( "    retrieving event details" )
-        event = gdb.event( graceid ).json()
+        event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
-        filename = "trigger_%.4f.txt"%event['gpstime']
+        filename = "trigger_%.4f.txt"%event['gpstime'] ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
  
 class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     """
     check for oLIB event creation
     """
-    description="a check of the trigger.json file for oLIB events"
-    name = "oLIBTrigger"
+    description ="a check of the trigger.json file for oLIB events"
+    name        = "oLIBTrigger"
 
     def __init__(self, timeout, email=[]):
         super(oLIBTriggerCheck, self).__init__( timeout, 
@@ -117,19 +126,23 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
             print( "    retrieving event details" )
-        event = gdb.event( graceid ).json()
+        event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
-        template = ("%.2f-d.json"%event['gpstime']).replace(".","\.").replace("d",".") 
+        template = ("%.2f-d.json"%event['gpstime']).replace(".","\.").replace("d",".") ### NOTE: may be fragile
         self.warning, action_required = check4file( graceid, gdb, template, tagnames=None, verbose=verbose, regex=True )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class cbcCoincCheck(esUtils.EventSupervisorTask):
@@ -137,7 +150,7 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
     check for CBC event creation, checking coinc.xml file
     """
     description = "check coinc.xml file for CBC events"
-    name = "cbcCoinc"
+    name        = "cbcCoinc"
 
     def __init__(self, timeout, email=[]):
         super(cbcCoincCheck, self).__init__( timeout, 
@@ -154,14 +167,18 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
         filename = "coinc.xml"
         self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class cbcPSDCheck(esUtils.EventSupervisorTask):
@@ -169,7 +186,7 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
     check for CBC event creation, checking PSD.xml file
     """
     description = "check psd.xml.gz file for CBC events"
-    name = "cbcPSD"
+    name        = "cbcPSD"
 
     def __init__(self, timeout, email=[]):
         super(cbcPSDCheck, self).__init__( timeout, 
@@ -185,14 +202,18 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
         filename = "psd.xml.gz"
         self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 #-------------------------------------------------
@@ -211,24 +232,29 @@ class FARItem(esUtils.EventSupervisorQueueItem):
         dt
         email
     """
-    name = "far"
     description = "check sanity of reported FAR"
+    name        = "far"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
+        ### extract parameters from config file
         self.minFAR = float(options['min far'])
         self.maxFAR = float(options['max far'])
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        ### generate tasks
         tasks = [FARCheck(timeout, maxFAR=self.maxFAR, minFAR=self.minFAR, email=email)]
+
+        ### wrap up instantiation
         super(FARItem, self).__init__( graceid, 
                                        gdb, 
                                        t0, 
                                        tasks, 
-                                       annotate=annotate
+                                       annotate=annotate,
+                                       warnings=warnings,
                                      )
 
 class FARCheck(esUtils.EventSupervisorTask):
@@ -236,7 +262,7 @@ class FARCheck(esUtils.EventSupervisorTask):
     a check for propper FAR
     """
     description = "a check for propper FAR"
-    name = "far"
+    name        = "far"
 
     def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[]):
         self.maxFAR = maxFAR
@@ -255,45 +281,59 @@ class FARCheck(esUtils.EventSupervisorTask):
             print( "    retrieving event details" )
         event = gdb.event( gdb_id ).json()
 
-        if event.has_key("far"): ### check bounds
+        if event.has_key("far"): ### ensure FAR exists
+
+            ### check bounds
             far = event['far']
             big = far > self.axFAR
             sml = far < self.minFAR
 
-            if big:
+            if big: ### far is too big
                 self.warning = "FAR=%.3e > %.3e"%(far, maxFAR)
                 if verbose or annotate:
                     message = "action required : "+self.warning
+
+                    ### post message
                     if verbose:
                         print( message )
                     if annotate:
                         esUtils.writeGDBLog( gdb, graceid, message )
+
                 return True ### action_required=True
                 
-            elif sml:
+            elif sml: ### far is too small
                 self.warning = "FAR=%.3e < %.3e"%(far, minFAR)
                 if verbose or annotate:
                     message = "action required : "+self.warning
+
+                    ### post message
                     if verbose:
                         print( message )
                     if annotate:
                         gdb.writeGDBLog( gdb, graceid, message )
+
                 return True ### action_required=True
 
-            else:
+            else: ### far is within an uninteresting range
                 self.warning = "%.3e <= FAR=%.3e <= %.3e"%(minFAR, far, maxFAR)
                 if verbose or annotate:
                     message = "no action required : "+self.warning
+
+                    ### post message
                     if verbose:
                         print( message )
                     if annotate:
                         gdb.writeGDBLog( gdb, graceid, message )
+
                 return False ### action_required=False
 
         else: ### something is very wrong...
+
             self.warning = "FAR is not defined!"
             if verbose or annotate:
                 message = "action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( message )
                 if annotate:
@@ -321,18 +361,19 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
         dt 
         email
     """
-    name = "local rate"
     description = "check local rates of events"
+    name        = "local rate"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
-        graceid = alert['uid']
-        group = alert['group']
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
+        graceid  = alert['uid']
+        group    = alert['group']
         pipeline = alert['pipeline']
         if alert.has_key('search'):
             search = alert['search']
         else:
             search = None
 
+        ### extract parameters from config
         pWin = float(options['win+'])
         mWin = float(options['win-'])
         maxRate = float(options['max rate'])
@@ -340,12 +381,16 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        ### gnerate tasks
         tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ] 
+
+        ### wrap up instantiation
         super(LocalRateItem, self).__init__( graceid, 
                                              gdb,
                                              t0, 
                                              tasks,
-                                             annotate=annotate
+                                             annotate=annotate,
+                                             warnings=warnings,
                                            )
 
 class localRateCheck(esUtils.EventSupervisorTask):
@@ -358,9 +403,9 @@ class localRateCheck(esUtils.EventSupervisorTask):
         description = "a check of local rates for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
-        self.group = group
+        self.group    = group
         self.pipeline = pipeline
-        self.search = search
+        self.search   = search
         super(localRateCheck, self).__init__( timeout, 
                                               email=email
                                             )
@@ -385,6 +430,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
         if verbose:
             report( "    retrieving neighbors within [%.6f-%.6f, %.6f+%6f]"%(event_time, mWin, event_time, pWin) )
 
+        ### count the number of neighbors
         count = 0
         for entry in gdb.events( "%d .. %d"%(np.floor(event_time-self.mWin), np.ceil(event_time+self.pWin)) ): ### query for neighbors in (t-mWin, t+pWin)
             if not entry.has_key('search'): 
@@ -392,24 +438,31 @@ class localRateCheck(esUtils.EventSupervisorTask):
             ###         not the 'current' event          belongs to the right group        associated with the right pipeline           from the correct search
             count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
             
-        if count > (pWin+mWin)*maxRate:
+        if count > (pWin+mWin)*maxRate: ### too many neighbors
             self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
                 message = "action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message=message )  
+
             return True ### action_required = True
-        else:
+
+        else: ### an acceptable number of neighbors
             self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
                 message = "no action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     message = "event_supervisor : "+message
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return False ### action_required = False
 
 class CreateRateItem(esUtils.EventSupervisorQueueItem):
@@ -428,10 +481,10 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
         dt 
         email
     """
-    name = "creation rate"
     description = "check creation rates of events"
+    name        = "creation rate"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
         group = alert['group']
         pipeline = alert['pipeline']
@@ -440,6 +493,7 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
         else:
             search = None
 
+        ### extract parameters from config
         pWin = float(options['win+'])
         mWin = float(options['win-'])
         maxRate = float(options['max rate'])
@@ -447,12 +501,16 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        ### generate tasks
         tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email) ]
+
+        ### wrap up instantiation
         super(CreateRateItem, self).__init__( graceid,
                                               gdb,
                                               t0,
                                               tasks,
-                                              annotate=annotate
+                                              annotate=annotate,
+                                              warnings=warnings,
                                             )
 
 class createRateCheck(esUtils.EventSupervisorTask):
@@ -465,9 +523,9 @@ class createRateCheck(esUtils.EventSupervisorTask):
         description = "a check of creation rate for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
-        self.group = group
+        self.group    = group
         self.pipeline = pipeline
-        self.search = search
+        self.search   = search
         super(createRateCheck, self).__init__( timeout,
                                               email=email
                                             )
@@ -496,6 +554,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
         if verbose:
             print( "\tretrieving neighbors within [%s, %s]"%(winstart, winstop) )
 
+        ### count the number of neighbors
         count = 0
         for entry in gdb.events( "created: %s .. %s"%(winstart, winstop) ): ### query for neighbors in (t-mWin, t+pWin)
             if not entry.has_key('search'):
@@ -503,23 +562,30 @@ class createRateCheck(esUtils.EventSupervisorTask):
             ###         not the 'current' event          belongs to the right group        associated with the right pipeline           from the correct search
             count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
 
-        if count > (pWin+mWin)*maxRate:
+        if count > (pWin+mWin)*maxRate: ### too many neighbors
             self.warning = self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
                 message = "action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)
+
+                ### post messsage
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message=message )
+
             return True ### action_required = True
-        else:
+
+        else: ### an acceptable number of neighbors
             self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
                 message = "no action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return False ### action_required = False
 
 #-------------------------------------------------
@@ -536,21 +602,26 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
         dt
         email
     """
-    name = "external triggers"
     description = "check that the unblind injection search completed"
+    name        = "external triggers"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
+        ### extract params from config
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        ### generate tasks
         tasks = [externalTriggersCheck(timeout, email=email)]
+
+        ### wrap up instantiation
         super(ExternalTriggersItem, self).__init__( graceid, 
                                                     gdb,
                                                     t0, 
                                                     tasks, 
-                                                    annotate=annotate
+                                                    annotate=annotate,
+                                                    warnings=warnings,
                                                   )
 
 class externalTriggersCheck(esUtils.EventSupervisorTask):
@@ -558,7 +629,7 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
     a check that the external triggers seach was completed
     """
     description = "a check that the external triggers search was completed"
-    name = "externalTriggers"
+    name        = "externalTriggers"
 
     def __init__(self, timeout, email=[]):
         """
@@ -574,24 +645,32 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        if not esUtils.check4log( graceid, gdb, "Coincidence search complete", verbose=verbose ):
+
+        if not esUtils.check4log( graceid, gdb, "Coincidence search complete", verbose=verbose ): ### check for log message
             self.warning = "found external triggers coinc search completion message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return False ### action_required = False
 
-        self.warning = "could not find external triggers search completion message"
-        if verbose or annotate:
-            message = "action required : "+self.warning
-            if verbose:
-                print( "    "+self.warning )
-            if annotate:
-                esUtils.writeGDBLog( gdb, graceid, message )
-        return True ### action_required = True
+        else:
+            self.warning = "could not find external triggers search completion message"
+            if verbose or annotate:
+                message = "action required : "+self.warning
+
+                ### post message
+                if verbose:
+                    print( "    "+self.warning )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+
+            return True ### action_required = True
 
 #-------------------------------------------------
 # unblind injections
@@ -607,21 +686,26 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
         dt 
         email
     """
-    name = "unblind injections"
     description = "check that the unblind injection search completed"
+    name        = "unblind injections"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
+        ### exract parameters from config
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        ### generate tasks
         tasks = [unblindInjectionsCheck(timeout, email=email)]
+
+        ### wrap up instantiation
         super(UnblindInjectionsItem, self).__init__( graceid, 
                                                      gdb,
                                                      t0, 
                                                      tasks, 
-                                                     annotate=annotate
+                                                     annotate=annotate,
+                                                     warnings=warnings,
                                                    )
 
 class unblindInjectionsCheck(esUtils.EventSupervisorTask):
@@ -629,7 +713,7 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
     a check that the unblind injections search was completed
     """
     description = "a check that the unblind injections search was completed"
-    name = "unblindInjections"
+    name        = "unblindInjections"
 
     def __init__(self, timeout, email=[]):
         """
@@ -651,25 +735,30 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
 
         if verbose:
             print( "    parsing log" )
-        for log in logs:
-            comment = log['comment']
-            if "No unblind injections in window" in comment:
-                self.warning = "process reported that no unblind injections were found"
-                if verbose or annotate:
-                    message = "no action required : "+self.warning
-                    if verbose:
-                        print( "    "+message )
-                    if annotate:
-                        esUtils.writeGDBLog( gdb, graceid, message )
-                return False ### action_required = False
+
+        if esUtils.check4log( graceid, gdb, "No unblind injections in window", verbose=verbose ): ### check for log message
+            self.warning = "process reported that no unblind injections were found"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+
+                ### post message
+                if verbose:
+                    print( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+
+            return False ### action_required = False
 
         print( "    WARNING: we do not currently know how to parse out statements when there *is* an unblind injection...raising an alarm anyway" )
 
         self.warning = "could not find a statement about unblind injections"
         if verbose or annotate:
             message = "action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return True ### action_required = True

@@ -21,21 +21,26 @@ class DQSummaryItem(esUtils.EventSupervisorQueueItem):
         dt
         email
     """
-    name = "dq summary"
     description = "a check that the DQ summary page was posted"
+    name        = "dq summary"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
+        ### extract params
         timeout = float(options['dt'])
         email = options['email'].split()
 
+        ### generate tasks
         tasks = [dqSummaryCheck(timeout, email=email)]
+
+        ### wrap up instantiation
         super(DQSummaryItem, self).__init__( graceid,
                                              gdb,
                                              t0,
                                              tasks,
-                                             annotate=annotate
+                                             annotate=annotate,
+                                             warnings=warnings,
                                            )
 
 class dqSummaryCheck(esUtils.EventSupervisorTask):
@@ -43,7 +48,7 @@ class dqSummaryCheck(esUtils.EventSupervisorTask):
     a check that a link to the DQ Summary page was posted
     """
     description = "a check that the DQ summary page was posted"
-    name = "dqSummary"
+    name        = "dqSummary"
 
     def __init__(self, timeout, email=[]):
         super(dqSummaryCheck, self).__init__( timeout,

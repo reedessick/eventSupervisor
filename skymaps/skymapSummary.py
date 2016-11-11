@@ -33,22 +33,27 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skymap summary start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
-
         self.fitsname = alert['file']
         self.tagnames = alert['object']['tagnames']
 
+        self.description = "check that autosummary of skymaps started processing %s"%self.fitsname
+
+        ### extract params from config
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        self.description = "check that autosummary of skymaps started processing %s"%self.fitsname
+        ### generate tasks
         tasks = [skymapSummaryStartCheck(timeout, self.fitsname, tagnames=self.tagnames, email=email)]
+
+        ### wrap up instantiation
         super(SkymapSummaryStartItem, self).__init__( graceid,
                                                       gdb,
                                                       t0,
                                                       tasks,
-                                                      annotate=annotate
+                                                      annotate=annotate,
+                                                      warnings=warnings,
                                                     )
 
 
@@ -89,25 +94,30 @@ class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skymap summary"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
-
         self.fitsname = alert['description'].split()[-1] ### likely to break because I haven't written this yet...
         self.tagnames = alert['object']['tagnames']
 
-        data_dt = float(options['data dt'])
-        finish_dt = float(options['finish dt'])
-        email = options['email'].split()
-
         self.description = "check that autosummary of skymaps picked up and correctly processed %s"%self.fitsname
+
+        ### extract params from config
+        data_dt   = float(options['data dt'])
+        finish_dt = float(options['finish dt'])
+        email     = options['email'].split()
+
+        ### generate tasks
         tasks = [skymapSummaryDataCheck(data_dt, self.fitsname, tagnames=self.tagnames, email=email),
                  skymapSummaryFinishCheck(finish_dt, self.fitsname, tagnames=self.tagnames, email=email)
                 ]
+
+        ### wrap up instantiation
         super(SkymapSummaryItem, self).__init__( graceid,
                                                  gdb,
                                                  t0,
                                                  tasks,
-                                                 annotate=annotate
+                                                 annotate=annotate,
+                                                 warnings=warnings,
                                                )
 
 class skymapSummaryDataCheck(esUtils.EventSupervisorTask):

@@ -39,22 +39,27 @@ class IDQStartItem(esUtils.EventSupervisorQueueItem):
     """
     name = "idq start"
  
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
-        ifos = options['ifos'].split()
+        ### extract params
+        self.ifos = options['ifos'].split()
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        self.ifos = ifos
         self.description = "a check that iDQ GraceDB follow-up started as expected at (%s)"%(",".join(self.ifos))
-        tasks = [ idqStartCheck(timeout, ifo, email=email) for ifo in ifos ]
+
+        ### generate tasks
+        tasks = [ idqStartCheck(timeout, ifo, email=email) for ifo in self.ifos ]
+
+        ### wrap up instantiation
         super(IDQStartItem, self).__init__( graceid,
                                             gdb,
                                             t0,
                                             tasks,
-                                            annotate=annotate
+                                            annotate=annotate,
+                                            warnings=warnings,
                                           )     
 
 class idqStartCheck(esUtils.EventSupervisorTask):
@@ -76,24 +81,32 @@ class idqStartCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
+
         template = "Started searching for iDQ information within [(.*), (.*)] at %s"%(self.ifo)
-        if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True ):
+        if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True ): ### look for log message
             self.warning = "found iDQ starting message at %s"%(self.ifo)
+
             if verbose or annotate:
                 message = "no action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return False ### action_required = False
 
         self.warning = "could not find iDQ staring message at %s"%(self.ifo)
         if verbose or annotate:
             message = "action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return True ### action_required = True
 
 #---
@@ -125,11 +138,12 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
     """
     name = "idq"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
         self.ifo = alert['description'].split()[-1] ### assume a particular format for the log comment
                                                        ### this is based off iDQ start messages from a single IFO
 
+        ### extract parameters from config
         self.classifiers = options['classifiers'].split()
 
         tables_dt           = float(options['tables dt'])
@@ -150,6 +164,8 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         self.description = "a check that iDQ reported information as expected for (%s) at %s"%(",".join(self.classifiers), self.ifo)
+
+        ### generate tasks
         tasks = []
         for classifier in self.classifiers:
             tasks += [idqGlitchFAPCheck(glitch_fap_dt, self.ifo, classifier, email=email),
@@ -167,11 +183,14 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
                       idqTrainStatsCheck(train_stats_dt, self.ifo, classifier, email=email)
                      ]
         tasks.append( idqFinishCheck(finish_dt, self.ifo, email=email) )
+
+        ### wrap up instantiation
         super(IDQItem, self).__init__( graceid,
                                        gdb,
                                        t0,
                                        tasks,
-                                       annotate=annotate
+                                       annotate=annotate,
+                                       warnings=warnings,
                                      )
 
 #---
@@ -198,8 +217,8 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        jsonname = "%s_%s(.*)-(.*)-(.*).json"%(self.ifo, self.classifier)
-        fragment = "minimum glitch-FAP for %s at %s within [(.*), (.*)] is (.*)"%(self.classifier, self.ifo)
+        jsonname = "%s_%s(.*)-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "minimum glitch-FAP for %s at %s within [(.*), (.*)] is (.*)"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid, 
                                                     gdb, 
                                                     jsonname, 
@@ -210,14 +229,18 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
                                                     logRegex=True 
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqFAPFrameCheck(esUtils.EventSupervisorTask):
@@ -240,8 +263,8 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        framename = "%s_idq_%s_fap(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier)
-        fragment = "iDQ fap timeseries for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo)
+        framename = "%s_idq_%s_fap(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ fap timeseries for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid, 
                                                     gdb, 
                                                     framename, 
@@ -252,14 +275,18 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
                                                     logRegex=True 
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqRankFrameCheck(esUtils.EventSupervisorTask):
@@ -282,8 +309,8 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        framename = "%s_idq_%s_rank(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier)
-        fragment = "iDQ glitch-rank frame for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo)
+        framename = "%s_idq_%s_rank(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ glitch-rank frame for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     framename,
@@ -294,14 +321,18 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
                                                     logRegex=True
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
@@ -324,8 +355,8 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        figname = "%s_%s(.*)_timeseries-(.*)-(.*).png"%(self.ifo, self.classifier)
-        fragment = "iDQ fap and glitch-rank timeseries plot for %s at %s:"%(self.classifier, self.ifo)
+        figname = "%s_%s(.*)_timeseries-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ fap and glitch-rank timeseries plot for %s at %s:"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     figname,
@@ -336,14 +367,18 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
                                                     logRegex=True
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqActiveChanCheck(esUtils.EventSupervisorTask):
@@ -366,8 +401,8 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        jsonname = "%s_%s_chanlist(.*)-(.*)-(.*).json"%(self.ifo, self.classifier)
-        fragment = "iDQ (possible) active channels for %s at %s"%(self.classifier, self.ifo)
+        jsonname = "%s_%s_chanlist(.*)-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ (possible) active channels for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     jsonname,
@@ -378,14 +413,18 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
@@ -408,8 +447,8 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        figname = "%s_%s(.*)_chanstrip-(.*)-(.*).png"%(self.ifo, self.classifier)
-        fragment = "iDQ channel strip chart for %s at %s"%(self.classifier, self.ifo)
+        figname = "%s_%s(.*)_chanstrip-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ channel strip chart for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     figname,
@@ -420,14 +459,18 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 #---
@@ -453,8 +496,8 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        filename = "%s_idq_%s(.*)-(.*)-(.*).xml.gz"%(self.ifo, self.classifier)
-        fragment = "iDQ glitch tables %s:"%(self.ifo) ### this is bad... but it's what we have at the moment within iDQ
+        filename = "%s_idq_%s(.*)-(.*)-(.*).xml.gz"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ glitch tables %s:"%(self.ifo) ### NOTE: this is bad... but it's what we have at the moment within iDQ
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     filename,
@@ -465,14 +508,18 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 #---
@@ -498,8 +545,8 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        jsonname = "%s_%s(.*)_calib-(.*)-(.*).json"%(self.ifo, self.classifier)
-        fragment = "iDQ calibration sanity check for %s at %s"%(self.classifier, self.ifo)
+        jsonname = "%s_%s(.*)_calib-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ calibration sanity check for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     jsonname,
@@ -510,14 +557,18 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
@@ -540,8 +591,8 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        figname = "%s_%s(.*)_calib-(.*)-(.*).png"%(self.ifo, self.classifier)
-        fragment = "iDQ calibration sanity check figure for %s at %s"%(self.classifier, self.ifo)
+        figname = "%s_%s(.*)_calib-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ calibration sanity check figure for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     figname,
@@ -552,14 +603,18 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqROCCheck(esUtils.EventSupervisorTask):
@@ -582,8 +637,8 @@ class idqROCCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        jsonname = "%s_%s(.*)_ROC-(.*)-(.*).json"%(self.ifo, self.classifier)
-        fragment = "iDQ local ROC curves for %s at %s"%(self.classifier, self.ifo)
+        jsonname = "%s_%s(.*)_ROC-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ local ROC curves for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     jsonname,
@@ -594,14 +649,18 @@ class idqROCCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqROCPlotCheck(esUtils.EventSupervisorTask):
@@ -624,8 +683,8 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        figname = "%s_%s(.*)_ROC-(.*)-(.*).png"%(self.ifo, self.classifier)
-        fragment = "iDQ local ROC figure for %s at %s"%(self.classifier, self.ifo)
+        figname = "%s_%s(.*)_ROC-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ local ROC figure for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     figname,
@@ -636,14 +695,18 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqCalibStatsCheck(esUtils.EventSupervisorTask):
@@ -666,8 +729,8 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        jsonname = "%s_%s(.*)_calibStats-(.*)-(.*).json"%(self.ifo, self.classifier)
-        fragment = "iDQ local calibration vital statistics for %s at %s"%(self.classifier, self.ifo)
+        jsonname = "%s_%s(.*)_calibStats-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ local calibration vital statistics for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     jsonname,
@@ -678,14 +741,18 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 class idqTrainStatsCheck(esUtils.EventSupervisorTask):
@@ -708,8 +775,8 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        jsonname = "%s_%s(.*)_trainStats-(.*)-(.*).json"%(self.ifo, self.classifier)
-        fragment = "iDQ local training vital statistics for %s at %s"%(self.classifier, self.ifo)
+        jsonname = "%s_%s(.*)_trainStats-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
+        fragment = "iDQ local training vital statistics for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = check4file( graceid,
                                                     gdb,
                                                     jsonname,
@@ -720,14 +787,18 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
                                                     logRegex=False
                                                   )
         if verbose or annotate:
+            ### format message
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return action_required
 
 #---
@@ -752,22 +823,29 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
         """
         if verbose:
             print( "%s : %s"%(graceid, self.description) )
-        template = "Finished searching for iDQ information within [(.*), (.*)] at %s"%(self.ifo)
+
+        template = "Finished searching for iDQ information within [(.*), (.*)] at %s"%(self.ifo) ### use regex
         if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True ):
             self.warning = "found iDQ completion message at %s"%(self.ifo)
             if verbose or annotate:
                 message = "no action required : "+self.warning
+
+                ### post message
                 if verbose:
                     print( "    "+message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
+
             return False ### action_required = False
 
         self.warning = "could not find iDQ completion message at %s"%(self.ifo)
         if verbose or annotate:
             message = "action required : "+self.warning
+
+            ### post message
             if verbose:
                 print( "    "+self.warning )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
+
         return True ### action_required = True

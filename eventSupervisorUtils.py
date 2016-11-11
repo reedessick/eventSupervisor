@@ -38,15 +38,18 @@ def isINJ( graceid, gdb, verbose=False ):
     determines if the event is labeled as an injection
     """
     if verbose:
-        print( "    looking up labels" )
+        print( graceid, "    looking up labels" )
     labels = gracedb.labels( gdb_id ).json()['labels']
+
     if verbose:
         if "INJ" in [label['name'] for label in labels]:
-            report( "\tevent labeled \"INJ\"" )
+            print( "    event labeled \"INJ\"" )
             return True
+
         else:
-            report( "\tevent not labeled \"INJ\"" )
+            print( "    event not labeled \"INJ\"" )
             return False
+
     else:
         return "INJ" in [label['name'] for label in labels]
 
@@ -75,22 +78,27 @@ def check4log( graceid, gdb, fragment, tagnames=None, verbose=False, regex=False
 
     if verbose:
         print( "    parsing log" )
-    if regex:
+
+    if regex: ### use regular expressions
         template = re.complile( fragment )
         for log in logs:
             comment = log['comment']
             if template.match( comment ):
                 if tagnames!=None: ### check for tagnames
                     return sorted(log['tagnames']) != sorted(tagnames) ### log exists, so action_required depends only on tagnames
+
                 else:
                     return False ### action_required = False (we found a match) 
+
         else:
             return True ### action_required = True (could not find a match)
-    else:
+
+    else: ### use basic string parsing
         for log in logs:
             comment = log['comment']
             if fragment in comment:
                 return False ### action_required = False (we found a match)
+
         else:
             return True ### action_required = True (could not find log)
 
@@ -105,23 +113,26 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=Fals
     """
     if verbose:
         print( "    retrieving filenames" )
-    files = gdb.files( graceid ).json().keys()
+    files = gdb.files( graceid ).json().keys() ### query for files
 
-    if regex:
+    if regex: ### use regular expressions
         template = re.compile( filename )
         for f in files:
             if template.match( f ):
                 file_exists = True
                 filename = f
                 break
+
         else:
             file_exists = False
-    else:
+
+    else: ### use basic string matching
         file_exists = filename in files
 
     if file_exists: ### file exists
         check_tagnames = tagnames!=None
         check_logFragment = logFragment!=None
+
         if (check_tagnames) or (check_logFrament):
             if verbose:
                 print( "    retrieving log messages" )
@@ -133,18 +144,22 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=Fals
                 if logRegex:
                     template = re.compile( logFragment )
                     logGood = re.compile( logFragment ).match( log['comment'] )
+
                 else:
                     logGood = logFragment in log['comment']
 
                 if tagsGood and logGood:
                     warning = "found %s with correct tagnames (%s) and correct log message"%(filename, ",".join(tagnames))
                     return warning, False ### action_required = False
+
                 elif tagsGood:
                     warning = "found %s with correct tagnames (%s) but incorrect log message"%(filename, ",".join(tagnames))
                     return warning, True ### action_required = True
+
                 elif logGood:
                     warning = "found %s with correct log message but incorrect tagnames (%s)"%(filename, ",".join(log['tagnames']))
                     return warning, True ### action_required = True
+
                 else:
                     warning = "found %s with incorrect tagnames (%s) and incorrect log message"%(filename, ",".join(log['tagnames']))
                     return warning, True ### action_required = True
@@ -153,6 +168,7 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=Fals
                 if sorted(log['tagnames']) == sorted(tagnames): ### correct tags
                     warning = "found %s with correct tagnames (%s) while ignoring log message"%(filename, ",".join(tagnames))
                     return warning, False ### action_required = False
+
                 else: ### wrong tagnames
                     warning = "found %s but with incorrect tagnames (%s) while ignoring log message"%(filename, ",".join(log['tagnames']))
                     return warning, True ### action_required = True
@@ -161,12 +177,14 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, verbose=Fals
                 if logRegex:
                     template = re.compile( logFragment )
                     logGood = re.compile( logFragment ).match( log['comment'] )
+
                 else:
                     logGood = logFragment in log['comment']
 
                 if logGood:
                     warning = "found %s with correct log message while ignoring tagnames"%(filename)
                     return warning, False ### action_required = False
+
                 else:
                     warning = "found %s but with incorrect log message while ignoring tagnames"%(filename)
                     return warning, True ### action_required = True
@@ -192,27 +210,42 @@ class EventSupervisorQueueItem(utils.QueueItem):
     name = "event supervisor item"
     description = "a series of connected tasks for event supervisor"
 
-    def __init__(self, graceid, gdb, t0, tasks, annotate=False):
+    def __init__(self, graceid, gdb, t0, tasks, annotate=False, warnings=False):
         self.graceid = graceid
         self.gdb = gdb
+
+        self.warnings = warnings
         self.annotate = annotate
+
         for task in tasks:
             if not isinstance(task, EventSupervisorTask):
                 raise ValueError("each element of tasks must be an instance of eventSupervisorUtilts.EventSupervisorTask")
+
         super(EventSupervisorQueueItem, self).__init__(t0, tasks)
 
     def execute(self, verbose=False):
         """
         execute the next task
+
+        NOTE: we overwrite the parent's method here because of the different signature for EventSupervisorTask.execute
         """
         while len(self.tasks):
             self.expiration = self.tasks[0].expiration
             if self.hasExpired():
                 task = self.tasks.pop(0) ### extract this task
-                task.execute( self.graceid, self.gdb, verbose=verbose, annotate=self.annotate ) ### perform this task
-                self.completedTasks.append( task ) ### mark as completed
+                task.execute( self.graceid, self.gdb, verbose=verbose, annotate=self.annotate, warnings=self.warnings ) ### perform this task
+                ### NOTE: this next step could introduce a race condition, althouth it is unlikely to ever actually matter
+                ###   a more proper solution would be to give task objects "complete" attributes and to check that, but
+                ###   this should work well enough
+                if task.hasExpired(): ### check whether task is actually done
+                    self.completedTasks.append( task ) ### mark as completed
+
+                else:
+                    self.add( task )
+
             else:
                 break
+
         self.complete = len(tasks)==0 ### only complete when there are no remaining tasks
 
 class EventSupervisorTask(utils.Task):
@@ -229,19 +262,20 @@ class EventSupervisorTask(utils.Task):
         self.warning = None
         super(EventSupervisorTask, self).__init__(timeout, **kwargs)
 
-    def execute(self, graceid, gdb, verbose=False, annotate=False):
+    def execute(self, graceid, gdb, verbose=False, annotate=False, warnings=False):
         """
         perform associated function call
         """
         try:
             if getattr(self, self.name)( graceid, gdb, verbose=verbose, annotate=annotate, **self.kwargs ):
-                if self.email:
+                if warnings and self.email:
                     subject = "%s: %s requires attention"%(graceid, self.name)
                     url = "URL" ### extrace from gdb instance!
                     body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\n%s"%(graceid, name, url, self.description, self.warning)
                     emailWarning(subject, body, email=self.email)
+
         except Exception as e:
-            if self.email:
+            if warnings and self.email:
                 subject = "%s: %s FAILED"%(graceid, self.name)
                 url = "URL" ### extrace from gdb instance!
                 body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, name, url, description, traceback.format_exc())

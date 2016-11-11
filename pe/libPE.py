@@ -25,10 +25,10 @@ class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
         dt
         email
     """
-    name = "lib pe start"
     description = "a check that LIB PE started"
+    name        = "lib pe start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=warnings):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
@@ -39,15 +39,16 @@ class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
                                               gdb,
                                               t0,
                                               tasks,
-                                              annotate=annotate
+                                              annotate=annotate,
+                                              warnings=warnings,
                                             )
 
 class libPEStartCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE started
     """    
-    name = "libPEStart"
     description = "a check that LIB PE started"
+    name        = "libPEStart"
 
     def __init__(self, timeout, email=[]):
         super(libPEStartCheck, self).__init__( timeout,
@@ -94,10 +95,10 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
         finish dt
         email
     """
-    name = "lib pe"
     description = "a check that LIB PE produced the expected data and finished"
+    name        = "lib pe"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False):
         graceid = alert['uid']
 
         postsamp_dt = float(options['post samp dt'])
@@ -119,15 +120,16 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
                                          gdb,
                                          t0,
                                          tasks,
-                                         annotate=annotate
+                                         annotate=annotate,
+                                         warnings=warnings,
                                        )
 
 class libPEPostSampCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE posted posterior samples
     """
-    name = "libPEPostSamp"
     description = "a check that LIB PE posted posterior samples"
+    name        = "libPEPostSamp"
 
     def __init__(self, timeout, email=[]):
         super(libPEPostSampCheck, self).__init__( timeout,
@@ -159,8 +161,8 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE posted BayesFactors
     """
-    name = "libPEBayesFactors"
     description = "a check that LIB PE posted Bayes Factors"
+    name        = "libPEBayesFactors"
 
     def __init__(self, timeout, email=[]):
         super(libPEBayesFactorsCheck, self).__init__( timeout,
@@ -198,8 +200,8 @@ class libPESkymapCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE posted a skymap
     """
-    name = "libPESkymap"
     description = "a check that LIB PE posted a skymap"
+    name        = "libPESkymap"
 
     def __init__(self, timeout, tagnames=None, email=[]):
         self.tagnames = tagnames
@@ -231,8 +233,8 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
     """
     a check that LIB PE finished
     """
-    name = "libPEFinish"
     description = "a check that LIB PE finished"
+    name        = "libPEFinish"
 
     def __init__(self, timeout, email=[]):
         super(libPEFinishCheck, self).__init__( timeout,
