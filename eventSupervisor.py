@@ -110,7 +110,7 @@ new = [
 parent_child = {
   None                    : [], ### helps with parsing. parseUpdate will return None if we don't do anything special for that alert
 ### parent name : [child name]
-  'idq start'             : ['idq item'],
+  'idq start'             : ['idq'],
   'idqGlitchFAP'          : ['approval processor idq'], 
   'idqActiveChan'         : ['idq omega scan start'], 
   'hoft omega scan start' : ['hoft omega scan'],
