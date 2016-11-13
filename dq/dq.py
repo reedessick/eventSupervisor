@@ -24,7 +24,7 @@ class DQSummaryItem(esUtils.EventSupervisorQueueItem):
     description = "a check that the DQ summary page was posted"
     name        = "dq summary"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         ### extract params
@@ -41,6 +41,8 @@ class DQSummaryItem(esUtils.EventSupervisorQueueItem):
                                              tasks,
                                              annotate=annotate,
                                              warnings=warnings,
+                                             logDir=logDir,
+                                             logTag=logTag,
                                            )
 
 class dqSummaryCheck(esUtils.EventSupervisorTask):
@@ -50,10 +52,11 @@ class dqSummaryCheck(esUtils.EventSupervisorTask):
     description = "a check that the DQ summary page was posted"
     name        = "dqSummary"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(dqSummaryCheck, self).__init__( timeout,
                                               email=email,
                                               logDir=logDir,
+                                              logTag=logTag,
                                             )
 
     def dqSummary(self, graceid, gdb, verbose=False, annotate=False, **kwargs):

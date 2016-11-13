@@ -35,7 +35,7 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
     """
     name = "event creation"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid  = alert['uid']
         pipeline = alert['pipeline']
         self.description = "check %s event creation and trigger files"%(pipeline)
@@ -45,13 +45,14 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate task instances
+        taskTag = "%s.%s"%(logTag, self.name)
         if pipeline=="cwb":
-            tasks = [cWBTriggerCheck(timeout, email=email, logDir=logDir)]
+            tasks = [cWBTriggerCheck(timeout, email=email, logDir=logDir, logTag=taskTag)]
         elif pipeline=="lib":
-            tasks = [oLIBTriggerCheck(timeout, email=email, logDir=logDir)]
+            tasks = [oLIBTriggerCheck(timeout, email=email, logDir=logDir, logTag=taskTag)]
         elif pipeline in ["gstlal", "mbtaonline", "gstlal-spiir", "pycbc"]:
-            tasks = [cbcCoincCheck(timeout, email=email, logDir=logDir), 
-                     cbcPSDCheck(timeout, email=email, logDir=logDir)
+            tasks = [cbcCoincCheck(timeout, email=email, logDir=logDir, logTag=taskTag), 
+                     cbcPSDCheck(timeout, email=email, logDir=logDir, logTag=taskTag)
                     ]
         else:
             raise ValueError("pipeline=%s not understood"%pipeline)
@@ -63,6 +64,8 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
                                                  tasks, 
                                                  annotate=annotate,
                                                  warnings=warnings,
+                                                 logDir=logDir,
+                                                 logTag=logTag,
                                                 )
 
 class cWBTriggerCheck(esUtils.EventSupervisorTask):
@@ -72,10 +75,11 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
     description = "a check of the trigger.txt file for cWB events"
     name        = "cWBTrigger"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(cWBTriggerCheck, self).__init__( timeout, 
                                                email=email,
                                                logDir=logDir,
+                                               logTag=logTag,
                                              )
 
     def cWBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -85,7 +89,7 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
             trigger_gpstime.txt
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "    retrieving event details" )
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
@@ -127,7 +131,7 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
             gpstime-.\.json
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "retrieving event details" )
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
@@ -156,10 +160,11 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
     description = "check coinc.xml file for CBC events"
     name        = "cbcCoinc"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(cbcCoincCheck, self).__init__( timeout, 
                                              email=email,
                                              logDir=logDir,
+                                             logTag=logTag,
                                            )
 
     def cbcCoinc(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -167,7 +172,7 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
         check for coinc.xml file
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         filename = "coinc.xml"
@@ -194,10 +199,11 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
     description = "check psd.xml.gz file for CBC events"
     name        = "cbcPSD"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(cbcPSDCheck, self).__init__( timeout, 
                                            email=email,
                                            logDir=logDir,
+                                           logTag=logTag,
                                          )
 
     def cbcPSD(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -205,7 +211,7 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
         check for psd.xml.gz file
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         filename = "psd.xml.gz"
@@ -244,7 +250,7 @@ class FARItem(esUtils.EventSupervisorQueueItem):
     description = "check sanity of reported FAR"
     name        = "far"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         ### extract parameters from config file
@@ -255,7 +261,7 @@ class FARItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [FARCheck(timeout, maxFAR=self.maxFAR, minFAR=self.minFAR, email=email, logDir=logDir)]
+        tasks = [FARCheck(timeout, maxFAR=self.maxFAR, minFAR=self.minFAR, email=email, logDir=logDir, logTag="%s.%s"%(logTag, self.name))]
 
         ### wrap up instantiation
         super(FARItem, self).__init__( graceid, 
@@ -264,6 +270,8 @@ class FARItem(esUtils.EventSupervisorQueueItem):
                                        tasks, 
                                        annotate=annotate,
                                        warnings=warnings,
+                                       logDir=logDir,
+                                       logTag=logTag,
                                      )
 
 class FARCheck(esUtils.EventSupervisorTask):
@@ -273,13 +281,14 @@ class FARCheck(esUtils.EventSupervisorTask):
     description = "a check for propper FAR"
     name        = "far"
 
-    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[], logDir='.'):
+    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[], logDir='.', logTag='iQ'):
         self.maxFAR = maxFAR
         self.minFAR = minFAR
         
         super(FARCheck, self).__init__( timeout, 
                                         email=email,
                                         logDir=logDir,
+                                        logTag=logTag,
                                       )
 
     def far(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -287,7 +296,7 @@ class FARCheck(esUtils.EventSupervisorTask):
         check the sanity of the reported FAR
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "retrieving event details" )
         event = gdb.event( gdb_id ).json()
@@ -375,7 +384,7 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
     description = "check local rates of events"
     name        = "local rate"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid  = alert['uid']
         group    = alert['group']
         pipeline = alert['pipeline']
@@ -393,7 +402,7 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### gnerate tasks
-        tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir) ] 
+        tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name)) ] 
 
         ### wrap up instantiation
         super(LocalRateItem, self).__init__( graceid, 
@@ -402,6 +411,8 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
                                              tasks,
                                              annotate=annotate,
                                              warnings=warnings,
+                                             logDir=logDir,
+                                             logTag=logTag,
                                            )
 
 class localRateCheck(esUtils.EventSupervisorTask):
@@ -410,7 +421,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
     """
     name = "localRate"
 
-    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.'):
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.', logTag='iQ'):
         description = "a check of local rates for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
@@ -420,6 +431,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
         super(localRateCheck, self).__init__( timeout, 
                                               email=email,
                                               logDir=logDir,
+                                              logTag=logTag,
                                             )
 
     def localRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
@@ -428,7 +440,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
         checks only around the event's gpstime : (gpstime-self.mWin, gpstime+self.pWin)
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         ### get this event
@@ -496,7 +508,7 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
     description = "check creation rates of events"
     name        = "creation rate"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         group = alert['group']
         pipeline = alert['pipeline']
@@ -514,7 +526,7 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir) ]
+        tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name)) ]
 
         ### wrap up instantiation
         super(CreateRateItem, self).__init__( graceid,
@@ -523,6 +535,8 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
                                               tasks,
                                               annotate=annotate,
                                               warnings=warnings,
+                                              logDir='.',
+                                              logTag='.',
                                             )
 
 class createRateCheck(esUtils.EventSupervisorTask):
@@ -531,7 +545,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
     """
     name = "createRate"
 
-    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.'):
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.', logTag='iQ'):
         description = "a check of creation rate for %s_%s"%(group, pipeline)
         if search:
             description = "%s_%s"%(description, search)
@@ -541,6 +555,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
         super(createRateCheck, self).__init__( timeout,
                                               email=email,
                                               logDir=logDir,
+                                              logTag=logTag,
                                             )
 
     def createRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
@@ -549,7 +564,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
         checks only around the event's creation time : (t-self.mWin, t+self.pWin)
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "retrieving information about this event" )
         gdb_entry = gdb.event( graceid ).json()
@@ -614,7 +629,7 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
     description = "check that the unblind injection search completed"
     name        = "external triggers"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         ### extract params from config
@@ -622,7 +637,7 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [externalTriggersCheck(timeout, email=email, logDir=logDir)]
+        tasks = [externalTriggersCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag,self.name))]
 
         ### wrap up instantiation
         super(ExternalTriggersItem, self).__init__( graceid, 
@@ -631,6 +646,8 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
                                                     tasks, 
                                                     annotate=annotate,
                                                     warnings=warnings,
+                                                    logDir=logDir,
+                                                    logTag=logTag,
                                                   )
 
 class externalTriggersCheck(esUtils.EventSupervisorTask):
@@ -640,13 +657,14 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
     description = "a check that the external triggers search was completed"
     name        = "externalTriggers"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         """
         a check that the external triggers search was completed
         """
         super(externalTriggersCheck, self).__init__( timeout, 
                                                      email=email,
                                                      logDir=logDir,
+                                                     logTag=logTag,
                                                    )
     
     def externalTriggers(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -654,7 +672,7 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
         a check that the external triggers search was completed
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         if not esUtils.check4log( graceid, gdb, "Coincidence search complete", verbose=verbose, logTag=logger.name if verbose else None ): ### check for log message
@@ -700,7 +718,7 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
     description = "check that the unblind injection search completed"
     name        = "unblind injections"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         ### exract parameters from config
@@ -708,7 +726,7 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [unblindInjectionsCheck(timeout, email=email, logDir=logDir)]
+        tasks = [unblindInjectionsCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(UnblindInjectionsItem, self).__init__( graceid, 
@@ -717,6 +735,8 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
                                                      tasks, 
                                                      annotate=annotate,
                                                      warnings=warnings,
+                                                     logDir=logDir,
+                                                     logTag=logTag,
                                                    )
 
 class unblindInjectionsCheck(esUtils.EventSupervisorTask):
@@ -726,13 +746,14 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
     description = "a check that the unblind injections search was completed"
     name        = "unblindInjections"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         """
         a check that the unblind injections search was completed
         """
         super(unblindInjectionsCheck, self).__init__( timeout, 
                                                       email=email,
                                                       logDir=logDir,
+                                                      logTag=logTag,
                                                     )
 
     def unblindInjections(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -741,7 +762,7 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
         """
         ### NOTE: we do not delegate to esUtils.check4log here because we need to look for mutliple logs...
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "retrieving log messages" )
         logs = gdb.logs( graceid ).json()['log']

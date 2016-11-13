@@ -112,6 +112,7 @@ if opts.notify:
         'by email' : 'a',
 #        'by sms'   : 'b c',    ### NOTE: not currently implemented
 #        'by phone' : 'd e f',  ### NOTE: not currently implemented
+        'email' : 'g',
         }
 
     ### instantiate Item

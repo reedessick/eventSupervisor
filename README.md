@@ -34,3 +34,4 @@ To Do:
     - want some sort of Parent:Child relationship with the edge length connecting the nodes to be the expected delay time
     - we then can have a "compiler" that takes the directed graph and writes the appropriate eventSupervisor config file
       - eg: this can ensure that chansets are identical in "l1 omega scan start" and "l1 omega scan
+  - remove self.logDir attributes from EventSupervisorTask objects (they no longer need it because EventSupervisorQueueItems create the FileHandler now)

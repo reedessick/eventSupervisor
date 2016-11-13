@@ -28,19 +28,21 @@ class BayestarStartItem(esUtils.EventSupervisorQueueItem):
     description = "a check that BAYESTAR started as expected"
     name        = "bayestar start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [bayestarStartCheck(timeout, email=email, logDir=logDir)]
+        tasks = [bayestarStartCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
         super(BayestarStartItem, self).__init__( graceid,
                                                  gdb,
                                                  t0,
                                                  tasks,
                                                  annotate=annotate,
                                                  warnings=warnings,
+                                                 logDir=logDir,
+                                                 logTag=logTag,
                                                )
 
 class bayestarStartCheck(esUtils.EventSupervisorTask):
@@ -50,10 +52,11 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
     description = "a check that bayestar started as expected"
     name        = "bayestarStart"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(bayestarStartCheck, self).__init__( timeout,
                                                   email=email,
                                                   logDir=logDir,
+                                                  logTag=logTag,
                                                 )
 
     def bayestarStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -61,7 +64,7 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
         a check that bayestar started as expected
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
         if not esUtils.check4log( graceid, gdb, "INFO:BAYESTAR:starting sky localization", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found BAYESTAR staring message"
@@ -98,7 +101,7 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
     description = "a check that BAYESTAR produced the expected data and finished"
     name        = "bayestar"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         skymap_dt = float(options['skymap dt'])
@@ -109,8 +112,9 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
 
         email = options['email'].split()
 
-        tasks = [bayestarSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir),
-                 bayestarFinishCheck(finish_dt, email=email, logDir=logDir)
+        taskTag = '%s.%s'%(logTag, self.name)
+        tasks = [bayestarSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir, logTag=taskTag),
+                 bayestarFinishCheck(finish_dt, email=email, logDir=logDir, logTag=taskTag)
                 ]
         super(BayestarItem, self).__init__( graceid,
                                             gdb,
@@ -118,6 +122,8 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
                                             tasks,
                                             annotate=annotate,
                                             warnings=warnings,
+                                            logDir=logDir,
+                                            logTag=logTag,
                                           )
 
 class bayestarSkymapCheck(esUtils.EventSupervisorTask):
@@ -127,11 +133,12 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that bayestar produced a skymap"
     name        = "bayestarSkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[], logDir='.'):
+    def __init__(self, timeout, tagnames=None, email=[], logDir='.', logTag='iQ'):
         self.tagnames = tagnames
         super(bayestarSkymapCheck, self).__init__( timeout, 
                                                    email=email,
                                                    logDir=logDir,
+                                                   logTag=logTag,
                                                  )
 
     def bayestarSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -140,7 +147,7 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
         looks for the existence of a skymap and the correct tagnames
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid ) 
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag ) 
             logger.info( "%s : %s"%(graceid, self.description) )
         fitsname = "bayestar.fits.gz"
         self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
@@ -162,10 +169,11 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
     description = "a check that bayestar finished as expected"
     name        = "bayestarFinish"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(bayestarFinishCheck, self).__init__( timeout,
                                                    email=email,
                                                    logDir=logDir,
+                                                   logTag=logTag,
                                                  )
 
     def bayestarFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -173,7 +181,7 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
         a check that bayestar finished as expected
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid ) 
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag ) 
             logger.info( "%s : %s"%(graceid, self.description) )
         if not esUtils.check4log( graceid, gdb, "INFO:BAYESTAR:sky localization complete", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found BAYESTAR completion message"

@@ -28,7 +28,7 @@ class SegDB2GrcDBStartItem(esUtils.EventSupervisorQueueItem):
     description = "check that segDB2grcDB started"
     name        = "segdb2grcdb start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         ### extract params
@@ -36,7 +36,7 @@ class SegDB2GrcDBStartItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [segDB2grcDBStartCheck(timeout, email=email, logDir=logDir)]
+        tasks = [segDB2grcDBStartCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(SegDB2GrcDBStartItem, self).__init__( graceid,
@@ -44,7 +44,9 @@ class SegDB2GrcDBStartItem(esUtils.EventSupervisorQueueItem):
                                                     t0,
                                                     tasks,
                                                     annotate=annotate,
-                                                    warnings=warnings
+                                                    warnings=warnings,
+                                                    logDir=logDir,
+                                                    logTag=logTag,
                                                   )
 
 class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
@@ -54,10 +56,11 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
     description = "check that segDB2grcDB started"
     name        = "segDB2grcDBStart"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(segDB2grcDBStartCheck, self).__init__( timeout,
                                                      email=email,
                                                      logDir=logDir,
+                                                     logTag=logTag,
                                                    )
 
     def segDB2grcDBStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -65,7 +68,7 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
         a check that segDB2grcDB started
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         if not esUtils.check4log( graceid, gdb, "began searching for segments in : ", verbose=verbose, logTag=logger.name if verbose else None ): ### check for log
@@ -111,7 +114,7 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
     description = "check that segDB2grcDB posted the expected data and finished"
     name        = "segdb2grcdb"
     
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         ### extract params
@@ -128,15 +131,16 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
+        taskTag = '%s.%s'%(logTag, self.name)
         tasks = []
         for flag in flags:
-            tasks.append( segDB2grcDBFlagCheck(flags_dt, flag, email=email, logDir=logDir) )
+            tasks.append( segDB2grcDBFlagCheck(flags_dt, flag, email=email, logDir=logDir, logTag=taskTag) )
         for veto_def in veto_defs:
             raise NotImplementedError('currently cannot monitor veto definer queries')
-            tasks.append( segDB2grcDBVetoDefCheck(veto_def_dt, veto_def, email=email, logDir=logDir) )
+            tasks.append( segDB2grcDBVetoDefCheck(veto_def_dt, veto_def, email=email, logDir=logDir, logTag=taskTag) )
         if any_dt!=None:
-            tasks.append( segDB2grcDBAnyCheck(any_dt, email=email, logDir=logDir) )
-        tasks.append( segDB2grcDBFinishCheck(finish_dt, email=email, logDir=logDir) )
+            tasks.append( segDB2grcDBAnyCheck(any_dt, email=email, logDir=logDir, logTag=taskTag) )
+        tasks.append( segDB2grcDBFinishCheck(finish_dt, email=email, logDir=logDir, logTag=taskTag) )
 
         ### wrap up instantiation
         super(SegDB2GrcDBItem, self).__init__( graceid,
@@ -145,6 +149,8 @@ class SegDB2GrcDBItem(esUtils.EventSupervisorQueueItem):
                                                tasks,
                                                annotate=annotate,
                                                warnings=warnings,
+                                               logDir=logDir,
+                                               logTag=logTag,
                                              )
 
 class segDB2grcDBFlagCheck(esUtils.EventSupervisorTask):
@@ -154,19 +160,20 @@ class segDB2grcDBFlagCheck(esUtils.EventSupervisorTask):
     description = "check that segDB2grcDB posted the expected individual flags"
     name        = "segDB2grcDBFlag"
 
-    def __init__(self, timeout, flag, email=[], logDir='.'):
+    def __init__(self, timeout, flag, email=[], logDir='.', logTag='iQ'):
         self.flag = flag
         super(segDB2grcDBFlagCheck, self).__init__( timeout,
-                                                     email=email,
-                                                     logDir=logDir,
-                                                   )
+                                                    email=email,
+                                                    logDir=logDir,
+                                                    logTag=logTag,
+                                                  )
 
     def segDB2grcDBFlag(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that segDB2grcDB uploaded the expected individual flags by requiring xml.gz files to exist (with expected nomenclature)
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         flagname = flag.split(":")
@@ -203,11 +210,12 @@ class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
     description = "check that segDB2grcDB posted the expected Veto-Definer summaries"
     name        = "segDB2grcDBVetoDef"
 
-    def __init__(self, timeout, vetoDef, email=[], logDir='.'):
+    def __init__(self, timeout, vetoDef, email=[], logDir='.', logTag='iQ'):
         self.vetoDef = vetoDef
         super(segDB2grcDBVetoDefCheck, self).__init__( timeout,
                                                      email=email,
                                                      logDir=logDir,
+                                                     logTag=logTag,
                                                    )
 
     def segDB2grcDBVetoDef(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -216,7 +224,7 @@ class segDB2grcDBVetoDefCheck(esUtils.EventSupervisorTask):
         NOT IMPLEMENTED
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         raise NotImplementedError(self.name)
@@ -229,10 +237,11 @@ class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
     description = "check that segDB2grcDB posted the expected summaries of all active flags"
     name        = "segDB2grcDBAny"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(segDB2grcDBAnyCheck, self).__init__( timeout,
                                                      email=email,
                                                      logDir=logDir,
+                                                     logTag=logTag,
                                                    )
 
     def segDB2grcDBAny(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -240,7 +249,7 @@ class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
         a check that segDB2grcDB uploaded the query for any active segments
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         jsonname = "allActive-(.*)-(.*).json"
@@ -276,10 +285,11 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
     description = "check that segDB2grcDB finished"
     name        = "segDB2grcDBFinish"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(segDB2grcDBFinishCheck, self).__init__( timeout,
                                                       email=email,
                                                       logDir=logDir,
+                                                      logTag=logTag,
                                                     )
 
     def segDB2grcDBFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -287,7 +297,7 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
         a check that segDB2grcDB finished
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid ) 
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag ) 
             logger.info( "%s : %s"%(graceid, self.description) )
         if not esUtils.check4log( graceid, gdb, "finished searching for segments in : ", verbose=verbose, logTag=logger.name if verbose else None ): ### check for log
             self.warning = "found segDB2grcDB finish message"

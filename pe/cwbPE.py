@@ -24,19 +24,21 @@ class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
     description = "a check that cWB PE started"
     name        = "cwb pe start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
         email = options['email'].split()
 
-        tasks = [cWBPEStartCheck(timeout, email, logDir=logDir)]
+        tasks = [cWBPEStartCheck(timeout, email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
         super(CWBPEStartItem, self).__init__( graceid,
                                               gdb,
                                               t0,
                                               tasks,
                                               annotate=annotate,
                                               warnings=warnings,
+                                              logDir=logDir,
+                                              logTag=logTag,
                                             )
 
 class cWBPEStartCheck(esUtils.EventSupervisorTask):
@@ -46,10 +48,11 @@ class cWBPEStartCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE started"
     name        = "cWBPEStart"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(cWBPEStartCheck, self).__init__( timeout,
                                                email=email,
                                                logDir=logDir,
+                                               logTag=logTag,
                                              )
 
     def cWBPEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -77,7 +80,7 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
     description = "a check that cWB PE produced the expected data and finished"
     name        = "cwb pe"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
         ced_dt = float(options['ced dt'])
@@ -89,10 +92,11 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
 
         email = options['email'].split()
 
-        tasks = [cWBPECEDCheck(ced_dt, email=email, logDir=logDir),
-                 cWBPEEstimateCheck(estimate_dt, email=email, logDir=logDir),
-                 cWBPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir),
-#                 cWBPEFinishCheck(timeout, email=email, logDir=logDir) ### NOT IMPLEMENTED
+        taskTag = '%s.%s'%(logTag, self.name)
+        tasks = [cWBPECEDCheck(ced_dt, email=email, logDir=logDir, logTag=taskTag),
+                 cWBPEEstimateCheck(estimate_dt, email=email, logDir=logDir, logTag=taskTag),
+                 cWBPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir, logTag=taskTag),
+#                 cWBPEFinishCheck(timeout, email=email, logDir=logDir, logTag=taskTag) ### NOT IMPLEMENTED
                 ]
         super(CWBPEItem, self).__init__( graceid, 
                                          gdb,
@@ -100,6 +104,8 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
                                          tasks,
                                          annotate=annotate,
                                          warnings=warnings,
+                                         logDir=logDir,
+                                         logTag=logTag,
                                        )
 
 class cWBPECEDCheck(esUtils.EventSupervisorTask):
@@ -109,10 +115,11 @@ class cWBPECEDCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE posted a link to a CED page"
     name        = "cWBPECED"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(cWBPECEDCheck, self).__init__( timeout,
                                              email=email,
                                              logDir=logDir,
+                                             logTag=logTag,
                                            )
 
     def cWBPECED(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -120,7 +127,7 @@ class cWBPECEDCheck(esUtils.EventSupervisorTask):
         a check that cWB PE posted posterior samples
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         if not esUtils.check4log( graceid, gdb, "cWB CED", verbose=verbose, logTag=logger.name if verbose else None ):
@@ -149,10 +156,11 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE posted estimates of parameters"
     name        = "cWBPEEstimate"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(cWBPEEstimateCheck, self).__init__( timeout,
                                                   email=email,
                                                   logDir=logDir,
+                                                  logTag=logTag,
                                                 )
 
     def cWBPEEstimate(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -160,7 +168,7 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
         a check that cWB PE posted posterior samples
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         if not esUtils.check4log( graceid, gdb, "cWB parameter estimation", verbose=verbose, logTag=logger.name if verbose else None ):
@@ -189,11 +197,12 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE posted a skymap"
     name        = "cWBPESkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[], logDir='.'):
+    def __init__(self, timeout, tagnames=None, email=[], logDir='.', logTag='iQ'):
         self.tagnames = tagnames
         super(cWBPESkymapCheck, self).__init__( timeout,
                                                 email=email,
                                                 logDir=logDir,
+                                                logTag=logTag,
                                               )
 
     def cWBPESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -202,7 +211,7 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
         looks for the existence of a skymap and the correct tagnames
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
         fitsname = "skyprobcc_cWB.fits"
         self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
@@ -224,10 +233,11 @@ class cWBPEFinishCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE finished"
     name        = "cWBPEFinish"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(cWBPEFinishCheck, self).__init__( timeout,
                                                 email=email,
                                                 logDir=logDir,
+                                                logTag=logTag,
                                               )
 
     def cWBPEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):

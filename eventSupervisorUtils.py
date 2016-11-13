@@ -7,6 +7,8 @@ from lvalertMP.lvalert import lvalertMPutils as utils
 from lvalertMP.lvalert.lvalertMPutils import genLogname
 from lvalertMP.lvalert.lvalertMPutils import genFormatter
 
+import logging
+
 import subprocess as sp
 
 import traceback
@@ -15,9 +17,11 @@ import re
 
 #---------------------------------------------------------------------------------------------------
 
-def genTaskLogger( directory, name, logTag='iQ', graceiD=None ):
+def genItemLogger( directory, name, logTag='iQ', graceid=None ):
     """
-    returns a logger set up for Tasks
+    returns a logger set up for QueueItems
+
+    if a graceid is supplied, we also set up a FileHandler for that log specifically
     """
     logger = logging.getLogger('%s.%s'%(logTag, name))
 
@@ -25,15 +29,21 @@ def genTaskLogger( directory, name, logTag='iQ', graceiD=None ):
         logname = genLogname(directory, graceid)
 
         for handler in logger.handlers: ### ensure it doesn't already exist to avoid repeated log statements
-            if isinstance(handler, logger.FileHandler) and handler.baseFilename==logname:
+            if isinstance(handler, logging.FileHandler) and handler.baseFilename==logname:
                 break
 
         else: ### handler doesn't exist, so we add it
             handler = logging.FileHandler( logname )
             handler.setFormatter( genFormatter() )
-            logger.addHandler( logger )
+            logger.addHandler( handler )
 
     return logger
+
+def genTaskLogger( directory, name, logTag='iQ' ):
+    """
+    returns a logger set up for Tasks
+    """
+    return logging.getLogger('%s.%s'%(logTag, name))
 
 #---------------------------------------------------------------------------------------------------
 
@@ -64,16 +74,15 @@ def isINJ( graceid, gdb, verbose=False, logTag='iQ' ):
     if verbose:
         logger = logging.getLogger('%s.isINJ'%logTag) ### inheritance of loggers controlled by kwarg
         logger.debug( "looking up labels" )
-
-    labels = gracedb.labels( gdb_id ).json()['labels']
+    labels = gdb.labels( graceid ).json()['labels']
 
     if verbose:
         if "INJ" in [label['name'] for label in labels]:
-            print( "    event labeled \"INJ\"" )
+            logger.debug( "event labeled \"INJ\"" )
             return True
 
         else:
-            print( "    event not labeled \"INJ\"" )
+            logger.debug( "event not labeled \"INJ\"" )
             return False
 
     else:
@@ -239,7 +248,7 @@ class EventSupervisorQueueItem(utils.QueueItem):
     name = "event supervisor item"
     description = "a series of connected tasks for event supervisor"
 
-    def __init__(self, graceid, gdb, t0, tasks, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, graceid, gdb, t0, tasks, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         self.graceid = graceid
         self.gdb = gdb
 
@@ -252,14 +261,20 @@ class EventSupervisorQueueItem(utils.QueueItem):
             if not isinstance(task, EventSupervisorTask):
                 raise ValueError("each element of tasks must be an instance of eventSupervisorUtilts.EventSupervisorTask")
 
-        super(EventSupervisorQueueItem, self).__init__(t0, tasks)
+        super(EventSupervisorQueueItem, self).__init__(t0, tasks, logTag=logTag)
 
     def execute(self, verbose=False):
         """
         execute the next task
 
         NOTE: we overwrite the parent's method here because of the different signature for EventSupervisorTask.execute
+
+        editing the correct file!
         """
+        if verbose:
+            logger = genItemLogger( self.logDir, self.name, logTag=self.logTag, graceid=self.graceid )
+            logger.debug( 'executing %s'%self.name )
+
         while len(self.tasks):
             self.expiration = self.tasks[0].expiration
             if self.hasExpired():
@@ -277,7 +292,12 @@ class EventSupervisorQueueItem(utils.QueueItem):
             else:
                 break
 
-        self.complete = len(tasks)==0 ### only complete when there are no remaining tasks
+        self.complete = len(self.tasks)==0 ### only complete when there are no remaining tasks
+        if verbose:
+            if self.complete:
+                logger.debug( '%s is complete'%self.name )
+            else:
+                logger.debug( '%s is NOT complete'%self.name )
 
 class EventSupervisorTask(utils.Task):
     """
@@ -288,29 +308,37 @@ class EventSupervisorTask(utils.Task):
     name = "eventSupervisorTask"
     description = "a task for event supervisor"
 
-    def __init__(self, timeout, email=[], logDir='.', **kwargs ):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ', **kwargs ):
         self.email = email
         self.warning = None
         self.logDir = logDir
-        super(EventSupervisorTask, self).__init__(timeout, **kwargs)
+
+        super(EventSupervisorTask, self).__init__(timeout, logTag=logTag, **kwargs)
 
     def execute(self, graceid, gdb, verbose=False, annotate=False, warnings=False):
         """
         perform associated function call
         """
+        if verbose:
+            logger = genTaskLogger( self.logDir, self.name, logTag=self.logTag )
+            logger.debug( 'executing %s'%self.name )
+
         try:
             if getattr(self, self.name)( graceid, gdb, verbose=verbose, annotate=annotate, **self.kwargs ):
                 if warnings and self.email:
                     subject = "%s: %s requires attention"%(graceid, self.name)
-                    url = "URL" ### extrace from gdb instance!
-                    body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\n%s"%(graceid, name, url, self.description, self.warning)
+                    url = gdb.service_url
+                    body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\nwarning : %s"%(graceid, self.name, url, self.description, self.warning)
                     emailWarning(subject, body, email=self.email)
-
+        
         except Exception as e:
+            if verbose:
+                logger.warn( '%s raise an exception!'%self.name )
+
             if warnings and self.email:
                 subject = "%s: %s FAILED"%(graceid, self.name)
-                url = "URL" ### extrace from gdb instance!
-                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, name, url, description, traceback.format_exc())
+                url = gdb.service_url 
+                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, self.name, url, self.description, traceback.format_exc())
                 emailWarning(subject, body, email=self.email)
 
     def eventSupervisorTask(self, graceid, gdb, verbose=False, annotate=False, **kwargs):

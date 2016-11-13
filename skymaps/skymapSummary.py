@@ -33,7 +33,7 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skymap summary start"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
         self.tagnames = alert['object']['tagnames']
@@ -45,7 +45,7 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [skymapSummaryStartCheck(timeout, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir)]
+        tasks = [skymapSummaryStartCheck(timeout, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(SkymapSummaryStartItem, self).__init__( graceid,
@@ -54,6 +54,8 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
                                                       tasks,
                                                       annotate=annotate,
                                                       warnings=warnings,
+                                                      logDir=logDir,
+                                                      logTag=logTag,
                                                     )
 
 
@@ -63,13 +65,14 @@ class skymapSummaryStartCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSummaryStart"
 
-    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.'):
+    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.', logTag='iQ'):
         self.fitsname = fitsname
         self.tagnames = tagnames
         self.description = "check that autosummary of skymaps started processing %s"%fitsname
         super(skymapSummaryStartCheck, self).__init__( timeout,
                                                        email=email,
                                                        logDir=logDir,
+                                                       logTag=logTag,
                                                      )
 
     def skymapSummaryStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -95,7 +98,7 @@ class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skymap summary"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['description'].split()[-1] ### likely to break because I haven't written this yet...
         self.tagnames = alert['object']['tagnames']
@@ -108,8 +111,9 @@ class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
         email     = options['email'].split()
 
         ### generate tasks
-        tasks = [skymapSummaryDataCheck(data_dt, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir),
-                 skymapSummaryFinishCheck(finish_dt, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir)
+        taskTag = '%s.%s'%(logTag, self.name)
+        tasks = [skymapSummaryDataCheck(data_dt, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir, logTag=logTag),
+                 skymapSummaryFinishCheck(finish_dt, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir, logTag=logTag)
                 ]
 
         ### wrap up instantiation
@@ -119,6 +123,8 @@ class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
                                                  tasks,
                                                  annotate=annotate,
                                                  warnings=warnings,
+                                                 logDir=logDir,
+                                                 logTag=logTag,
                                                )
 
 class skymapSummaryDataCheck(esUtils.EventSupervisorTask):
@@ -127,13 +133,14 @@ class skymapSummaryDataCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSummaryData"
 
-    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.'):
+    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.', logTag='iQ'):
         self.fitsname = fitsname
         self.tagnames = tagnames
         self.description = "check that autosummary of skymaps generated the expected data for %s"%fitsname
         super(skymapSummaryDataCheck, self).__init__( timeout,
                                                       email=email,
                                                       logDir=logDir,
+                                                      logTag=logTag,
                                                     )
 
     def skymapSummaryData(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -149,13 +156,14 @@ class skymapSummaryFinishCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSummaryFinish"
 
-    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.'):
+    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.', logTag='iQ'):
         self.fitsname = fitsname
         self.tagnames = tagnames
         self.description = "check that autosummary of skymaps finished as expected for %s"%fitsname
         super(skymapSummaryFinishCheck, self).__init__( timeout,
                                                         email=email,
                                                         logDir=logDir,
+                                                        logTag=logTag,
                                                       )
 
     def skymapSummaryFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):

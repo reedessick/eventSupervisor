@@ -31,7 +31,7 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skymap sanity"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
         self.description = "check sanity and formatting of %s"%self.fitsname
@@ -41,7 +41,7 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [skymapSanityCheck(timeout, self.fitsname, email=email, logDir=logDir)]
+        tasks = [skymapSanityCheck(timeout, self.fitsname, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(SkymapSanityItem, self).__init__( graceid,
@@ -50,6 +50,8 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
                                                 tasks,
                                                 annotate=annotate,
                                                 warnings=warnings,
+                                                logDir=logDir,
+                                                logTag=logTag,
                                               )
 
 class skymapSanityCheck(esUtils.EventSupervisorTask):
@@ -58,12 +60,13 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSanity"
 
-    def __init__(self, timeout, fitsname, email=[], logDir='.'):
+    def __init__(self, timeout, fitsname, email=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
         super(skymapSanityCheck, self).__init__( timeout,
                                                  email=email,
                                                  logDir=logDir,
+                                                 logTag=logTag,
                                                )
     
     def skymapSanity(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -72,7 +75,7 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
         checks that normalization is correct and that map is in Equatorial (C) coordinates
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "downloading %s"%(self.fitsname) )
 
@@ -160,7 +163,7 @@ class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
     """
     name = "plot skymap"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
         self.tagnames = alert['object']['tagnames']
@@ -172,7 +175,7 @@ class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [plotSkymapCheck(timeout, self.fitsname, self.tagnames, email=email, logDir=logDir)]
+        tasks = [plotSkymapCheck(timeout, self.fitsname, self.tagnames, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(PlotSkymapItem, self).__init__( graceid,
@@ -181,6 +184,8 @@ class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
                                               tasks,
                                               annotate=annotate,
                                               warnings=warnings,
+                                              logDir=logDir,
+                                              logTag=logTag,
                                             )
 
 class plotSkymapCheck(esUtils.EventSupervisorTask):
@@ -189,13 +194,14 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
     """
     name = "plotSkymap"
 
-    def __init__(self, timeout, fitsname, tagnames, email=[], logDir='.'):
+    def __init__(self, timeout, fitsname, tagnames, email=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
         self.tagnames = sorted(tagnames)
         super(plotSkymapCheck, self).__init__( timeout,
                                                email=email,
                                                logDir=logDir,
+                                               logTag=logTag,
                                              )
 
     def plotSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -203,7 +209,7 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
         a check that plotting jobs ran and tagged figures properly
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
         figname = "%s.png"%(self.fitsname.split('.')[0]) ### NOTE: this may be fragile
@@ -242,7 +248,7 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
     """
     name = "skyviewer"
 
-    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.'):
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
         self.tagnames = alert['object']['tagnames']
@@ -254,7 +260,7 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [skyviewerCheck(timeout, self.fitsname, self.tagnames, email=email, logDir=logDir)]
+        tasks = [skyviewerCheck(timeout, self.fitsname, self.tagnames, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(SkyviewerItem, self).__init__( graceid,
@@ -263,6 +269,8 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
                                              tasks,
                                              annotate=annotate,
                                              warnings=warnings,
+                                             logDir=logDir,
+                                             logTag=logTag,
                                            )
 
 class skyviewerCheck(esUtils.EventSupervisorTask):
@@ -271,13 +279,14 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
     """
     name = "skyviewer"
 
-    def __init__(self, timeout, fitsname, tagnames, email=[], logDir='.'):
+    def __init__(self, timeout, fitsname, tagnames, email=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
         self.tagnames = sorted(tagnames)
         super(skyviewerCheck, self).__init__( timeout,
                                               email=email,
                                               logDir=logDir,
+                                              logTag=logTag,
                                             )
 
     def skyviewer(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -285,7 +294,7 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
         a check that plotting jobs ran and tagged figures properly
         """
         if verbose:
-            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag='iQ', graceid=graceid )
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "retrieving files")
 
