@@ -1,5 +1,5 @@
 #!/usr/bin/python
-usage       = "eventSupervisor_executionTests.py [--options] graceid"
+usage       = "eventSupervisor_executionTests.py [--options] graceid config"
 description = "a script testing event supervisor toolkits' execution"
 author      = "reed.essick@ligo.org"
 
@@ -22,6 +22,8 @@ import logging
 
 import time
 
+from ConfigParser import SafeConfigParser
+
 from optparse import OptionParser
 
 #-------------------------------------------------
@@ -34,7 +36,6 @@ def execute( item, cadence=0.1 ):
         while not item.hasExpired(): ### wait until this has expired
             time.sleep( cadence )
         item.execute( verbose=opts.verbose ) ### do it
-
 
 #-------------------------------------------------
 
@@ -87,9 +88,9 @@ parser.add_option("", "--segDB2grcDB", default=False, action="store_true")
 opts, args = parser.parse_args()
 
 ### ensure we have the correct arguments
-if len(args)!=1:
-    raise ValueError('please supply exactly one input argument\n%s'%usage)
-graceid = args[0]
+if len(args)!=2:
+    raise ValueError('please supply exactly two input arguments\n%s'%usage)
+graceid, configname = args
 
 ### finish setting up options
 opts.notify            = opts.notify            or opts.everything
@@ -141,6 +142,13 @@ logger.info( "graceid : %s"%graceid )
 
 #-------------------------------------------------
 
+### load config file
+logger.info( "loading config from : %s"%configname )
+config = SafeConfigParser()
+config.read( configname )
+
+#-------------------------------------------------
+
 ### set up what we feed into the tests
 
 tests = []
@@ -148,27 +156,18 @@ tests = []
 if opts.notify:
 
     ### set up inputs
-    options = {'dt'        : '1.0',
-               'ignoreInj' : 'True',
-               'by email'  : 'ressick@mit.edu',
-               'by sms'    : '',                ### not implemented yet...
-               'by phone'  : '',                ### not implemented yet...
-               'email'  : 'ressick@mit.edu',
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- Notify
     name = 'notify'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
 if opts.basic:
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
@@ -184,31 +183,31 @@ if opts.basic:
         cbcPSDCheck
     """
 
-    test.append( (name, alert, options) )
+    test.append( (name, alert) )
 
     #------- FAR
     name = 'far'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     #------- LocalRate
     name = 'local rate'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     #------- LocalRate
     name = 'local rate'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     #------- CreateRate
     name = 'creation rate'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     #------- ExternalTriggers
     name = 'external triggers'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     #------- UnblindInjections
     name = 'unblind injections'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -216,14 +215,12 @@ if opts.dq:
     raise NotImplementedError('dq.DQSummaryItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- DQSummary
     name = 'dq summary'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -231,27 +228,23 @@ if opts.idq:
     raise NotImplementedError('idq.IDQStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- IDQStart
     name = 'idq start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
     
 
     raise NotImplementedError('idq.IDQItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- IDQ
     name = 'idq'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -259,27 +252,23 @@ if opts.segDB2grcDB:
     raise NotImplementedError('segDB2grcDb.SegDB2GrcDBStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- SegDB2GrcDBStart
     name = 'segdb2grcdb start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     
     raise NotImplementedError('segDB2grcDB.SegDB2GrcDBItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- SegDB2GrcDB
     name = 'segdb2grcdb'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -290,27 +279,23 @@ if opts.omegaScan:
     raise NotImplementedError('omegascan.H1OmegaScanStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- OmegaScanStart
     name = 'h1 omega scan start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 
     raise NotImplementedError('omegascan.H1OmegaScanItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- OmegaScan
     name = 'h1 omega scan'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -318,26 +303,24 @@ if opts.skymaps:
     raise NotImplementedError('skymaps.SkymapSanityItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- SkymapSanity
     name = 'skymap sanity'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('skymaps.PlotSkymapItem')
 
     #------- PlotSkymap
     name = 'plot skymap'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('skymaps.SkyviewerItem')
 
     #------- Skyviewer
     name = 'skyviewer'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -345,26 +328,22 @@ if opts.skymapSummary:
     raise NotImplementedError('skymapSummary.SkymapSummaryStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- SkymapSummaryStart
     name = 'skymap summary start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('skymapSummary.SkymapSummaryItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- SkymapSummary
     name = 'skymap summary'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -372,26 +351,22 @@ if opts.bayestar:
     raise NotImplementedError('bayestar.BayestarStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- BayestarStart
     name = 'bayestar start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('bayestar.BayestarItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- Bayestar
     name = 'bayestar'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -399,26 +374,22 @@ if opts.bayeswavePE:
     raise NotImplementedError('bayeswavePE.BayesWavePEStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- BayesWavePEStart
     name = 'bayeswave pe start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('bayeswavePE.BayesWavePEItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- BayesWavePE
     name = 'bayeswave pe'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -426,26 +397,22 @@ if opts.cwbPE:
     raise NotImplementedError('cwbPE.CWBPEStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- CWBPEStart
     name = 'cwb pe start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('cwbPE.CWBPEItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- CWBPE
     name = 'cwb pe'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -453,26 +420,22 @@ if opts.lalinf:
     raise NotImplementedError('lalinf.LALInfStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- LALInfStart
     name = 'lalinf start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('lalinf.LALInfItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- LALInf
     name = 'lalinf'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -480,26 +443,22 @@ if opts.libPE:
     raise NotImplementedError('libPE.LIBPEStartItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- LIBPEStart
     name = 'lib pe start'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('libPE.LIBPEItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- LIBPE
     name = 'lib pe'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #------------------------
 
@@ -508,72 +467,68 @@ if opts.approvalProcessor:
     raise NotImplementedError("approvalProcessor.ApprovalProcessorPrelimDQItem")
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- ApprovalProcessorPrelimDQ
     name = "approval processor prelim dq"
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('approvalProcessor.ApprovalProcessorSegDBItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- ApprovalProcessorSegDB
     name = 'approval processor segdb'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('approvalProcessor.ApprovalProcessoriDQItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- ApprovalProcessoriDQ
     name = 'approval processor idq'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
     raise NotImplementedError('approvalProcessor.ApprovalProcessorVOEventItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- ApprovalProcessorVOEvent
     name = 'approval processor voevent'
-    tasks.append( (name, alert, options) )
-
+    tasks.append( (name, alert) )
 
     raise NotImplementedError('approvalProcessor.ApprovalProcessorGCNItem')
 
     ### set up inputs
-    options = {
-              }
     alert = {'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
     #------- ApprovalProcessorGCN
     name = 'approval processor gcn'
-    tests.append( (name, alert, options) )
+    tests.append( (name, alert) )
 
 #-------------------------------------------------
 
+### load config file
+logger.info( "loading config from : %s"%configname )
+config = SafeConfigParser()
+config.read( configname )
+
+#-------------------
+
 ### actually test the items
-for name, alert, options in tests:
+for name, alert in tests:
     logger.info( "TESTING: %s"%name )
 
     ### instantiate the item
-    item = es.qid[name]( alert, time.time(), options, gdb, annotate=opts.annotate, warnings=opts.warnings, logDir=opts.logDir, logTag=opts.logTag )
+    item = es.qid[name]( alert, time.time(), dict(config.options(name)), gdb, annotate=opts.annotate, warnings=opts.warnings, logDir=opts.logDir, logTag=opts.logTag )
 #    raise NotImplementedError('check object internals')
 
     execute( item, cadence=opts.cadence )
