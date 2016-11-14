@@ -84,13 +84,13 @@ class segDB2grcDBStartCheck(esUtils.EventSupervisorTask):
 
             return False ### action_required = False
 
-        self.warning = "could not find segDB2grcDB staring message"
+        self.warning = "could not find segDB2grcDB starting message"
         if verbose or annotate:
             message = "action required : "+self.warning
 
             ### post message
             if verbose:
-                logger.debug( self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -176,8 +176,8 @@ class segDB2grcDBFlagCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        flagname = flag.split(":")
-        flagname = "%s-%s-(.*)-(.*).xml.gz"%(flagname[0], "_".join(flagname[1:]))
+        flagname = self.flag.split(":")
+        flagname = "%s-%s-(.*)-(.*).xml.gz"%(flagname[0], "_".join(_.replace("-","_") for _ in flagname[1:]))
         self.warning, action_required = esUtils.check4file( graceid,
                                                             gdb,
                                                             flagname,
@@ -306,7 +306,7 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
 
                 ### post Log
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -318,7 +318,7 @@ class segDB2grcDBFinishCheck(esUtils.EventSupervisorTask):
 
             ### post Log
             if verbose:
-                logger.debug( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 

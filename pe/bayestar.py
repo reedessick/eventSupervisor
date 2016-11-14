@@ -67,7 +67,7 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
         if not esUtils.check4log( graceid, gdb, "INFO:BAYESTAR:starting sky localization", verbose=verbose, logTag=logger.name if verbose else None ):
-            self.warning = "found BAYESTAR staring message"
+            self.warning = "found BAYESTAR starting message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
@@ -76,7 +76,7 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-        self.warning = "could not find a BAYESTAR staring message"
+        self.warning = "could not find a BAYESTAR starting message"
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
@@ -150,7 +150,7 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag ) 
             logger.info( "%s : %s"%(graceid, self.description) )
         fitsname = "bayestar.fits.gz"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning

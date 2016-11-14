@@ -103,13 +103,13 @@ class idqStartCheck(esUtils.EventSupervisorTask):
 
             return False ### action_required = False
 
-        self.warning = "could not find iDQ staring message at %s"%(self.ifo)
+        self.warning = "could not find iDQ starting message at %s"%(self.ifo)
         if verbose or annotate:
             message = "action required : "+self.warning
 
             ### post message
             if verbose:
-                logger.debug( self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -231,11 +231,11 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "minimum glitch-FAP for %s at %s within [(.*), (.*)] is (.*)"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid, 
+        self.warning, action_required = esUtils.check4file( graceid, 
                                                     gdb, 
                                                     jsonname, 
                                                     regex=True,
-                                                    tagnames=self.tagnames, 
+                                                    tagnames=None, 
                                                     verbose=verbose, 
                                                     logFragment=fragment, 
                                                     logRegex=True,
@@ -281,11 +281,11 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         framename = "%s_idq_%s_fap(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ fap timeseries for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid, 
+        self.warning, action_required = esUtils.check4file( graceid, 
                                                     gdb, 
                                                     framename, 
                                                     regex=True, 
-                                                    tagnames=self.tagnames, 
+                                                    tagnames=None, 
                                                     verbose=verbose, 
                                                     logFragment=fragment, 
                                                     logRegex=True,
@@ -300,7 +300,7 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -331,11 +331,11 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         framename = "%s_idq_%s_rank(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ glitch-rank frame for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     framename,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=True,
@@ -381,11 +381,11 @@ class idqTimeseriesPlotCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_timeseries-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ fap and glitch-rank timeseries plot for %s at %s:"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     figname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=True,
@@ -431,11 +431,11 @@ class idqActiveChanCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s_chanlist(.*)-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ (possible) active channels for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     jsonname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -481,11 +481,11 @@ class idqActiveChanPlotCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_chanstrip-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ channel strip chart for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     figname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -534,11 +534,11 @@ class idqTablesCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         filename = "%s_idq_%s(.*)-(.*)-(.*).xml.gz"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ glitch tables %s:"%(self.ifo) ### NOTE: this is bad... but it's what we have at the moment within iDQ
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     filename,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -587,11 +587,11 @@ class idqCalibrationCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_calib-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ calibration sanity check for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     jsonname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -637,11 +637,11 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_calib-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ calibration sanity check figure for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     figname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -687,11 +687,11 @@ class idqROCCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_ROC-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local ROC curves for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     jsonname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -737,11 +737,11 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         figname = "%s_%s(.*)_ROC-(.*)-(.*).png"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local ROC figure for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     figname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -756,7 +756,7 @@ class idqROCPlotCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -787,11 +787,11 @@ class idqCalibStatsCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_calibStats-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local calibration vital statistics for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     jsonname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -837,11 +837,11 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
         jsonname = "%s_%s(.*)_trainStats-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
         fragment = "iDQ local training vital statistics for %s at %s"%(self.classifier, self.ifo) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid,
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     jsonname,
                                                     regex=True,
-                                                    tagnames=self.tagnames,
+                                                    tagnames=None,
                                                     verbose=verbose,
                                                     logFragment=fragment,
                                                     logRegex=False,
@@ -856,7 +856,7 @@ class idqTrainStatsCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -880,7 +880,7 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
                                               logTag=logTag,
                                             )
 
-    def idqFinish(self, graceid, gdb, verbose=False, annoate=False, **kwargs):
+    def idqFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that iDQ finished as expected
         """
@@ -896,7 +896,7 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
 
                 ### post message
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -908,7 +908,7 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                logger.debug( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 

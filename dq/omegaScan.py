@@ -88,26 +88,26 @@ class omegaScanStartCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
     
         fragment = "automatic OmegaScans begun for: %s"%(", ".join(self.chansets))
-        if not check4log( graceid, gdb, fragment, tagnames=None, regex=False, verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, fragment, tagnames=None, regex=False, verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found OmegaScan start message for %s"%(", ".join(self.chansets))
             if verbose or annotate:
                 message = "no action required : "+self.warning
        
                 ### post message
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
             return False ### action_required = False
 
-        self.warning = "could not find OmegaScan start message for %s"%(", ".join(self.chanests))
+        self.warning = "could not find OmegaScan start message for %s"%(", ".join(self.chansets))
         if verbose or annotate:
             message = "action required : "+self.warning
 
             ### post message
             if verbose:
-                logger.debug( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -177,8 +177,8 @@ class omegaScanDataCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        jsonname = "%s.json"%chanset
-        self.warning, action_required = check4file( graceid,
+        jsonname = "%s.json"%self.chanset
+        self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     jsonname,
                                                     regex=False,
@@ -211,7 +211,7 @@ class omegaScanFinishCheck(esUtils.EventSupervisorTask):
 
     def __init__(self, timeout, chansets, email=[], logDir='.', logTag='iQ'):
         self.chansets = chansets
-        self.description = "a check that OmegaScans finished for %s"%(chansets)
+        self.description = "a check that OmegaScans finished for %s"%(", ".join(chansets))
         super(omegaScanFinishCheck, self).__init__( timeout,
                                                     email=email,
                                                     logDir=logDir,
@@ -227,26 +227,26 @@ class omegaScanFinishCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         fragment = "automatic OmegaScans finished for: %s"%(", ".join(self.chansets))
-        if not check4log( graceid, gdb, fragment, tagnames=None, regex=False, verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, fragment, tagnames=None, regex=False, verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found OmegaScan start message for %s"%(", ".join(self.chansets))
             if verbose or annotate:
                 message = "no action required : "+self.warning
 
                 ### post message
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
 
             return False ### action_required = False
 
-        self.warning = "could not find OmegaScan finished message for %s"%(", ".join(self.chanests))
+        self.warning = "could not find OmegaScan finished message for %s"%(", ".join(self.chansets))
         if verbose or annotate:
             message = "action required : "+self.warning
 
             ### post message
             if verbose:
-                logger.debug( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -280,4 +280,4 @@ class H1OmegaScanItem(OmegaScanItem):
     child of OmegaScanItem that specifically looks for the H1 process
     this declaration is necessary for automated look-up within config file
     """
-    name = "h1 omega scan start"
+    name = "h1 omega scan"

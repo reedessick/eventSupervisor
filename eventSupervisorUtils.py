@@ -63,6 +63,13 @@ def emailWarning(subject, body, email):
     """
     utils.sendEmail( email, body, subject )
 
+def gdb2url( gdb, graceid):
+    """
+    generates a link to the gracedb page for graceid
+    """
+    return "%s/events/view/%s"%(gdb.service_url.strip('api/'), graceid)
+
+
 #---------------------------------------------------------------------------------------------------
 
 ### some basic look-up utilities
@@ -117,12 +124,12 @@ def check4log( graceid, gdb, fragment, tagnames=None, regex=False, verbose=False
         logger.debug( "parsing log" )
 
     if regex: ### use regular expressions
-        template = re.complile( fragment )
+        template = re.compile( fragment )
         for log in logs:
             comment = log['comment']
             if template.match( comment ):
                 if tagnames!=None: ### check for tagnames
-                    return sorted(log['tagnames']) != sorted(tagnames) ### log exists, so action_required depends only on tagnames
+                    return sorted(log['tag_names']) != sorted(tagnames) ### log exists, so action_required depends only on tagnames
 
                 else:
                     return False ### action_required = False (we found a match) 
@@ -150,7 +157,7 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
     """
     if verbose:
         logger = logging.getLogger('%s.check4file'%logTag)
-        logger.debug( "    retrieving filenames" )
+        logger.debug( "retrieving filenames" )
     files = gdb.files( graceid ).json().keys()
 
     if regex: ### use regular expressions
@@ -158,6 +165,11 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
         for f in files:
             if template.match( f ):
                 file_exists = True
+
+                ### WARNING: we strip the suffix GraceDb appends to filenames if it is present. 
+                ###          This may break things if we're looking for a file with that suffix, but that's not the expected use case...
+                f = f.split(',')[0]
+
                 filename = f
                 break
 
@@ -171,14 +183,14 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
         check_tagnames = tagnames!=None
         check_logFragment = logFragment!=None
 
-        if (check_tagnames) or (check_logFrament):
+        if (check_tagnames) or (check_logFragment):
             if verbose:
                 logger.debug( "retrieving log messages" )
             logs = gdb.logs( graceid ).json()['log']
-            log = filename2log( fitsname, logs, verbose=verbose )
+            log = filename2log( filename, logs, verbose=verbose )
 
             if (check_tagnames) and (check_logFragment): ### check both tagnames and log message
-                tagsGood = sorted(log['tagnames']) == sorted(tagnames)
+                tagsGood = sorted(log['tag_names']) == sorted(tagnames)
                 if logRegex:
                     template = re.compile( logFragment )
                     logGood = re.compile( logFragment ).match( log['comment'] )
@@ -203,12 +215,12 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
                     return warning, True ### action_required = True
 
             elif check_tagnames: ### check only tagnames
-                if sorted(log['tagnames']) == sorted(tagnames): ### correct tags
+                if sorted(log['tag_names']) == sorted(tagnames): ### correct tags
                     warning = "found %s with correct tagnames (%s) while ignoring log message"%(filename, ",".join(tagnames))
                     return warning, False ### action_required = False
 
                 else: ### wrong tagnames
-                    warning = "found %s but with incorrect tagnames (%s) while ignoring log message"%(filename, ",".join(log['tagnames']))
+                    warning = "found %s but with incorrect tagnames (%s) while ignoring log message"%(filename, ",".join(log['tag_names']))
                     return warning, True ### action_required = True
 
             else: ### check_logFragment -> check only log message
@@ -228,11 +240,11 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
                     return warning, True ### action_required = True
 
         else: 
-            warning = "found %s while ignoring tagnames and log message"%(fitsname)
+            warning = "found %s while ignoring tagnames and log message"%(filename)
             return warning, False ### action_required = False
 
     else: ### file does not exist
-        warning = "could not find %s"%(fitsname)
+        warning = "could not find %s"%(filename)
         return warning, True ### action_required = True
 
 #---------------------------------------------------------------------------------------------------
@@ -327,18 +339,20 @@ class EventSupervisorTask(utils.Task):
             if getattr(self, self.name)( graceid, gdb, verbose=verbose, annotate=annotate, **self.kwargs ):
                 if warnings and self.email:
                     subject = "%s: %s requires attention"%(graceid, self.name)
-                    url = gdb.service_url
+                    url = gdb2url( gdb, graceid )
                     body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\nwarning : %s"%(graceid, self.name, url, self.description, self.warning)
                     emailWarning(subject, body, email=self.email)
         
         except Exception as e:
+            trcbk = traceback.format_exc().strip("\n")
             if verbose:
-                logger.warn( '%s raise an exception!'%self.name )
+                logger.warn( '%s raised an exception!'%self.name )
+                logger.warn( trcbk )
 
             if warnings and self.email:
                 subject = "%s: %s FAILED"%(graceid, self.name)
-                url = gdb.service_url 
-                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, self.name, url, self.description, traceback.format_exc())
+                url = gdb2url( gdb, graceid )
+                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, self.name, url, self.description, trcbk)
                 emailWarning(subject, body, email=self.email)
 
     def eventSupervisorTask(self, graceid, gdb, verbose=False, annotate=False, **kwargs):

@@ -36,7 +36,7 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         bySMS   = options['by sms'].split()   if options.has_key('by sms')   else [] ### phone numbers to ping (really, via email)
         byPhone = options['by phone'].split() if options.has_key('by phone') else [] ### phone numbers to ping with voice?
 
-        ignoreInj = bool(options['ignoreInj']) ### whether we ignore things labeled as injections
+        ignoreInj = bool(options['ignore inj']) ### whether we ignore things labeled as injections
 
         timeout = float(options['dt']) ### how long we wait before we ping people
 
@@ -93,7 +93,7 @@ class notifyByEmail(esUtils.EventSupervisorTask):
 
         if self.notificationList:
             ###                            need to remove "api/" from url for hyperlink...
-            body    = "%s/events/view/%s"%(gdb.service_url.strip("api/"), graceid)
+            body    = esUtils.gdb2url( gdb, graceid)
             subject = "new GraceDb Event: %s"%graceid
             if self.ignoreInj:
                 if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=logger.name if verbose else None ):
@@ -102,12 +102,12 @@ class notifyByEmail(esUtils.EventSupervisorTask):
 
                 else:
                     if verbose:
-                        logger.debug( "not labeled INJ -> sending emails : %s"%(" ,".join(self.notificationList)) )
+                        logger.debug( "not labeled INJ -> sending emails : %s"%(", ".join(self.notificationList)) )
                     sendEmail( self.notificationList, body, subject )
 
             else:
                 if verbose:
-                    logger.debug( "sending emails : %s"%(" ,".join(self.notificationList)) )
+                    logger.debug( "sending emails : %s"%(", ".join(self.notificationList)) )
                 sendEmail( self.notificationList, body, subject )
 
         return False ### action_required = False

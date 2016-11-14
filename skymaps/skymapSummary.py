@@ -36,7 +36,7 @@ class SkymapSummaryStartItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
-        self.tagnames = alert['object']['tagnames']
+        self.tagnames = alert['object']['tag_names']
 
         self.description = "check that autosummary of skymaps started processing %s"%self.fitsname
 
@@ -101,7 +101,7 @@ class SkymapSummaryItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['description'].split()[-1] ### likely to break because I haven't written this yet...
-        self.tagnames = alert['object']['tagnames']
+        self.tagnames = alert['object']['tag_names']
 
         self.description = "check that autosummary of skymaps picked up and correctly processed %s"%self.fitsname
 

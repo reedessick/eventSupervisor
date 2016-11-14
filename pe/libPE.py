@@ -71,16 +71,16 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-        self.warning = "could not find LIB PE staring message"
+        self.warning = "could not find LIB PE starting message"
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -156,14 +156,14 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
         filename = "posterior_samples.dat"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, filename, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required
@@ -204,7 +204,7 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -234,14 +234,14 @@ class libPESkymapCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
         fitsname = "LIB_skymap.fits.gz"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
             else:
                 message = "no action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required

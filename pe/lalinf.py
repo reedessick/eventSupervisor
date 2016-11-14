@@ -76,11 +76,11 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-        self.warning = "could not find LALInference staring message"
+        self.warning = "could not find LALInference starting message"
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -115,7 +115,7 @@ class LALInfItem(esUtils.EventSupervisorQueueItem):
 
         taskTag = '%s.%s'%(logTag, self.name)
         tasks = [
-                 lalinfPostSampCheck(postsamp_dt, email=email, logDir=logDir, logTag=taskTag), 
+#                 lalinfPostSampCheck(postsamp_dt, email=email, logDir=logDir, logTag=taskTag), ### NOTE: not implemented yet...
                  lalinfSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir, logTag=taskTag),
                  lalinfFinishCheck(finish_dt, email=email, logDir=logDir, logTag=taskTag)
                 ]
@@ -155,7 +155,7 @@ class lalinfPostSampCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         filename = "posterior_samples.dat"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, fitsname, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
@@ -192,7 +192,7 @@ class lalinfSkymapCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         fitsname = "LALInference_skymap.fits.gz"
-        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             if action_required:
                 message = "action required : "+self.warning
@@ -239,7 +239,7 @@ class lalinfFinishCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True

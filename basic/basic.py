@@ -46,11 +46,11 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
 
         ### generate task instances
         taskTag = "%s.%s"%(logTag, self.name)
-        if pipeline=="cwb":
+        if pipeline=="CWB":
             tasks = [cWBTriggerCheck(timeout, email=email, logDir=logDir, logTag=taskTag)]
-        elif pipeline=="lib":
+        elif pipeline=="LIB":
             tasks = [oLIBTriggerCheck(timeout, email=email, logDir=logDir, logTag=taskTag)]
-        elif pipeline in ["gstlal", "mbtaonline", "gstlal-spiir", "pycbc"]:
+        elif pipeline in ["gstlal", "MBTAOnline", "gstlal-spiir", "pycbc"]:
             tasks = [cbcCoincCheck(timeout, email=email, logDir=logDir, logTag=taskTag), 
                      cbcPSDCheck(timeout, email=email, logDir=logDir, logTag=taskTag)
                     ]
@@ -95,7 +95,7 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
         filename = "trigger_%.4f.txt"%event['gpstime'] ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -118,10 +118,11 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     description ="a check of the trigger.json file for oLIB events"
     name        = "oLIBTrigger"
 
-    def __init__(self, timeout, email=[], logDir='.'):
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(oLIBTriggerCheck, self).__init__( timeout, 
                                                 email=email,
                                                 logDir=logDir,
+                                                logTag=logTag,
                                               )
 
     def oLIBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
@@ -136,8 +137,8 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
             logger.debug( "retrieving event details" )
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
-        template = ("%.2f-d.json"%event['gpstime']).replace(".","\.").replace("d",".") ### NOTE: may be fragile
-        self.warning, action_required = check4file( graceid, gdb, template, tagnames=None, verbose=verbose, regex=True, logTag=logger.name if verbose else None )
+        template = "%.2f-(.*).json"%event['gpstime'] ### NOTE: may be fragile
+        self.warning, action_required = esUtils.check4file( graceid, gdb, template, tagnames=None, verbose=verbose, regex=True, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -176,7 +177,7 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         filename = "coinc.xml"
-        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -215,7 +216,7 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         filename = "psd.xml.gz"
-        self.warning, action_required = check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -299,17 +300,17 @@ class FARCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "retrieving event details" )
-        event = gdb.event( gdb_id ).json()
+        event = gdb.event( graceid ).json()
 
-        if event.has_key("far"): ### ensure FAR exists
+        if event.has_key("far") and event['far']!=None: ### ensure FAR exists and is set
 
             ### check bounds
             far = event['far']
-            big = far > self.axFAR
+            big = far > self.maxFAR
             sml = far < self.minFAR
 
             if big: ### far is too big
-                self.warning = "FAR=%.3e > %.3e"%(far, maxFAR)
+                self.warning = "FAR=%.3e > %.3e"%(far, self.maxFAR)
                 if verbose or annotate:
                     message = "action required : "+self.warning
 
@@ -322,7 +323,7 @@ class FARCheck(esUtils.EventSupervisorTask):
                 return True ### action_required=True
                 
             elif sml: ### far is too small
-                self.warning = "FAR=%.3e < %.3e"%(far, minFAR)
+                self.warning = "FAR=%.3e < %.3e"%(far, self.minFAR)
                 if verbose or annotate:
                     message = "action required : "+self.warning
 
@@ -335,7 +336,7 @@ class FARCheck(esUtils.EventSupervisorTask):
                 return True ### action_required=True
 
             else: ### far is within an uninteresting range
-                self.warning = "%.3e <= FAR=%.3e <= %.3e"%(minFAR, far, maxFAR)
+                self.warning = "%.3e <= FAR=%.3e <= %.3e"%(self.minFAR, far, self.maxFAR)
                 if verbose or annotate:
                     message = "no action required : "+self.warning
 
@@ -422,12 +423,17 @@ class localRateCheck(esUtils.EventSupervisorTask):
     name = "localRate"
 
     def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.', logTag='iQ'):
-        description = "a check of local rates for %s_%s"%(group, pipeline)
+        self.description = "a check of local rates for %s_%s"%(group, pipeline)
         if search:
-            description = "%s_%s"%(description, search)
+            self.description = "%s_%s"%(description, search)
         self.group    = group
         self.pipeline = pipeline
         self.search   = search
+
+        self.pWin=pWin
+        self.mWin=mWin
+        self.maxRate=maxRate
+
         super(localRateCheck, self).__init__( timeout, 
                                               email=email,
                                               logDir=logDir,
@@ -445,14 +451,14 @@ class localRateCheck(esUtils.EventSupervisorTask):
 
         ### get this event
         if verbose:
-            print( "    retrieving information about this event" )
+            logger.debug( "retrieving information about this event" )
         gdb_entry = gdb.event( graceid ).json()
 
         ### get event time
         event_time = float(gdb_entry['gpstime'])
         if verbose:
             logger.debug( "gpstime : %.6f"%(event_time) )
-            logger.debug( "retrieving neighbors within [%.6f-%.6f, %.6f+%6f]"%(event_time, mWin, event_time, pWin) )
+            logger.debug( "retrieving neighbors within [%.6f-%.6f, %.6f+%6f]"%(event_time, self.mWin, event_time, self.pWin) )
 
         ### count the number of neighbors
         count = 0
@@ -462,7 +468,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
             ###         not the 'current' event          belongs to the right group        associated with the right pipeline           from the correct search
             count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
             
-        if count > (pWin+mWin)*maxRate: ### too many neighbors
+        if count > (self.pWin+self.mWin)*self.maxRate: ### too many neighbors
             self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
                 message = "action required : "+self.warning
@@ -546,12 +552,17 @@ class createRateCheck(esUtils.EventSupervisorTask):
     name = "createRate"
 
     def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.', logTag='iQ'):
-        description = "a check of creation rate for %s_%s"%(group, pipeline)
+        self.description = "a check of creation rate for %s_%s"%(group, pipeline)
         if search:
-            description = "%s_%s"%(description, search)
+            self.description = "%s_%s"%(description, search)
         self.group    = group
         self.pipeline = pipeline
         self.search   = search
+
+        self.pWin=pWin
+        self.mWin=mWin
+        self.maxRate=maxRate
+
         super(createRateCheck, self).__init__( timeout,
                                               email=email,
                                               logDir=logDir,
@@ -570,9 +581,9 @@ class createRateCheck(esUtils.EventSupervisorTask):
         gdb_entry = gdb.event( graceid ).json()
 
         ### get event time
-        event_time = tconvert( gdb_entry['created'] )
-        winstart = tconvert( np.floor(event_time-mWin ), form="%Y-%m-%d %H:%M:%S" )
-        winstop  = tconvert( np.ceil( event_time+pWin ), form="%Y-%m-%d %H:%M:%S" )
+        event_time = float(tconvert( gdb_entry['created'][:-4] )) ### we strip the time-zone to help tconvert format this 
+        winstart = tconvert( np.floor(event_time-self.mWin ), form="%Y-%m-%d %H:%M:%S" )
+        winstop  = tconvert( np.ceil( event_time+self.pWin ), form="%Y-%m-%d %H:%M:%S" )
 
         if verbose:
             logger.debug( "%s -> %.3f"%(gdb_entry['created'], event_time) )
@@ -586,7 +597,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
             ###         not the 'current' event          belongs to the right group        associated with the right pipeline           from the correct search
             count += (entry['graceid'] != graceid) and (entry['group'] == self.group) and (entry['pipeline'] == self.pipeline) and (entry['search'] == self.search) ### add to count
 
-        if count > (pWin+mWin)*maxRate: ### too many neighbors
+        if count > (self.pWin+self.mWin)*self.maxRate: ### too many neighbors
             self.warning = self.warning = "found %d events within (-%.3f, +%.3f) of %s"%(count, self.mWin, self.pWin, graceid)
             if verbose or annotate:
                 message = "action required : found %d events within (-%.3f, +%.3f) of %s creation"%(count, self.mWin, self.pWin, graceid)

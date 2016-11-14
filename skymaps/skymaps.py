@@ -60,9 +60,10 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSanity"
 
-    def __init__(self, timeout, fitsname, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, sumThr=1e-10, email=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
+        self.sumThr = 1e-10 ### require the skymap to be normalized to within sumThr of 1
         super(skymapSanityCheck, self).__init__( timeout,
                                                  email=email,
                                                  logDir=logDir,
@@ -86,14 +87,15 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
 
         if verbose:
             logger.debug( "checking %s"%(self.fitsname) )
-        post, header = hp.read_map( self.fitsname, h=True )
+        post, header = hp.read_map( self.fitsname, h=True, verbose=False )
         header = dict(header)
 
-        normed = np.sum(post) == 1.0      ### does it sum to 1?
+        postSum = 1-np.sum(post)
+        normed = np.abs(postSum) < self.sumThr  ### does it sum to 1? or at least close enough?
         coord = header['COORDSYS'] == 'C' ### is it in Equatorial Celestial coordinates?
 
         if normed and coord:
-            self.warning = "%s is properly normalized and in Equatorial coordinates"%self.fitsname
+            self.warning = "%s is properly normalized (1-sum=%.6e) and in Equatorial coordinates"%(self.fitsname, postSum)
             if verbose or annotate:
                 message = "no action required : "+self.warning
 
@@ -106,7 +108,7 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
             return False ### action_required = False
 
         elif normed:
-            self.warning = "%s is not in Equatorial coordinates"%self.fitsname
+            self.warning = "%s is properly normalized (1-sum=%.6e) but is not in Equatorial coordinates"%(self.fitsname, postSum)
             if verbose or annotate:
                 message = "no action required : "+self.warning
 
@@ -119,7 +121,7 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
             return True ### action_required = False
 
         elif coord:
-            self.warning = "%s is not properly normalized"%self.fitsname
+            self.warning = "%s is not properly normalized (1-sum=%.6e) but is in Equatorial coordinates"%(self.fitsname, postSum)
             if verbose or annotate:
                 message = "action required : "+self.warning
 
@@ -132,7 +134,7 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
             return True ### action_required = True
 
         else:
-            self.warning = "%s is not properly normalized and is not in Equatorial coordinates"%self.fitsname
+            self.warning = "%s is not properly normalized (1-sum=%.6e) and is not in Equatorial coordinates"%(self.fitsname, postSum)
             if verbose or annotate:
                 message = "action required : "+self.warning
 
@@ -166,7 +168,7 @@ class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
-        self.tagnames = alert['object']['tagnames']
+        self.tagnames = alert['object']['tag_names']
 
         self.description = "check plotting jobs for %s"%self.fitsname
 
@@ -213,7 +215,7 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         figname = "%s.png"%(self.fitsname.split('.')[0]) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid, gdb, figname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None ) ### loog for the figure
+        self.warning, action_required = esUtils.check4file( graceid, gdb, figname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None ) ### loog for the figure
 
         if verbose or annotate:
             ### format message
@@ -224,7 +226,7 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
@@ -251,7 +253,7 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
-        self.tagnames = alert['object']['tagnames']
+        self.tagnames = alert['object']['tag_names']
 
         self.description = "check plotting jobs for %s"%self.fitsname
 
@@ -299,7 +301,7 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
             logger.debug( "retrieving files")
 
         jsonname = "%s.json"%(self.fitsname.strip(".gz").strip(".fits")) ### NOTE: this may be fragile
-        self.warning, action_required = check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
+        self.warning, action_required = esUtils.check4file( graceid, gdb, jsonname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
 
         if verbose or annotate:
             ### format message
@@ -310,7 +312,7 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
