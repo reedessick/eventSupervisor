@@ -11,6 +11,7 @@ import eventSupervisor.eventSupervisorUtils as esUtils
 
 def is_skymapSummaryStart( description ):
     ''' determine whether description is for a skymap summary start alert by matching a string fragment. NOT IMPLEMENTED -> return False '''
+    raise NotImplementedError('is_skymapSummaryStart')
     return False
 
 #---------------------------------------------------------------------------------------------------

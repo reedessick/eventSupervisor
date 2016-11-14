@@ -9,18 +9,12 @@ import eventSupervisor.eventSupervisorUtils as esUtils
 
 ### methods to identify updates by description
 
-def is_l1OmegaScanStart( description ):
-    ''' identify whether description is for an l1 omega scan start alert by matching a fragment. NOT IMPLEMENTED -> return False '''
-    raise NotImplementedError('is_l1OmegaScanStart')
-    return False ### need to predict the chansets associated with this, meaning we need another input argument!
-
-def is_h1OmegaScanStart( description ):
-    ''' identify whether description is for an h1 omega scan start alert by matching a fragment. NOT IMPLEMENTED -> return False '''
-    raise NotImplementedError('is_h1OmegaScanStart')
-    return False ### need to predict the chansets associated with this, meaning we need another input argument!
+def is_OmegaScanStart( description, chansets=[] ):
+    ''' identify whether description is for an omega scan start alert by matching a fragment.'''
+    return "automatic OmegaScans begun for: %s"%(", ".join(chansets)) in description
 
 #def is_idqOmegaScanStart( description ):
-#    ''' identify whether description is for an idq omega scan start alert by matching a fragment. NOT IMPLEMENTED -> return False '''
+#    ''' identify whether description is for an idq omega scan start alert by matching a fragment. NOT IMPLEMENTED '''
 #    return False
 
 #---------------------------------------------------------------------------------------------------
