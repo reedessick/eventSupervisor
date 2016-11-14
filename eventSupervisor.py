@@ -159,7 +159,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     """
     ### determine if this is a command and delegate accordingly
     if alert['uid'] == 'command':
-        return parseCommand( queue, queuebyGraceID, alert, t0, config, logTag=logTag )
+        return parseCommand( queue, queuebyGraceID, alert, t0, logTag=logTag )
 
     ### set up logger
     logger = logging.getLogger('%s.parseAlert'%logTag) ### propagate to iQ's logger
