@@ -88,7 +88,7 @@ class idqStartCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        template = "Started searching for iDQ information within [(.*), (.*)] at %s"%(self.ifo)
+        template = "Started searching for iDQ information within \[(.*), (.*)\] at %s"%(self.ifo)
         if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True, logTag=logger.name if verbose else None ): ### look for log message
             self.warning = "found iDQ starting message at %s"%(self.ifo)
 
@@ -147,7 +147,7 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.ifo = alert['description'].split()[-1] ### assume a particular format for the log comment
-                                                       ### this is based off iDQ start messages from a single IFO
+                                                    ### this is based off iDQ start messages from a single IFO
 
         ### extract parameters from config
         self.classifiers = options['classifiers'].split()
@@ -176,6 +176,7 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
         tasks = []
         for classifier in self.classifiers:
             tasks += [idqGlitchFAPCheck(glitch_fap_dt, self.ifo, classifier, email=email, logDir=logDir, logTag=taskTag),
+                      idqRankCheck(glitch_fap_dt, self.ifo, classifier, email=email, logDir=logDir, logTag=taskTag),
                       idqFAPFrameCheck(fap_frame_dt, self.ifo, classifier, email=email, logDir=logDir, logTag=taskTag),
                       idqRankFrameCheck(rank_frame_dt, self.ifo, classifier, email=email, logDir=logDir, logTag=taskTag),
                       idqTimeseriesPlotCheck(timeseries_plot_dt, self.ifo, classifier, email=email, logDir=logDir, logTag=taskTag),
@@ -229,8 +230,8 @@ class idqGlitchFAPCheck(esUtils.EventSupervisorTask):
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
-        jsonname = "%s_%s(.*)-(.*)-(.*).json"%(self.ifo, self.classifier) ### NOTE: this may be fragile
-        fragment = "minimum glitch-FAP for %s at %s within [(.*), (.*)] is (.*)"%(self.classifier, self.ifo) ### NOTE: this may be fragile
+        jsonname = "%s_%s_minFAP_%s-(.*)-(.*).json"%(self.ifo, self.classifier, graceid) ### NOTE: this may be fragile
+        fragment = "minimum glitch-FAP for %s at %s within \[(.*), (.*)\] is (.*)"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = esUtils.check4file( graceid, 
                                                     gdb, 
                                                     jsonname, 
@@ -280,7 +281,7 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
         framename = "%s_idq_%s_fap(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
-        fragment = "iDQ fap timeseries for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
+        fragment = "iDQ fap timeseries for %s at %s within \[(.*), (.*)\] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = esUtils.check4file( graceid, 
                                                     gdb, 
                                                     framename, 
@@ -288,6 +289,56 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
                                                     tagnames=None, 
                                                     verbose=verbose, 
                                                     logFragment=fragment, 
+                                                    logRegex=True,
+                                                    logTag=logger.name if verbose else None,
+                                                  )
+        if verbose or annotate:
+            ### format message
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+
+            ### post message
+            if verbose:
+                logger.debug( message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+
+        return action_required
+
+class idqRankCheck(esUtils.EventSupervisorTask):
+    """
+    a check that iDQ reported the rank as expected
+    """
+    name = "idqRank"
+
+    def __init__(self, timeout, ifo, classifier, email=[], logDir='.', logTag='iQ'):
+        self.ifo = ifo
+        self.classifier = classifier
+        self.description = "a check that iDQ reported a rank for %s at %s"%(self.classifier, self.ifo)
+        super(idqRankCheck, self).__init__( timeout,
+                                            email=email,
+                                            logDir=logDir,
+                                            logTag=logTag,
+                                          )
+
+    def idqRank(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
+        """
+        a check that iDQ reported the gltich-FAP as expected
+        """
+        if verbose:
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
+            logger.info( "%s : %s"%(graceid, self.description) )
+        jsonname = "%s_%s_maxRANK_%s-(.*)-(.*).json"%(self.ifo, self.classifier, graceid) ### NOTE: this may be fragile
+        fragment = "maximum glitch-RANK for %s at %s within \[(.*), (.*)\] is (.*)"%(self.classifier, self.ifo) ### NOTE: this may be fragile
+        self.warning, action_required = esUtils.check4file( graceid,
+                                                    gdb,
+                                                    jsonname,
+                                                    regex=True,
+                                                    tagnames=None,
+                                                    verbose=verbose,
+                                                    logFragment=fragment,
                                                     logRegex=True,
                                                     logTag=logger.name if verbose else None,
                                                   )
@@ -330,7 +381,7 @@ class idqRankFrameCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag ) 
             logger.info( "%s : %s"%(graceid, self.description) )
         framename = "%s_idq_%s_rank(.*)-(.*)-(.*).gwf"%(self.ifo, self.classifier) ### NOTE: this may be fragile
-        fragment = "iDQ glitch-rank frame for %s at %s within [(.*), (.*)] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
+        fragment = "iDQ glitch-rank frame for %s at %s within \[(.*), (.*)\] :"%(self.classifier, self.ifo) ### NOTE: this may be fragile
         self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
                                                     framename,
@@ -888,7 +939,7 @@ class idqFinishCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        template = "Finished searching for iDQ information within [(.*), (.*)] at %s"%(self.ifo) ### use regex
+        template = "Finished searching for iDQ information within \[(.*), (.*)\] at %s"%(self.ifo) ### use regex
         if not esUtils.check4log( graceid, gdb, template, verbose=verbose, regex=True, logTag=logger.name if verbose else None ):
             self.warning = "found iDQ completion message at %s"%(self.ifo)
             if verbose or annotate:
