@@ -139,7 +139,7 @@ fits = [
 # main parsing function
 #------------------------
 
-def parseAlert( queue, queueByGraceID, alert, t0, config ):
+def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     """
     the main parsing function that interprets lvalert messages and modifies the dynamic queue appropriately
 
@@ -159,10 +159,10 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     """
     ### determine if this is a command and delegate accordingly
     if alert['uid'] == 'command':
-        return parseCommand( queue, queuebyGraceID, alert, t0 )
+        return parseCommand( queue, queuebyGraceID, alert, t0, config, logTag=logTag )
 
     ### set up logger
-    logger = logging.getLogger('iQ.parseAlert') ### propagate to iQ's logger
+    logger = logging.getLogger('%s.parseAlert'%logTag) ### propagate to iQ's logger
 
     ### grab alert type
     alert_type = alert['alert_type']
@@ -187,7 +187,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
     if alert_type=="new":
         for name in new: ### iterate through names that neeed to be added
             if config.has_section( name ):
-                items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir ) )
+                items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
         completed = 0
 
     else: ### need to parse this further
@@ -206,10 +206,10 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
                 filename = alert['file']
 
                 ### new FITS file
-                if filename.strip('.gz').endswidth('.fits'):
-                    for name in fits:
+                if filename.endswith('.fits.gz') or filename.endswidth('.fits'):
+                    for name in fits: ### iterate over names that are needed for new FITS files
                         if config.has_section( name ):
-                            items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir ) )
+                            items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
 
                 else:
                     pass ### not sure what to do here... are there other file types that require special action?
@@ -217,14 +217,14 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
             #------------
             # react to alert description
             #------------
-            update_name = parseUpdate( alert ) ### determine the type of update
+            update_name = parseUpdate( alert, config ) ### determine the type of update
 
             ### determine new QueueItems that need to be added based on this update
             for name in parent_child[update_name]:
                 if config.has_section( name ):
-                    items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir ) )
+                    items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
 
-            ### determine which QueueItems/Tasks need to be marked complete based on this update
+            ### FIXME: determine which QueueItems/Tasks need to be marked complete based on this update
             ###  >>>>>>>>>>>>>>>>>> HOW DO WE DO THIS CLEANLY? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         #----------------
@@ -261,7 +261,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config ):
 # parser for update alerts based on description
 #------------------------
 
-def parseUpdate( alert ):
+def parseUpdate( alert, config ):
     """
     determines the "name" of the update, which we use to determine what actions we need to take
     new QueueItems are defined through parent_child (dict)
@@ -298,15 +298,18 @@ def parseUpdate( alert ):
     elif idq.is_idqActiveChan( description ):
         return 'idqActiveChan'
 
-    ### hoft omega scan start
-    elif omegaScan.is_l1OmegaScanStart( description ):
+    ### l1 omega scan start
+    ### ensure we actually care about this
+    elif config.has_section('l1 omega scan start') and omegaScan.is_l1OmegaScanStart( description, chansets=config.get('l1 omega scan start', 'chansets').split() ):
         return 'l1 omega scan start'
 
-    ### aux omega scan start
-    elif omegaScan.is_h1OmegaScanStart( description ):
+    ### h1 omega scan start
+    ### ensure that we actually care about this
+    elif config.has_section('h1 omega scan start') and omegaScan.is_h1OmegaScanStart( description, chansets=config.get('h1 omega scan start', 'chansets').split() ):
         return 'h1 omega scan start'
 
     ### idq omega scan start
+    ### NOTE: not implemented
 #    elif omegaScan.is_idqOmegaScanStart( description ):
 #        return 'idq omega scan start'
     
@@ -331,12 +334,14 @@ def parseUpdate( alert ):
         return 'lib pe start'
 
     ### skymap summary start
-    elif skymapSummary.is_skymapSummaryStart( description ):
-        return 'skymap summary start'
+    ### NOTE: Not implemented...
+#    elif skymapSummary.is_skymapSummaryStart( description ):
+#        return 'skymap summary start'
 
     ### approval processor segdb start
-    elif approvalProcessor.is_approvalProcessorSegDBStart( description ):
-        return 'approvalProcessorSegDBStartCheck'
+    ### NOTE: Not implemented...
+#    elif approvalProcessor.is_approvalProcessorSegDBStart( description ):
+#        return 'approvalProcessorSegDBStartCheck'
 
     ### message not recognized or we don't care about it
     else: 
