@@ -11,6 +11,10 @@ import lvalertMP.lvalert.lvalertMPutils as utils
 
 #------------------------
 
+import os
+
+import logging
+
 import time
 
 from ConfigParser import SafeConfigParser
@@ -33,7 +37,7 @@ parser.add_option("", "--new", default=False, action="store_true")
 
 # updates
 parser.add_option("", "--fits", default=False, action="store_true")
-parser.add_option("", "--skymapSummaryStart", default=False, action="store_true")
+#parser.add_option("", "--skymapSummaryStart", default=False, action="store_true") ### FIXME: not implemented yet...
 
 parser.add_option("", "--idqStart", default=False, action="store_true")
 parser.add_option("", "--idqGlitchFAP", default=False, action="store_true")
@@ -61,7 +65,7 @@ configname = args[0]
 ### finish parsing options
 opts.new                = opts.new                or opts.everything
 opts.fits               = opts.fits               or opts.everything
-opts.skymapSummaryStart = opts.skymapSummaryStart or opts.everything
+#opts.skymapSummaryStart = opts.skymapSummaryStart or opts.everything ### FIXME: not implemented yet...
 opts.idqStart           = opts.idqStart           or opts.everything
 opts.idqGlitchFAP       = opts.idqGlitchFAP       or opts.everything
 opts.idqActiveChan      = opts.idqActiveChan      or opts.everything
@@ -96,198 +100,372 @@ config.read( configname )
 
 #-------------------------------------------------
 
-### SortedQueues that we play around with
-queue          = utils.SortedQueue()
-queueByGraceID = dict()
-
-#-------------------------------------------------
-
 if opts.new:
     logger.info("TESTING: new")
     alert = {
+             'alert_type' : 'new',
              'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'group'    : 'CBC',
+             'pipeline' : 'gstlal',
+             'far'      : 1e-8,
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    for name in es.new:
+        for i, item in enumerate(queue):
+            if item.name==name:
+                queue.pop( i )
+                break
+        else:
+            assert False, 'could not find item corresponding to name=%s'%name
+    assert len(queue)==0, 'queue should be empty at this point'
 
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+    
     logger.info("passed all assertion statements for --new")
 
+#-------------------------------------------------
+
 if opts.fits:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: fits")
     alert = {
-             'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'alert_type'  : 'update',
+             'uid'         : 'G123FAKE',
+             'group'       : 'CBC',
+             'pipeline'    : 'gstlal',
+             'description' : 'a meaningless description meant to avoid triggering anything',
+             'file'        : 'fake.fits.gz',
+             'object'      : {'tag_names':['faketag']},
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    for name in es.fits:
+        for i, item in enumerate(queue):
+            if item.name==name:
+                queue.pop(i)
+                break
+            else:
+                assert False, 'could not find item corresponding to name=%s'%name
+    assert len(queue)==0, 'queue should be empty at this point'
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    for name in es.fits:
+        for i, item in enumerate(queue):
+            if item.name==name:
+                queue.pop(i)
+                break
+            else:
+                assert False, 'could not find item corresponding to name=%s'%name
+    assert len(queue)==0, 'queue should be empty at this point'
 
     logger.info("passed all assertion statements for --fits")
 
+#-------------------------------------------------
+
+'''
 if opts.skymapSummaryStart:
     raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: skymapSummaryStart")
     alert = {
-             'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'alert_type'  : 'update',
+             'uid'         : 'G123FAKE',
+             'group'       : 'CBC',
+             'pipeline'    : 'gstlal',
+             'description' : 'THIS IS NOT IMPLEMENTED YET', ### FIXME
+             'file'        : '',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    assert len(queue)==1, "should be a single item in the queue"
+    assert queue[0].name == 'skymap summary', "must be of the correct type"
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name == 'skymap summary'
 
     logger.info("passed all assertion statements for --skymapSummaryStart")
+'''
+
+#-------------------------------------------------
 
 if opts.idqStart:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: idqStart")
     alert = {
-             'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'alert_type'  : 'update',
+             'uid'         : 'G123FAKE',
+             'group'       : 'CBC',
+             'pipeline'    : 'gstlal',
+             'description' : 'Started searching for iDQ information within [1162558843.270, 1162558843.370] at H1',
+             'file'        : '',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    assert len(queue)==1
+    assert queue[0].name=='idq'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name == 'idq'
 
     logger.info("passed all assertion statements for --idqStart")
 
+#-------------------------------------------------
+
 if opts.idqGlitchFAP:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: idqGlitchFAP")
     alert = {
-             'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'alert_type'  : 'update',
+             'uid'         : 'G123FAKE',
+             'group'       : 'CBC',
+             'pipeline'    : 'gstlal',
+             'description' : 'minimum glitch-FAP for ovl at H1 within [1162558843.270, 1162558843.370] is 1.000e+00',
+             'file'        : 'https://gracedb.ligo.org/apiweb/events/G260778/files/H1_ovl_minFAP_G260778-1162558843-0.json',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    assert len(queue)==0, 'should ignore this alert because approval processor checks are not implemented'
+    assert len(queueByGraceID.keys())==0
 
     logger.info("passed all assertion statements for --idqGlitchFAP")
 
+#-------------------------------------------------
+
 if opts.idqActiveChan:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: idqActiveChan")
     alert = {
-             'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'alert_type'  : 'update',
+             'uid'         : 'G123FAKE',
+             'group'       : 'CBC',
+             'pipeline'    : 'gstlal',
+             'description' : 'iDQ (possible) active channels for ovl at L1 between [1162558838.320, 1162558848.320]',
+             'file'        : 'https://gracedb.ligo.org/apiweb/events/G260778/files/L1_ovl_chanlist_G260778-1162558838-10.json',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    assert len(queue)==0, 'should ignore this alert because idqOmegaScans are not implemented'
+    assert len(queueByGraceID.keys())==0
 
     logger.info("passed all assertion statements for --idqActiveChan")
 
+#-------------------------------------------------
+
 if opts.omegaScanStart:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: omegaScanStart")
+
+    name = 'l1 omega scan' ### only check L1, assume H1 works too...
+
     alert = {
-             'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'alert_type'  : 'update',
+             'uid'         : 'G123FAKE',
+             'group'       : 'CBC',
+             'pipeline'    : 'gstlal',
+             'description' : 'automatic OmegaScans begun for: %s'%(', '.join(config.get(name, 'chansets').split())),
+             'file'        : '',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    assert len(queue)==1
+    assert queue[0].name==name
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name==name
 
     logger.info("passed all assertion statements for --omegaScanStart")
 
+#-------------------------------------------------
+
 if opts.segDbStart:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: segDbStart")
     alert = {
-             'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'alert_type'  : 'update',
+             'uid'         : 'G123FAKE',
+             'group'       : 'CBC',
+             'pipeline'    : 'gstlal',
+             'description' : 'began searching for segments in : https://segments.ligo.org',
+             'file'        : '', 
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    name = 'segdb2grcdb'
+
+    assert len(queue)==1
+    assert queue[0].name==name
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name==name
 
     logger.info("passed all assertion statements for --segDbStart")
 
+#-------------------------------------------------
+
 if opts.bayestarStart:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: bayestarStart")
     alert = {
+             'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'group'    : 'CBC',
+             'pipeline' : 'gstlal',
+             'description' : 'INFO:BAYESTAR:starting sky localization',
+             'file'        : '',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    name = 'bayestar'
+
+    assert len(queue)==1
+    assert queue[0].name==name
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name==name
 
     logger.info("passed all assertion statements for --bayestarStart")
 
+#-------------------------------------------------
+
 if opts.bayeswavePEStart:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: bayeswavePEStart")
     alert = {
+             'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'group'    : 'CBC',
+             'pipeline' : 'gstlal',
+             'description' : 'BayesWaveBurst launched',
+             'file'        : '',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    name = 'bayeswave pe'
+
+    assert len(queue)==1
+    assert queue[0].name==name
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name==name
 
     logger.info("passed all assertion statements for --bayeswavePEStart")
 
+#-------------------------------------------------
+
 if opts.lalinfStart:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: lalinfStart")
     alert = {
+             'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'group'    : 'CBC',
+             'pipeline' : 'gstlal',
+             'description' : 'LALInference online estimation started',
+             'file'        : '',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    name = 'lalinf'
+
+    assert len(queue)==1
+    assert queue[0].name==name
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name==name
 
     logger.info("passed all assertion statements for --lalinfStart")
 
+#-------------------------------------------------
+
 if opts.libPEStart:
-    raise NotImplementedError('need to format alert before this test will work!')
 
     logger.info("TESTING: libPEStart")
     alert = {
+             'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'NOT',
-             'pipeline' : 'REAL',
+             'group'    : 'CBC',
+             'pipeline' : 'gstlal',
+             'description' : 'LIB Parameter estimation started.',
+             'file'        : '',
             }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    raise NotImplementedError('WRITE ASSERTION STATEMENTS HERE! probably need to rely on lvalertTest to generate lvalert messages for me')
+    name = 'lib pe'
+
+    assert len(queue)==1
+    assert queue[0].name==name
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name==name
 
     logger.info("passed all assertion statements for --libPEStart")

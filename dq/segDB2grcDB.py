@@ -9,7 +9,7 @@ import eventSupervisor.eventSupervisorUtils as esUtils
 
 ### methods to identify updates by description
 
-def is_segdb2grcdbStart( description ):
+def is_segDB2grcDBStart( description ):
     ''' determine whether description is for a segdb2grcdb start alert by matching a string fragment '''
     return "began searching for segments in " in description
 

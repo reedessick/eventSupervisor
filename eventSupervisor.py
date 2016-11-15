@@ -16,66 +16,50 @@ def extractChildren( mod, klass ):
 
 #-------------------------------------------------
 
-qid = {} ### queueItemDict
-         ### contains mapping of names -> QueueItem objects
-         ### used to standardize instantiation of QueueItems
-
-#-------------------------------------------------
-
 import logging
+
+from ligo.gracedb.rest import GraceDb
 
 from lvalertMP.lvalert import lvalertMPutils as utils
 from lvalertMP.lvalert.commands import parseCommand
 
 import eventSupervisorUtils as esUtils
 
+#------------------------
+
 ### notification and alerts
 from notify import notify
-qid.update( extractChildren( notify, esUtils.EventSupervisorQueueItem ) )
- 
+
 ### basics
 from basic import basic
-qid.update( extractChildren( basic, esUtils.EventSupervisorQueueItem ) )
 
 ### vetting and alerts
 from basic import approvalProcessor
-qid.update( extractChildren( approvalProcessor, esUtils.EventSupervisorQueueItem ) )
 
 ### localization
 from skymaps import skymaps
-qid.update( extractChildren( skymaps, esUtils.EventSupervisorQueueItem ) )
-
 from skymaps import skymapSummary
-qid.update( extractChildren( skymapSummary, esUtils.EventSupervisorQueueItem ) )
 
 ### PE follow-up
 from pe import bayestar
-qid.update( extractChildren( bayestar, esUtils.EventSupervisorQueueItem ) )
-
 from pe import bayeswavePE
-qid.update( extractChildren( bayeswavePE, esUtils.EventSupervisorQueueItem ) )
-
 from pe import cwbPE
-qid.update( extractChildren( cwbPE, esUtils.EventSupervisorQueueItem ) )
-
 from pe import libPE
-qid.update( extractChildren( libPE, esUtils.EventSupervisorQueueItem ) )
-
 from pe import lalinf
-qid.update( extractChildren( lalinf, esUtils.EventSupervisorQueueItem ) )
 
 ### DQ follow-up
 from dq import dq
-qid.update( extractChildren( dq, esUtils.EventSupervisorQueueItem ) )
-
 from dq import idq
-qid.update( extractChildren( idq, esUtils.EventSupervisorQueueItem ) )
-
 from dq import omegaScan
-qid.update( extractChildren( omegaScan, esUtils.EventSupervisorQueueItem ) )
-
 from dq import segDB2grcDB
-qid.update( extractChildren( segDB2grcDB, esUtils.EventSupervisorQueueItem ) )
+
+#-------------------------------------------------
+
+qid = {} ### queueItemDict
+         ### contains mapping of names -> QueueItem objects
+         ### used to standardize instantiation of QueueItems
+for mod in [notify, basic, approvalProcessor, skymaps, skymapSummary, bayestar, bayeswavePE, cwbPE, libPE, lalinf, dq, idq, omegaScan, segDB2grcDB]:
+    qid.update( extractChildren( mod, esUtils.EventSupervisorQueueItem ) )
 
 #-------------------------------------------------
 
@@ -85,7 +69,7 @@ qid.update( extractChildren( segDB2grcDB, esUtils.EventSupervisorQueueItem ) )
 
 ### behvior when new alerts are witnessed
 new = [
-  'approval processor prelim dq',
+#  'approval processor prelim dq',
   'event creation',
   'far',
   'local rate',
@@ -108,12 +92,10 @@ new = [
 ### behavior if certian checks are satisfied/alerts are received
 ### NOTE: keys can be Task names but values can ONLY contain Item names
 parent_child = {
-  None                    : [], ### helps with parsing. parseUpdate will return None if we don't do anything special for that alert
 ### parent name : [child name]
   'idq start'             : ['idq'],
-  'idqGlitchFAP'          : ['approval processor idq'], 
+  'idqGlitchFAP'          : [], # ['approval processor idq'], ### FIXME: not implemented...
   'idqActiveChan'         : ['idq omega scan start'], 
-  'hoft omega scan start' : ['hoft omega scan'],
   'h1 omega scan start'   : ['h1 omega scan'],
   'l1 omega scan start'   : ['l1 omega scan'], 
   'segdb2grcdb start'     : ['segdb2grcdb'],
@@ -122,7 +104,7 @@ parent_child = {
   'lalinf start'          : ['lalinf'],
   'lib pe start'          : ['lib pe'],
   'skymap summary start'  : ['skymap summary'],
-  'approvalProcessorSegDBStartCheck' : ['approval processor segdb']
+#  'approvalProcessorSegDBStartCheck' : ['approval processor segdb'], ### FIXME: not implemented...
   }
 
 ### special behavior if certain file types are seen
@@ -158,7 +140,8 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     Importantly, this function will ignore anything with "event_supervisor" in the tagnames
     """
     ### determine if this is a command and delegate accordingly
-    if alert['uid'] == 'command':
+    graceid = alert['uid']
+    if graceid == 'command':
         return parseCommand( queue, queuebyGraceID, alert, t0, logTag=logTag )
 
     ### set up logger
@@ -168,8 +151,8 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     alert_type = alert['alert_type']
 
     ### general options
-    annotate = config.getbool('general', 'annotate')
-    warnings = config.getbool('general', 'warnings')
+    annotate = config.getboolean('general', 'annotate')
+    warnings = config.getboolean('general', 'warnings')
 
     logDir = config.get('general', 'log_directory') if config.has_option('general','log_directory') else '.'
     
@@ -187,7 +170,10 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     if alert_type=="new":
         for name in new: ### iterate through names that neeed to be added
             if config.has_section( name ):
-                items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
+                ### check if there's a FAR threshold
+                ###    we don't have a far Threshold        or    the event has a FAR           the threshold is above the event's value
+                if (not config.has_option(name, 'far thr')) or ((alert['far']!=None) and (config.getfloat(name, 'far thr') >= alert['far'])):
+                    items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
         completed = 0
 
     else: ### need to parse this further
@@ -206,7 +192,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
                 filename = alert['file']
 
                 ### new FITS file
-                if filename.endswith('.fits.gz') or filename.endswidth('.fits'):
+                if filename.endswith('.fits.gz') or filename.endswith('.fits'):
                     for name in fits: ### iterate over names that are needed for new FITS files
                         if config.has_section( name ):
                             items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
@@ -220,9 +206,10 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
             update_name = parseUpdate( alert, config ) ### determine the type of update
 
             ### determine new QueueItems that need to be added based on this update
-            for name in parent_child[update_name]:
-                if config.has_section( name ):
-                    items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
+            if parent_child.has_key(update_name): ### ensure we know what to do with this...
+                for name in parent_child[update_name]:
+                    if config.has_section( name ):
+                        items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
 
             ### FIXME: determine which QueueItems/Tasks need to be marked complete based on this update
             ###  >>>>>>>>>>>>>>>>>> HOW DO WE DO THIS CLEANLY? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -291,7 +278,7 @@ def parseUpdate( alert, config ):
         return 'idq start'
 
     ### idqGlitchFAP
-    elif idq.is_idqGlitchFap( description ):
+    elif idq.is_idqGlitchFAP( description ):
         return 'idqGlitchFAP'
 
     ### idqActiveChan
@@ -300,12 +287,12 @@ def parseUpdate( alert, config ):
 
     ### l1 omega scan start
     ### ensure we actually care about this
-    elif config.has_section('l1 omega scan start') and omegaScan.is_l1OmegaScanStart( description, chansets=config.get('l1 omega scan start', 'chansets').split() ):
+    elif config.has_section('l1 omega scan start') and omegaScan.is_OmegaScanStart( description, chansets=config.get('l1 omega scan start', 'chansets').split() ):
         return 'l1 omega scan start'
 
     ### h1 omega scan start
     ### ensure that we actually care about this
-    elif config.has_section('h1 omega scan start') and omegaScan.is_h1OmegaScanStart( description, chansets=config.get('h1 omega scan start', 'chansets').split() ):
+    elif config.has_section('h1 omega scan start') and omegaScan.is_OmegaScanStart( description, chansets=config.get('h1 omega scan start', 'chansets').split() ):
         return 'h1 omega scan start'
 
     ### idq omega scan start
@@ -314,7 +301,7 @@ def parseUpdate( alert, config ):
 #        return 'idq omega scan start'
     
     ### segdb2grcdb start
-    elif segdb2grcdb.is_segdb2grcdbStart( description ):
+    elif segDB2grcDB.is_segDB2grcDBStart( description ):
         return 'segdb2grcdb start'
 
     ### bayestar start
