@@ -5,6 +5,8 @@ author      = "reed.essick@ligo.org"
 
 import eventSupervisor.eventSupervisorUtils as esUtils
 
+import os
+
 import numpy as np
 import healpy as hp
 
@@ -89,6 +91,10 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
             logger.debug( "checking %s"%(self.fitsname) )
         post, header = hp.read_map( self.fitsname, h=True, verbose=False )
         header = dict(header)
+
+        if verbose:
+            logger.debug( "removing %s"%(self.fitsname) )
+            os.remove( self.fitsname )
 
         postSum = 1-np.sum(post)
         normed = np.abs(postSum) < self.sumThr  ### does it sum to 1? or at least close enough?
