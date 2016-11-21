@@ -62,10 +62,10 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSanity"
 
-    def __init__(self, timeout, fitsname, sumThr=1e-10, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, sumThr=1e-6, email=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
-        self.sumThr = 1e-10 ### require the skymap to be normalized to within sumThr of 1
+        self.sumThr = sumThr ### require the skymap to be normalized to within sumThr of 1
         super(skymapSanityCheck, self).__init__( timeout,
                                                  email=email,
                                                  logDir=logDir,
