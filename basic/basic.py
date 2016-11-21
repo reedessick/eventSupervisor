@@ -37,7 +37,7 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
 
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid  = alert['uid']
-        pipeline = alert['pipeline']
+        pipeline = alert['object']['pipeline']
         self.description = "check %s event creation and trigger files"%(pipeline)
 
         ### extract parameters from config file
@@ -387,10 +387,10 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
 
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid  = alert['uid']
-        group    = alert['group']
-        pipeline = alert['pipeline']
-        if alert.has_key('search'):
-            search = alert['search']
+        group    = alert['object']['group']
+        pipeline = alert['object']['pipeline']
+        if alert['object'].has_key('search'):
+            search = alert['object']['search']
         else:
             search = None
 
@@ -515,11 +515,11 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
     name        = "creation rate"
 
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
-        graceid = alert['uid']
-        group = alert['group']
-        pipeline = alert['pipeline']
-        if alert.has_key('search'):
-            search = alert['search']
+        graceid  = alert['uid']
+        group    = alert['object']['group']
+        pipeline = alert['object']['pipeline']
+        if alert['object'].has_key('search'):
+            search = alert['object']['search']
         else:
             search = None
 
