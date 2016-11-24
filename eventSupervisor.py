@@ -168,11 +168,12 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     # new alerts -> we don't need to parse this any further
     #--------------------
     if alert_type=="new":
+        far = alert['object']['far'] ### extract from alert only once
         for name in new: ### iterate through names that neeed to be added
             if config.has_section( name ):
                 ### check if there's a FAR threshold
                 ###    we don't have a far Threshold        or        the event has a FAR           the threshold is above the event's value
-                if (not config.has_option(name, 'far thr')) or ((alert['object']['far']!=None) and (config.getfloat(name, 'far thr') >= alert['far'])):
+                if (not config.has_option(name, 'far thr')) or ((far!=None) and (config.getfloat(name, 'far thr') >= far)):
                     items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
         completed = 0
 
