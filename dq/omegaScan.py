@@ -128,7 +128,8 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
 
         email = options['email'].split()
 
-        self.chansets = options['chansets'].split()
+#        self.chansets = options['chansets'].split()
+        self.chansets = alert['object']['comment'].strip('automatic OmegaScans begun for: ').split('.')[0].split(', ') ### FIXME: this may be fragile
 
         self.description = "a check that OmegaScans ran as expected for %s"%(", ".join(self.chansets))
 

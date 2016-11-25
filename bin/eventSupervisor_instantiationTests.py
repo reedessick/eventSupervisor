@@ -1525,14 +1525,16 @@ if opts.omegaScan:
     #--------------------
     print "    L1OmegaScanStartItem"
 
+    chansets = 'l1_llhoft l1_r-reduced l1_r-standard'.split()
+
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
         }
     t0 = time.time()
     options = {
         'dt'   : '10.0',
-        'chansets' : 'l1_llhoft l1_r-selected',
+        'chansets' : ' '.join(chansets ),
         'email' : 'a',
         }
 
@@ -1543,7 +1545,7 @@ if opts.omegaScan:
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
-    assert( item.chansets == options['chansets'].split() )
+    assert( item.chansets == chansets )
 
     ###   omegaScanStartCheck
     task = item.tasks[0] ### only one task
@@ -1561,13 +1563,12 @@ if opts.omegaScan:
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
-        'description' : 'blah blah blah H1',
+        'object' : {'comment':'automatic OmegaScans begun for: %s. WARNING: we will not track the individual OmegaScan processes to ensure completion'%(', '.join(chansets))},
         }
     t0 = time.time()
     options = {
         'data dt'   : '10.0',
         'finish dt' : '20.0',
-        'chansets'  : 'l1_llhoft l1_r-selected',
         'email' : 'a',
         }
 
@@ -1575,21 +1576,29 @@ if opts.omegaScan:
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == len(options['chansets'].split())+1 )
+    assert( len(item.tasks) == len(chansets)+1 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
-    assert( item.chansets == options['chansets'].split() )
+    assert( item.chansets == chansets )
+
+    alert = {
+        'uid' : graceid,
+        'object' : {'comment':'automatic OmegaScans begun for: %s.'%(', '.join(chansets))},
+        }
+
+    item = omegaScan.L1OmegaScanItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.chansets == chansets )
 
     ### check tasks
     dataTasks = [ task for task in item.tasks if task.name=='omegaScanData' ]
-    assert( len(dataTasks)==2 )
+    assert( len(dataTasks)==len(chansets) )
 
     finishTask = [task for task in item.tasks if task.name=='omegaScanFinish']
     assert( len(finishTask)==1 )
     finishTask = finishTask[0]
 
     ###   omegaScanDataCheck
-    for chanset, task in zip(options['chansets'].split(), dataTasks):
+    for chanset, task in zip(chansets, dataTasks):
         assert( task.expiration == t0+10.0 )
         assert( task.email == ['a'] )
         assert( task.chanset == chanset )
@@ -1598,13 +1607,15 @@ if opts.omegaScan:
     ###   omegaScanFinishCheck
     assert( finishTask.expiration == t0+20.0 )
     assert( finishTask.email == ['a'] )
-    assert( finishTask.chansets == options['chansets'].split() )
+    assert( finishTask.chansets == chansets )
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
 
     #--------------------
     # H1OmegaScanStartItem
     #--------------------
     print "    H1OmegaScanStartItem"
+
+    chansets = 'h1_llhoft h1_r-selected'.split()
 
     graceid = 'FakeEvent'
     alert = {
@@ -1613,7 +1624,7 @@ if opts.omegaScan:
     t0 = time.time()
     options = {
         'dt'   : '10.0',
-        'chansets' : 'h1_llhoft h1_r-selected',
+        'chansets' : ' '.join(chansets),
         'email' : 'a',
         }
 
@@ -1624,14 +1635,14 @@ if opts.omegaScan:
     assert( len(item.tasks) == 1 ) ### 2 ifos
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
-    assert( item.chansets == options['chansets'].split() )
+    assert( item.chansets == chansets )
 
     ###   omegaScanStartCheck
     task = item.tasks[0]
 
     assert( task.expiration == t0+10.0 )
     assert( task.email == ['a'] )
-    assert( task.chansets == options['chansets'].split() )
+    assert( task.chansets == chansets )
 
     print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
 
@@ -1643,13 +1654,12 @@ if opts.omegaScan:
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
-        'description' : 'blah blah blah H1',
+        'object': {'comment':'automatic OmegaScans begun for: %s. WARNING: we will not track the individual OmegaScan processes to ensure completion'%(', '.join(chansets))},
         }
     t0 = time.time()
     options = {
         'data dt'   : '10.0',
         'finish dt' : '20.0',
-        'chansets'  : "h1_llhoft h1_r-selected",
         'email' : 'a',
         }
 
@@ -1657,21 +1667,21 @@ if opts.omegaScan:
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == len(options['chansets'].split())+1 )
+    assert( len(item.tasks) == len(chansets)+1 )
     assert( len(item.completedTasks) == 0 )
     assert( item.expiration == t0+10.0 )
-    assert( item.chansets == options['chansets'].split() )
+    assert( item.chansets == chansets )
 
     ### check tasks
     dataTasks = [ task for task in item.tasks if task.name=='omegaScanData' ]
-    assert( len(dataTasks)==2 )
+    assert( len(dataTasks)==len(chansets) )
 
     finishTask = [task for task in item.tasks if task.name=='omegaScanFinish']
     assert( len(finishTask)==1 )
     finishTask = finishTask[0]
 
     ###   omegaScanDataCheck
-    for chanset, task in zip(options['chansets'].split(), dataTasks):
+    for chanset, task in zip(chansets, dataTasks):
         assert( task.expiration == t0+10.0 )
         assert( task.email == ['a'] )
         assert( task.chanset == chanset )
@@ -1680,7 +1690,7 @@ if opts.omegaScan:
     ###   omegaScanFinishCheck
     assert( finishTask.expiration == t0+20.0 )
     assert( finishTask.email == ['a'] )
-    assert( finishTask.chansets == options['chansets'].split() )
+    assert( finishTask.chansets ==chansets )
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
 
     '''
