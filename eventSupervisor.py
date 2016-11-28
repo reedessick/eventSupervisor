@@ -142,7 +142,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     ### determine if this is a command and delegate accordingly
     graceid = alert['uid']
     if graceid == 'command':
-        return parseCommand( queue, queuebyGraceID, alert, t0, logTag=logTag )
+        return parseCommand( queue, queueByGraceID, alert, t0, logTag=logTag )
 
     ### set up logger
     logger = logging.getLogger('%s.parseAlert'%logTag) ### propagate to iQ's logger
@@ -222,6 +222,12 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
             completed = 0 ### currently we don't do anything...
 
         #----------------
+        # signoff alert
+        #----------------
+        elif alert_type=="signoff":
+            completed = 0 ### currently, we don't do anything...
+
+        #----------------
         # alert type is not understood
         #----------------
         else:
@@ -295,6 +301,11 @@ def parseUpdate( alert, config ):
     ### ensure that we actually care about this
     elif config.has_section('h1 omega scan start') and omegaScan.is_OmegaScanStart( description, chansets=config.get('h1 omega scan start', 'chansets').split() ):
         return 'h1 omega scan start'
+
+    ### unspecified omega scan start
+    ### note: this allows less flexibility than 'h1 omega scan start' and 'l1 omega scan start', but also doesn't require the chansets to be specified a priori
+    elif omegaScan.is_OmegaScanStart( description ):
+        return 'omega scan start'
 
     ### idq omega scan start
     ### NOTE: not implemented
