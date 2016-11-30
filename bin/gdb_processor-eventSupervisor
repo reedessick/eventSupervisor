@@ -68,9 +68,10 @@ queue 1
      'out'      : args.out,
     }
 
-    with open('lvalertlisten_event_supervisor.sub', 'w') as f:
+    sub = 'lvalertlisten_event_supervisor.sub'
+    with open(sub, 'w') as f:
         f.write(contents)
-    condorargs = ['condor_submit', 'lvalertlisten_event_supervisor.sub']
+    condorargs = ['condor_submit', sub]
     os.execlp('condor_submit', *condorargs)
 
 #------------------------
