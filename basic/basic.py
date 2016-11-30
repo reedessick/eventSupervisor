@@ -554,7 +554,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.', logTag='iQ'):
         self.description = "a check of creation rate for %s_%s"%(group, pipeline)
         if search:
-            self.description = "%s_%s"%(description, search)
+            self.description = "%s_%s"%(self.description, search)
         self.group    = group
         self.pipeline = pipeline
         self.search   = search
