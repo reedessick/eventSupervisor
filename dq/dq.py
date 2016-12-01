@@ -11,7 +11,7 @@ import eventSupervisor.eventSupervisorUtils as esUtils
 
 #---------------------------------------------------------------------------------------------------
 
-class DQSummaryItem(esUtils.EventSupervisorQueueItem):
+class LLDQReportItem(esUtils.EventSupervisorQueueItem):
     """
     a check that a link to the DQ Summary page was posted
 
@@ -21,8 +21,8 @@ class DQSummaryItem(esUtils.EventSupervisorQueueItem):
         dt
         email
     """
-    description = "a check that the DQ summary page was posted"
-    name        = "dq summary"
+    description = "a check that the lldq-report page was posted"
+    name        = "lldqReport"
 
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
@@ -32,7 +32,7 @@ class DQSummaryItem(esUtils.EventSupervisorQueueItem):
         email = options['email'].split()
 
         ### generate tasks
-        tasks = [dqSummaryCheck(timeout, email=email, logDir=logDir)]
+        tasks = [lldqReportCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(DQSummaryItem, self).__init__( graceid,
@@ -45,12 +45,12 @@ class DQSummaryItem(esUtils.EventSupervisorQueueItem):
                                              logTag=logTag,
                                            )
 
-class dqSummaryCheck(esUtils.EventSupervisorTask):
+class lldqReportCheck(esUtils.EventSupervisorTask):
     """
     a check that a link to the DQ Summary page was posted
     """
-    description = "a check that the DQ summary page was posted"
-    name        = "dqSummary"
+    description = "a check that the lldq-report page was posted"
+    name        = "lldqReport"
 
     def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
         super(dqSummaryCheck, self).__init__( timeout,
@@ -59,9 +59,28 @@ class dqSummaryCheck(esUtils.EventSupervisorTask):
                                               logTag=logTag,
                                             )
 
-    def dqSummary(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
+    def lldqReport(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        a check that a link to the DQ Summary page was posted
-        NOT IMPLEMENTED
+        a check that a link to the lldq-report page was posted
         """
-        raise NotImplementedError(self.name)
+        if verbose:
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
+            logger.info( "%s : %s"%(graceid, self.description) )
+        if not esUtils.check4log( graceid, gdb, "Automatic Data-quality report posted",  verbose=verbose, logTag=logger.name if verbose else None ):
+            self.warning = "found lldq-report post"
+            if verbose or annotate:
+                message = "no action required : "+self.warning
+                if verbose:
+                    logger.debug( "    "+message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### action_required = False
+
+        self.warning = "could not find a lldq-report post"
+        if verbose or annotate:
+            message = "action required : "+self.warning
+            if verbose:
+                logger.debug( "    "+message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return True ### action_required = True
