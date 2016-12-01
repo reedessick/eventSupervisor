@@ -31,6 +31,10 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
 
+        group    = alert['object']['group']
+        pipeline = alert['object']['pipeline']
+        search   = alert['object']['search'] if alert['object'].has_key('search') else ''
+
         ### extract parameters from config file
         byEmail = options['by email'].split() if options.has_key('by email') else [] ### addresses to ping
         bySMS   = options['by sms'].split()   if options.has_key('by sms')   else [] ### phone numbers to ping (really, via email)
@@ -47,13 +51,13 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         taskTag = "%s.%s"%(logTag, self.name)
 
         if byEmail: ### only add if the list is not empty
-            tasks.append( notifyByEmail(timeout, email=email, notificationList=byEmail, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
+            tasks.append( notifyByEmail(timeout, group, pipeline, search=search, email=email, notificationList=byEmail, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
         if bySMS:
             raise NotImplementedError('currently do not support sms specifically, try using email')
-            tasks.append( notifyBySMS(timeout, email=email, notificationList=bySMS, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
+            tasks.append( notifyBySMS(timeout, group, pipeline, search=search, email=email, notificationList=bySMS, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
         if byPhone:
             raise NotImplementedError('currently do not suport phone')
-            tasks.append( notifyByPhone(timeout, email=email, notificationList=byPhone, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
+            tasks.append( notifyByPhone(timeout, group, pipeline, search=search, email=email, notificationList=byPhone, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
 
         ### wrap up instantiation
         super(NotifyItem, self).__init__( graceid,
@@ -73,9 +77,14 @@ class notifyByEmail(esUtils.EventSupervisorTask):
     description = "notify folks by email that a new event was created"
     name        = "notifyByEmail"
 
-    def __init__(self, timeout, email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search='', email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
         self.notificationList = notificationList
         self.ignoreInj        = ignoreInj
+
+        self.group    = group
+        self.pipeline = pipeline
+        self.search   = search
+
         super(notifyByEmail, self).__init__( timeout, 
                                              email=email,
                                              logDir=logDir,
@@ -93,7 +102,12 @@ class notifyByEmail(esUtils.EventSupervisorTask):
 
         if self.notificationList:
             ###                            need to remove "api/" from url for hyperlink...
-            body    = esUtils.gdb2url( gdb, graceid)
+            body    = """\
+group    : %s
+pipeline : %s
+search   : %s
+
+%s"""%(self.group, self.pipeline, self.search, esUtils.gdb2url( gdb, graceid))
             subject = "new GraceDb Event: %s"%graceid
             if self.ignoreInj:
                 if esUtils.isINJ( graceid, gdb, verbose=verbose, logTag=logger.name if verbose else None ):
@@ -120,9 +134,14 @@ class notifyBySMS(esUtils.EventSupervisorTask):
     description = "notify folks by SMS that a new event was created"
     name        = "notifyBySMS"
 
-    def __init__(self, timeout, email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search='', email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
         self.notificationList = notificationList
         self.ignoreInj        = ignoreInj
+
+        self.group    = group
+        self.pipeline = pipeline
+        self.search   = search
+
         super(notifyBySMS, self).__init__( timeout,
                                            email=email,
                                            logDir=logDir,
@@ -163,9 +182,14 @@ class notifyByPhone(esUtils.EventSupervisorTask):
     description = "notify folks by phone that a new event was created"
     name        = "notifyByPhone"
 
-    def __init__(self, timeout, email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search='', email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
         self.notificationList = notificationListe
         self.ignoreInj        = ignoreInj
+
+        self.group    = group
+        self.pipeline = pipeline
+        self.search   = search
+
         super(notifyByPhone, self).__init__( timeout,
                                              email=email,
                                              logDir=logDir,
