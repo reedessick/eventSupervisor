@@ -76,7 +76,7 @@ new = [
   'creation rate',
   'external triggers',
   'unblind injections',
-  'dq summary',
+  'lldqReport',
   'idq start',
   'h1 omega scan start',
   'l1 omega scan start',
@@ -103,7 +103,9 @@ parent_child = {
   'bayeswave pe start'    : ['bayeswave pe'],
   'lalinf start'          : ['lalinf'],
   'lib pe start'          : ['lib pe'],
-  'skymap summary start'  : ['skymap summary'],
+  'snglFITS start'        : ['snglFITS'],
+  'snglFITSFinish'        : ['multFITS start'],
+  'multFITS start'        : ['multFITS'],
 #  'approvalProcessorSegDBStartCheck' : ['approval processor segdb'], ### FIXME: not implemented...
   }
 
@@ -112,7 +114,7 @@ fits = [
   'skymap sanity',
   'plot skymap',
   'skyviewer',
-  'skymap summary start',
+  'snglFITS start',
   ]
 
 #-------------------------------------------------
@@ -332,10 +334,16 @@ def parseUpdate( alert, config ):
     elif libPE.is_libPEStart( description ):
         return 'lib pe start'
 
-    ### skymap summary start
+    ### snglFITS start
     ### NOTE: Not implemented...
-#    elif skymapSummary.is_skymapSummaryStart( description ):
-#        return 'skymap summary start'
+    elif skymapSummary.is_snglFITSStart( description ):
+        return 'snglFITS start'
+
+    elif skymapSummary.is_snglFITSFinish( description ):
+        return 'snglFITSFinish'
+
+    elif skymapSummary.is_multFITSStart( description ):
+        return 'multFITS start'
 
     ### approval processor segdb start
     ### NOTE: Not implemented...
