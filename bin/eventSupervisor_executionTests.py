@@ -221,7 +221,7 @@ if opts.dq:
             }
 
     #------- DQSummary
-    name = 'dq summary'
+    name = 'lldqReport'
     tests.append( (name, alert) )
 
 #------------------------
