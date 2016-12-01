@@ -17,7 +17,7 @@ def is_snglFITSStart( description ):
 
 def is_snglFITSFinish( description ):
     ''' determine whether description is for a snglFITS finish alert by matching a string fragment.'''
-    return "started skymap summary for" in description
+    return "finished skymap summary for" in description
 
 def is_multFITSStart( description ):
     ''' determine whether description is for multFITS start alert by matching a string fragment.'''
@@ -45,7 +45,8 @@ class SnglFITSStartItem(esUtils.EventSupervisorQueueItem):
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
         graceid = alert['uid']
         self.fitsname = alert['file']
-        self.tagnames = alert['object']['tag_names']
+#        self.tagnames = alert['object']['tag_names'] ### how can we propagate these into future items without querying?
+        self.tagnames = [] ### FIXME: just ignore these for now
 
         self.description = "check that snglFITS started processing %s"%self.fitsname
 
@@ -91,7 +92,7 @@ class snglFITSStartCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "started skymap summary for .*%s.*"%self.fistname, regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, "started skymap summary for .*%s.*"%self.fitsname, regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found snglFITS start message for %s"%self.fitsname
             if verbose or annotate:
                 message = "no action required : "+self.warning
@@ -165,7 +166,7 @@ class snglFITShtmlCheck(esUtils.EventSupervisorTask):
         self.fitsname = fitsname
         self.tagnames = tagnames ### currently ignored
         self.description = "check that snglFITS posted an html for %s"%fitsname
-        super(snglFITSFinishCheck, self).__init__( timeout,
+        super(snglFITShtmlCheck, self).__init__( timeout,
                                                        email=email,
                                                        logDir=logDir,
                                                        logTag=logTag,
@@ -231,7 +232,7 @@ class snglFITSFinishCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "finished skymap summary for .*%s.*"%self.fistname, regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, "finished skymap summary for .*%s.*"%self.fitsname, regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found snglFITS finish message for %s"%self.fitsname
             if verbose or annotate:
                 message = "no action required : "+self.warning
@@ -270,7 +271,7 @@ class MultFITSStartItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         ### query GraceDb to get all fits files for this event
-        self.fitsfiles = [fits for fits in gdb.files( graceid ).json().keys() if fits.endswith('.fits') or fits.endswith('.fits.gz')] ### FIXME: subject to a race condition (another FITS is added between this query and when alert2html.py was launched
+        self.fitsnames = [fits for fits in gdb.files( graceid ).json().keys() if fits.endswith('.fits') or fits.endswith('.fits.gz')] ### FIXME: subject to a race condition (another FITS is added between this query and when alert2html.py was launched
 
 #        self.tagnames = alert['object']['tag_names'] ### these are the tags of the snglFITS finish message, not the fits file
         self.tagnames = [] ### FIXME: ignore these for now
@@ -302,16 +303,16 @@ class multFITSStartCheck(esUtils.EventSupervisorTask):
     name = "multFITSStart"
 
     def __init__(self, timeout, fitsnames, tagnames=[], email=[], logDir='.', logTag='iQ'):
-        self.fitsname = fitsnames
+        self.fitsnames = fitsnames
         self.tagnames = tagnames ### currently ignored
-        self.description = "check that multFITS started processing %s"%fitsname
+        self.description = "check that multFITS started processing %s"%(", ".join(fitsnames))
         super(multFITSStartCheck, self).__init__( timeout,
                                                        email=email,
                                                        logDir=logDir,
                                                        logTag=logTag,
                                                      )
 
-    def snglFITSStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
+    def multFITSStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that multFITS started as expected
         """
@@ -319,7 +320,7 @@ class multFITSStartCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "started skymap comparison for .*%s.*"%(".*".join(self.fistnames)), regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, "started skymap comparison for .*%s.*"%(".*".join(self.fitsnames)), regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found multFITS start message for %s"%(", ".join(self.fitsnames))
             if verbose or annotate:
                 message = "no action required : "+self.warning
@@ -358,7 +359,7 @@ class MultFITSItem(esUtils.EventSupervisorQueueItem):
         ### extrct fitsnames from log comment
         ### this is a bit complicated, and may be fragile
         self.fitsnames = []
-        expr = re.compile( '(.*.fits|.*.fits.gz)' )
+        expr = re.compile( '(.*.fits.gz|.*.fits)' )
         for fragment in alert['description'].split(','):
             self.fitsnames.append( expr.match( fragment ).group().split('>')[-1] ) ### NOTE: may be fragile!
 
@@ -369,17 +370,17 @@ class MultFITSItem(esUtils.EventSupervisorQueueItem):
 
         ### extract params from config
         html_dt   = float(options['html dt'])
-        finish_dt = float(options['html dt'])
+        finish_dt = float(options['finish dt'])
         email = options['email'].split()
 
         ### generate tasks
         taskTag = '%s.%s'%(logTag, self.name)
-        tasks = [multFITShtmlCheck(html_dt, tagnames=self.tagnames, email=email, logDir=logDir, logTask=tasktag),
+        tasks = [multFITShtmlCheck(html_dt, tagnames=self.tagnames, email=email, logDir=logDir, logTag=taskTag),
                  multFITSFinishCheck(finish_dt, self.fitsnames, tagnames=self.tagnames, email=email, logDir=logDir, logTag=taskTag),
                 ]
 
         ### wrap up instantiation
-        super(multFITSItem, self).__init__( graceid,
+        super(MultFITSItem, self).__init__( graceid,
                                                       gdb,
                                                       t0,
                                                       tasks,
@@ -398,7 +399,7 @@ class multFITShtmlCheck(esUtils.EventSupervisorTask):
     def __init__(self, timeout, tagnames=[], email=[], logDir='.', logTag='iQ'):
         self.tagnames = tagnames ### currently ignored
         self.description = "check that multFITS posted an html"
-        super(snglFITSFinishCheck, self).__init__( timeout,
+        super(multFITShtmlCheck, self).__init__( timeout,
                                                        email=email,
                                                        logDir=logDir,
                                                        logTag=logTag,
@@ -413,7 +414,7 @@ class multFITShtmlCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         htmlname = "%s-skymapComparison.html"%(graceid) ### NOTE: this may be fragile
-        fragment = "skymap comparison can be found.*here.*"%(self.fitsname) ### NOTE: this may be fragile
+        fragment = "comparison of skymaps can be found <a href=\"(.*)\">here</a>"
 
         self.warning, action_required = esUtils.check4file( graceid,
                                                     gdb,
@@ -447,9 +448,9 @@ class multFITSFinishCheck(esUtils.EventSupervisorTask):
     name = "multFITSFinish"
 
     def __init__(self, timeout, fitsnames, tagnames=[], email=[], logDir='.', logTag='iQ'):
-        self.fitsname = fitsnames
+        self.fitsnames = fitsnames
         self.tagnames = tagnames ### currently ignored...
-        self.description = "check that multFITS fimished processing %s"%fitsname
+        self.description = "check that multFITS fimished processing %s"%(", ".join(fitsnames))
         super(multFITSFinishCheck, self).__init__( timeout,
                                                        email=email,
                                                        logDir=logDir,
@@ -464,7 +465,7 @@ class multFITSFinishCheck(esUtils.EventSupervisorTask):
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
 
-        if not esUtils.check4log( graceid, gdb, "finished skymap comparison for .*%s.*"%(".*".join(self.fistnames)), regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, "finished skymap comparison for .*%s.*"%(".*".join(self.fitsnames)), regex=True, verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found multFITS finish message for %s"%(", ".join(self.fitsnames))
             if verbose or annotate:
                 message = "no action required : "+self.warning

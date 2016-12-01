@@ -170,7 +170,7 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     # new alerts -> we don't need to parse this any further
     #--------------------
     if alert_type=="new":
-        far = alert['object']['far'] ### extract from alert only once
+        far = alert['object']['far'] if alert['object'].has_key('far') else None ### extract from alert only once
         for name in new: ### iterate through names that neeed to be added
             if config.has_section( name ):
                 ### check if there's a FAR threshold

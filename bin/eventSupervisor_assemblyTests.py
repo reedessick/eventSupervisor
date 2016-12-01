@@ -37,7 +37,10 @@ parser.add_option("", "--new", default=False, action="store_true")
 
 # updates
 parser.add_option("", "--fits", default=False, action="store_true")
-#parser.add_option("", "--skymapSummaryStart", default=False, action="store_true") ### FIXME: not implemented yet...
+
+parser.add_option("", "--snglFITSStart", default=False, action="store_true")
+parser.add_option("", "--snglFITSFinish", default=False, action="store_true")
+parser.add_option("", "--multFITSStart", default=False, action="store_true")
 
 parser.add_option("", "--idqStart", default=False, action="store_true")
 parser.add_option("", "--idqGlitchFAP", default=False, action="store_true")
@@ -65,7 +68,9 @@ configname = args[0]
 ### finish parsing options
 opts.new                = opts.new                or opts.everything
 opts.fits               = opts.fits               or opts.everything
-#opts.skymapSummaryStart = opts.skymapSummaryStart or opts.everything ### FIXME: not implemented yet...
+opts.snglFITSStart      = opts.snglFITSStart      or opts.everything
+opts.snglFITSFinish     = opts.snglFITSFinish     or opts.everything
+opts.multFITSStart      = opts.multFITSStart      or opts.everything
 opts.idqStart           = opts.idqStart           or opts.everything
 opts.idqGlitchFAP       = opts.idqGlitchFAP       or opts.everything
 opts.idqActiveChan      = opts.idqActiveChan      or opts.everything
@@ -104,10 +109,11 @@ if opts.new:
     logger.info("TESTING: new")
     alert = {
              'alert_type' : 'new',
-             'uid'      : 'G123FAKE',
-             'group'    : 'CBC',
-             'pipeline' : 'gstlal',
-             'far'      : 1e-8,
+             'uid'        : 'G123FAKE',
+             'object'     : {'group'    : 'CBC',
+                             'pipeline' : 'gstlal',
+                             'far'      : 1e-8,
+                            },
             }
     queue          = utils.SortedQueue()
     queueByGraceID = dict()
@@ -173,18 +179,18 @@ if opts.fits:
 
 #-------------------------------------------------
 
-'''
-if opts.skymapSummaryStart:
-    raise NotImplementedError('need to format alert before this test will work!')
+if opts.snglFITSStart:
 
-    logger.info("TESTING: skymapSummaryStart")
+    logger.info("TESTING: snglFITSStart")
+
+    fitsname = "G123FAKE"
     alert = {
              'alert_type'  : 'update',
-             'uid'         : 'G123FAKE',
-             'group'       : 'CBC',
-             'pipeline'    : 'gstlal',
-             'description' : 'THIS IS NOT IMPLEMENTED YET', ### FIXME
+             'uid'         : 'G12345',
+             'description' : 'started skymap summary for <a href="does not matter">%s</a>'%fitsname,
              'file'        : '',
+             'object'      : {'tag_names' : 'does not matter'
+                             },
             }
     queue          = utils.SortedQueue()
     queueByGraceID = dict()
@@ -192,17 +198,80 @@ if opts.skymapSummaryStart:
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
     assert len(queue)==1, "should be a single item in the queue"
-    assert queue[0].name == 'skymap summary', "must be of the correct type"
+    assert queue[0].name == 'snglFITS', "must be of the correct type"
 
     assert len(queueByGraceID.keys())==1, 'there should be only one key here'
     assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
 
     queue = queueByGraceID[alert['uid']]
     assert len(queue)==1
-    assert queue[0].name == 'skymap summary'
+    assert queue[0].name == 'snglFITS'
 
-    logger.info("passed all assertion statements for --skymapSummaryStart")
-'''
+    logger.info("passed all assertion statements for --snglFITSStart")
+
+#-------------------------------------------------
+
+if opts.snglFITSFinish:
+
+    logger.info('TESTING: snglFITSFinish')
+
+    fitsname = "G123FAKE"
+    alert = {
+             'alert_type'  : 'update',
+             'uid'         : 'G263554', ### extracted this by hand from https://gracedb.ligo.org -> may be fragile!
+             'description' : 'finished skymap summary for <a href="does not matter">%s</a>'%fitsname,
+             'file'        : '',
+             'object'      : {'tag_names' : 'does not matter'
+                             },
+            }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
+
+    completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
+
+    assert len(queue)==1, "should be a single item in the queue"
+    assert queue[0].name == 'multFITS start', "must be of the correct type"
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name == 'multFITS start'
+
+    logger.info("passed all assertion statements for --snglFITSFinish")
+
+#-------------------------------------------------
+
+if opts.multFITSStart:
+
+    logger.info('TESTING: multFITSStart')
+
+    fitsname = "G123FAKE"
+    alert = {
+             'alert_type'  : 'update',
+             'uid'         : 'G12345', 
+             'description' : 'started skymap comparison for <a href="does not matter">fake.fits.gz</a>, <a href="unimportant">faker.fits</a>',
+             'file'        : '',
+             'object'      : {'tag_names' : 'does not matter'
+                             },
+            }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
+
+    completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
+
+    assert len(queue)==1, "should be a single item in the queue"
+    assert queue[0].name == 'multFITS', "must be of the correct type"
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name == 'multFITS'
+
+    logger.info("passed all assertion statements for --multFITS")
 
 #-------------------------------------------------
 

@@ -35,7 +35,7 @@ class LLDQReportItem(esUtils.EventSupervisorQueueItem):
         tasks = [lldqReportCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
-        super(DQSummaryItem, self).__init__( graceid,
+        super(LLDQReportItem, self).__init__( graceid,
                                              gdb,
                                              t0,
                                              tasks,
@@ -53,7 +53,7 @@ class lldqReportCheck(esUtils.EventSupervisorTask):
     name        = "lldqReport"
 
     def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(dqSummaryCheck, self).__init__( timeout,
+        super(lldqReportCheck, self).__init__( timeout,
                                               email=email,
                                               logDir=logDir,
                                               logTag=logTag,

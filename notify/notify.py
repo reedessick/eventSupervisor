@@ -6,6 +6,8 @@ author      = "reed.essick@ligo.org"
 from lvalertMP.lvalert.lvalertMPutils import sendEmail
 import eventSupervisor.eventSupervisorUtils as esUtils
 
+from distutils.util import strtobool ### required to parse booleans out of strings (for ignoreInj)
+
 #---------------------------------------------------------------------------------------------------
 
 ### methods to identify updates by description
@@ -40,7 +42,7 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         bySMS   = options['by sms'].split()   if options.has_key('by sms')   else [] ### phone numbers to ping (really, via email)
         byPhone = options['by phone'].split() if options.has_key('by phone') else [] ### phone numbers to ping with voice?
 
-        ignoreInj = bool(options['ignore inj']) ### whether we ignore things labeled as injections
+        ignoreInj = strtobool(options['ignore inj']) ### whether we ignore things labeled as injections
 
         timeout = float(options['dt']) ### how long we wait before we ping people
 

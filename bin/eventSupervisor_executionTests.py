@@ -158,6 +158,23 @@ if opts.notify:
     alert = {
              'alert_type' : 'new',
              'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
+             'object'     : {'group'    : 'Test',
+                             'pipeline' : 'gstlal',
+                             'search'   : 'lowmass',
+                            },
+            }
+
+    #------- Notify
+    name = 'notify'
+    tests.append( (name, alert) )
+
+    ### set up inputs
+    alert = {
+             'alert_type' : 'new',
+             'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
+             'object'     : {'group'    : 'Test',
+                             'pipeline' : 'gstlal',
+                            }, ### omit the search
             }
 
     #------- Notify
@@ -212,7 +229,6 @@ if opts.basic:
 #------------------------
 
 if opts.dq:
-    raise NotImplementedError('dq.DQSummaryItem')
 
     ### set up inputs
     alert = {
@@ -328,28 +344,55 @@ if opts.skymaps:
 #------------------------
 
 if opts.skymapSummary:
-    raise NotImplementedError('skymapSummary.SkymapSummaryStartItem')
+
+    fitsnames = [fitsname for fitsname in gdb.files( graceid ).json().keys() if fitsname.endswith('.fits') or fitsname.endswith('.fits.gz')]
+    fitsname  = fitsnames[0]
 
     ### set up inputs
     alert = {
              'alert_type' : 'update',
+             'file'       : fitsname,
              'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
-    #------- SkymapSummaryStart
-    name = 'skymap summary start'
+    #------- SnglFITSStart
+    name = 'snglFITS start'
     tests.append( (name, alert) )
 
-    raise NotImplementedError('skymapSummary.SkymapSummaryItem')
+    ### set up inputs
+    alert = {
+             'alert_type' : 'update',
+             'description': 'started skymap summary for <a href="%s../events/%s/files/%s">%s</a>'%(opts.gracedb_url, graceid, fitsname, fitsname),
+             'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
+            }
+
+    #------- SnglFITS
+    name = 'snglFITS'
+    tests.append( (name, alert) )
 
     ### set up inputs
     alert = {
              'alert_type' : 'update',
+             'description': 'finished skymap summary for <a href="%s../events/%s/files/%s">%s</a>'%(opts.gracedb_url, graceid, fitsname, fitsname),
              'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
-    #------- SkymapSummary
-    name = 'skymap summary'
+    #------- MultFITSStart
+    name = "multFITS start"
+    tests.append( (name, alert) )
+
+    ### set up inputs
+    description = 'started skymap comparison for <a href="%s../events/%s/files/%s">%s</a>'%(opts.gracedb_url, graceid, fitsname, fitsname)
+    for fitsname in fitsnames[1:]:
+        description += ', <a href="%s../events/%s/files/%s">%s</a>'%(opts.gracedb_url, graceid, fitsname, fitsname)
+    alert = {
+             'alert_type' : 'update',
+             'description': description,
+             'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
+            }
+
+    #------- MultFITS
+    name = "multFITS"
     tests.append( (name, alert) )
 
 #------------------------

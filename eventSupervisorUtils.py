@@ -192,7 +192,6 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
             if (check_tagnames) and (check_logFragment): ### check both tagnames and log message
                 tagsGood = sorted(log['tag_names']) == sorted(tagnames)
                 if logRegex:
-                    template = re.compile( logFragment )
                     logGood = re.compile( logFragment ).match( log['comment'] )
 
                 else:
@@ -225,7 +224,6 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
 
             else: ### check_logFragment -> check only log message
                 if logRegex:
-                    template = re.compile( logFragment )
                     logGood = re.compile( logFragment ).match( log['comment'] )
 
                 else:

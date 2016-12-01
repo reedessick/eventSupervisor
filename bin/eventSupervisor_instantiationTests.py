@@ -804,9 +804,9 @@ if opts.skymapSummary:
     print "testing skymaps/skymapSummary.py"
 
     #--------------------
-    # SkymapSummaryStartItem
+    # SnglFITSStartItem
     #--------------------
-    print "    SkymapSummaryStartItem"
+    print "    SnglFITSStartItem"
 
     graceid = 'FakeEvent'
     filename = 'fake.fits.gz',
@@ -821,11 +821,11 @@ if opts.skymapSummary:
         'email' : 'a',
         }
 
-    item = skymapSummary.SkymapSummaryStartItem( alert, t0, options, gdb, annotate=annotate )
+    item = skymapSummary.SnglFITSStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.fitsname == filename )
-    assert( item.tagnames == ['sky_loc'] )
+#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
@@ -834,36 +834,35 @@ if opts.skymapSummary:
     ###   skymapSummaryStartCheck
     task = item.tasks[0]
     assert( task.fitsname == filename )
-    assert( task.tagnames == ['sky_loc'] )
+#    assert( task.tagnames == ['sky_loc'] )
     assert( task.expiration == t0+10.0 )
     assert( task.email == ['a'] )
 
     print "        WARNING: skymapSummaryStartCheck Task.execute() not implemented and not tested"
 
     #--------------------
-    # SkymapSummaryItem
+    # SnglFITSItem
     #--------------------
-    print "    SkymapSummaryItem"
+    print "    SnglFITSItem"
 
     graceid = 'FakeEvent'
     filename = 'fake.fits.gz'
     alert = {
         'uid' : graceid,
-        'description' : 'blah blah blah '+filename,
-        'object' : {'tagnames':['sky_loc']},
+        'description' : 'started skymap summary for <a href="not real">%s</a>'%filename,
         }
     t0 = time.time()
     options = {
-        'data dt'   : '10.0',
+        'html dt'   : '10.0',
         'finish dt' : '20.0',
         'email' : 'a',
         }
 
-    item = skymapSummary.SkymapSummaryItem( alert, t0, options, gdb, annotate=annotate )
+    item = skymapSummary.SnglFITSItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.fitsname == filename )
-    assert( item.tagnames == ['sky_loc'] )
+#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
     assert( item.complete == False )
     assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
@@ -871,18 +870,104 @@ if opts.skymapSummary:
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
-    data = tasks['skymapSummaryData']
-    finish = tasks['skymapSummaryFinish']
+    data = tasks['snglFITShtml']
+    finish = tasks['snglFITSFinish']
     ###   skymapSummaryDataCheck
     assert( data.fitsname == filename )
-    assert( data.tagnames == ['sky_loc'] )
+#    assert( data.tagnames == ['sky_loc'] ) ### this should fail...
     assert( data.expiration == t0+10.0 )
     assert( data.email == ['a'] )
     print "        WARNING: skymapSummaryDataCheck Task.execute() not implemented and not tested"
 
     ###   skymapSummaryFinishCheck
     assert( finish.fitsname == filename )
-    assert( finish.tagnames == ['sky_loc'] )
+#    assert( finish.tagnames == ['sky_loc'] ) ### this should fail...
+    assert( finish.expiration == t0+20.0 )
+    assert( finish.email == ['a'] )
+    print "        WARNING: skymapSummaryFinishCheck Task.execute() not implemented and not tested"
+
+    #--------------------
+    # MultFITSStartItem
+    #--------------------
+    print "    MultFITSStartItem"
+
+    graceid = 'G263969' ### extracted this by hand from GraceDb -> FRAGILE!
+
+    from ligo.gracedb.rest import GraceDb
+    gdb = GraceDb()
+    filenames = [fits for fits in gdb.files( graceid ).json().keys() if fits.endswith('.fits') or fits.endswith('.fits.gz')]
+
+    alert = {
+        'uid' : graceid,
+        'description' : 'finished skymap summary for DOES NOT MATTER',
+        }
+    t0 = time.time()
+    options = {
+        'dt'   : '10.0',
+        'email' : 'a',
+        }
+
+    item = skymapSummary.MultFITSStartItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.fitsnames == filenames )
+#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
+    assert( item.complete == False )
+    assert( len(item.tasks) == 1 )
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+10.0 )
+
+    ###   skymapSummaryStartCheck
+    task = item.tasks[0]
+    assert( task.fitsnames == filenames )
+#    assert( task.tagnames == ['sky_loc'] ) ### FIXME: this should break...
+    assert( task.expiration == t0+10.0 )
+    assert( task.email == ['a'] )
+
+    print "        WARNING: skymapSummaryStartCheck Task.execute() not implemented and not tested"
+
+    #--------------------
+    # MultFITSItem
+    #--------------------
+    print "    MultFITSItem"
+
+    filenames = ['fake1.fits', 'fake2.fits.gz']
+
+    graceid = 'FakeEvent'
+    alert = {
+        'uid' : graceid,
+        'description' : 'started skymap comparison for <a href="not real">%s</a>, <a href="not real either">%s</a>'%tuple(filenames),
+        }
+    t0 = time.time()
+    options = {
+        'html dt'   : '10.0',
+        'finish dt' : '20.0',
+        'email' : 'a',
+        }
+
+    item = skymapSummary.MultFITSItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.fitsnames == filenames )
+#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
+    assert( item.complete == False )
+    assert( len(item.tasks) == 2 )
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+10.0 )
+
+    ### check tasks
+    tasks = dict( (task.name, task) for task in item.tasks )
+    data = tasks['multFITShtml']
+    finish = tasks['multFITSFinish']
+    ###   skymapSummaryDataCheck
+#    assert( data.tagnames == ['sky_loc'] ) ### this should fail...
+    assert( data.expiration == t0+10.0 )
+    assert( data.email == ['a'] )
+    print "        WARNING: skymapSummaryDataCheck Task.execute() not implemented and not tested"
+
+    ###   skymapSummaryFinishCheck
+    assert( finish.fitsnames == filenames )
+#    assert( finish.tagnames == ['sky_loc'] ) ### this should fail...
     assert( finish.expiration == t0+20.0 )
     assert( finish.email == ['a'] )
     print "        WARNING: skymapSummaryFinishCheck Task.execute() not implemented and not tested"
@@ -1313,7 +1398,7 @@ if opts.dq:
         'email' : 'a',
         }
 
-    item = dq.DQSummaryItem( alert, t0, options, gdb, annotate=annotate )
+    item = dq.LLDQReportItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
