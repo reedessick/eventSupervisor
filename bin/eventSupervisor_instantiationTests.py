@@ -17,6 +17,7 @@ from eventSupervisor.skymaps import skymaps
 from eventSupervisor.skymaps import skymapSummary
 
 from eventSupervisor.pe import bayestar
+from eventSupervisor.pe import embright
 from eventSupervisor.pe import bayeswavePE
 from eventSupervisor.pe import cwbPE
 from eventSupervisor.pe import libPE
@@ -53,6 +54,7 @@ parser.add_option("", "--skymapSummary", default=False, action="store_true")
 
 # pe
 parser.add_option("", "--bayestar", default=False, action="store_true")
+parser.add_option("", "--embright", default=False, action="store_true")
 parser.add_option("", "--bayeswavePE", default=False, action="store_true")
 parser.add_option("", "--cwbPE", default=False, action="store_true")
 parser.add_option("", "--libPE", default=False, action="store_true")
@@ -75,6 +77,7 @@ opts.approvalProcessor = opts.approvalProcessor or opts.everything
 opts.skymaps           = opts.skymaps           or opts.everything
 opts.skymapSummary     = opts.skymapSummary     or opts.everything
 opts.bayestar          = opts.bayestar          or opts.everything
+opts.embright          = opts.embright          or opts.everything
 opts.bayeswavePE       = opts.bayeswavePE       or opts.everything
 opts.cwbPE             = opts.cwbPE             or opts.everything
 opts.libPE             = opts.libPE             or opts.everything
@@ -1052,6 +1055,43 @@ if opts.bayestar:
     print "        WARNING: bayestarFinishCheck Task.execute() not implemented and not tested"
 
     print "    bayestar.py passed all tests sucessfully!"
+
+#-------------------------------------------------
+
+if opts.embright:
+    print "testing pe/embright.py"
+
+    #--------------------
+    # EMBrightItem
+    #--------------------
+    print "    EMBrightItem"
+
+    graceid = 'FakeEvent'
+    alert = {
+        'uid' : graceid,
+        }
+    t0 = time.time()
+    options = {
+        'dt'   : '10.0',
+        'email' : 'a',
+        }
+
+    item = embright.EMBrightItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.complete == False )
+    assert( len(item.tasks) == 1 )
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+10.0 )
+
+    ###   emBrightCheck
+    task = item.tasks[0]
+    assert( task.expiration == t0+10.0 )
+    assert( task.email == ['a'] )
+
+    print "        WARNING: emBrigthCheck Task.execute() not implemented and not tested"
+
+    print "    embright.py passed all tests sucessfully!"
 
 #-------------------------------------------------
 

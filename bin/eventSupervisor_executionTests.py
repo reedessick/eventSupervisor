@@ -75,6 +75,7 @@ parser.add_option("", "--skymapSummary", default=False, action="store_true")
 
 # pe
 parser.add_option("", "--bayestar", default=False, action="store_true")
+parser.add_option("", "--embright", default=False, action="store_true")
 parser.add_option("", "--bayeswavePE", default=False, action="store_true")
 parser.add_option("", "--cwbPE", default=False, action="store_true")
 parser.add_option("", "--libPE", default=False, action="store_true")
@@ -105,6 +106,7 @@ opts.approvalProcessor = opts.approvalProcessor or opts.everything
 opts.skymaps           = opts.skymaps           or opts.everything
 opts.skymapSummary     = opts.skymapSummary     or opts.everything
 opts.bayestar          = opts.bayestar          or opts.everything
+opts.embright          = opts.embright          or opts.everything
 opts.bayeswavePE       = opts.bayeswavePE       or opts.everything
 opts.cwbPE             = opts.cwbPE             or opts.everything
 opts.libPE             = opts.libPE             or opts.everything
@@ -401,7 +403,7 @@ if opts.bayestar:
 
     ### set up inputs
     alert = {
-             'alert_type' : 'new',
+             'alert_type' : 'update',
              'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
             }
 
@@ -417,6 +419,20 @@ if opts.bayestar:
 
     #------- Bayestar
     name = 'bayestar'
+    tests.append( (name, alert) )
+
+#------------------------
+
+if opts.embright:
+
+    ### set up inputs
+    alert = {
+             'alert_type' : 'update',
+             'uid'        : graceid,
+            }
+
+    #------- EMBright
+    name = 'em bright'
     tests.append( (name, alert) )
 
 #------------------------

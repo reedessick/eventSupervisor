@@ -156,15 +156,23 @@ if opts.psd:
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    assert len(queue)==1, "should be a single item in the queue"
-    assert queue[0].name == 'bayestar start', "must be of the correct type"
+    assert len(queue)==2, "should be a single item in the queue"
+    names = [name for name in es.parent_child['psd']] ### make a copy
+    for item in queue:
+        assert item.name in names, "must the the correct type"
+        names.remove( item.name )
+    assert len(names)==0, "this should have gotten rid of all the names"
 
     assert len(queueByGraceID.keys())==1, 'there should be only one key here'
     assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
 
     queue = queueByGraceID[alert['uid']]
-    assert len(queue)==1
-    assert queue[0].name == 'bayestar start'
+    assert len(queue)==2
+    names = [name for name in es.parent_child['psd']] ### make a copy
+    for item in queue:
+        assert item.name in names, "must the the correct type"
+        names.remove( item.name )
+    assert len(names)==0, "this should have gotten rid of all the names"
 
     logger.info("passed all assertion statements for --psd")
 

@@ -46,6 +46,7 @@ from pe import bayeswavePE
 from pe import cwbPE
 from pe import libPE
 from pe import lalinf
+from pe import embright
 
 ### DQ follow-up
 from dq import dq
@@ -58,7 +59,7 @@ from dq import segDB2grcDB
 qid = {} ### queueItemDict
          ### contains mapping of names -> QueueItem objects
          ### used to standardize instantiation of QueueItems
-for mod in [notify, basic, approvalProcessor, skymaps, skymapSummary, bayestar, bayeswavePE, cwbPE, libPE, lalinf, dq, idq, omegaScan, segDB2grcDB]:
+for mod in [notify, basic, approvalProcessor, skymaps, skymapSummary, bayestar, bayeswavePE, cwbPE, libPE, lalinf, embright, dq, idq, omegaScan, segDB2grcDB]:
     qid.update( extractChildren( mod, esUtils.EventSupervisorQueueItem ) )
 
 #-------------------------------------------------
@@ -98,7 +99,7 @@ parent_child = {
   'h1 omega scan start'   : ['h1 omega scan'],
   'l1 omega scan start'   : ['l1 omega scan'], 
   'segdb2grcdb start'     : ['segdb2grcdb'],
-  'psd'                   : ['bayestar start'],
+  'psd'                   : ['bayestar start', 'em bright'],
   'bayestar start'        : ['bayestar'],
   'bayeswave pe start'    : ['bayeswave pe'],
   'lalinf start'          : ['lalinf'],
