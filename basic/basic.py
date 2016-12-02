@@ -14,7 +14,9 @@ from lal.gpstime import tconvert
 #---------------------------------------------------------------------------------------------------
 
 ### methods to identify updates by description
-### not needed here
+def is_psd( filename ):
+    """checks if the filename corresponds to a psd.xml.gz that would satisfy cbcPSDCheck"""
+    return filename == "psd.xml.gz"
 
 #---------------------------------------------------------------------------------------------------
 

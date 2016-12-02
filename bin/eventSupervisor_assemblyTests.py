@@ -36,6 +36,8 @@ parser.add_option('', '--everything', default=False, action="store_true", help="
 parser.add_option("", "--new", default=False, action="store_true")
 
 # updates
+parser.add_option("", "--psd", default=False, action='store_true')
+
 parser.add_option("", "--fits", default=False, action="store_true")
 
 parser.add_option("", "--snglFITSStart", default=False, action="store_true")
@@ -67,6 +69,7 @@ configname = args[0]
 
 ### finish parsing options
 opts.new                = opts.new                or opts.everything
+opts.psd                = opts.psd                or opts.everything
 opts.fits               = opts.fits               or opts.everything
 opts.snglFITSStart      = opts.snglFITSStart      or opts.everything
 opts.snglFITSFinish     = opts.snglFITSFinish     or opts.everything
@@ -133,6 +136,37 @@ if opts.new:
     assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
     
     logger.info("passed all assertion statements for --new")
+
+#-------------------------------------------------
+
+if opts.psd:
+    logger.info("TESTING: psd")
+    alert = {
+             'alert_type' : 'update',
+             'uid'        : 'G123FAKE',
+             'object'     : {'group'    : 'CBC',
+                             'pipeline' : 'gstlal',
+                             'far'      : 1e-8,
+                            },
+             'description': 'DOES NOT MATTER',
+             'file'       : 'psd.xml.gz',
+            }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
+
+    completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
+
+    assert len(queue)==1, "should be a single item in the queue"
+    assert queue[0].name == 'bayestar start', "must be of the correct type"
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    assert len(queue)==1
+    assert queue[0].name == 'bayestar start'
+
+    logger.info("passed all assertion statements for --psd")
 
 #-------------------------------------------------
 

@@ -82,7 +82,6 @@ new = [
   'l1 omega scan start',
   'segdb2grcdb start',
   'notify',
-  'bayestar start',
   'bayeswave pe start',
   'cwb pe',
   'lalinf start',
@@ -99,6 +98,7 @@ parent_child = {
   'h1 omega scan start'   : ['h1 omega scan'],
   'l1 omega scan start'   : ['l1 omega scan'], 
   'segdb2grcdb start'     : ['segdb2grcdb'],
+  'psd'                   : ['bayestar start'],
   'bayestar start'        : ['bayestar'],
   'bayeswave pe start'    : ['bayeswave pe'],
   'lalinf start'          : ['lalinf'],
@@ -281,6 +281,7 @@ def parseUpdate( alert, config ):
         return None
     """
     description = alert['description']
+    filename    = alert['file']
 
     ### idq start
     if idq.is_idqStart( description ):
@@ -317,6 +318,10 @@ def parseUpdate( alert, config ):
     ### segdb2grcdb start
     elif segDB2grcDB.is_segDB2grcDBStart( description ):
         return 'segdb2grcdb start'
+
+    ### upload of a psd
+    elif basic.is_psd( filename ):
+        return 'psd'
 
     ### bayestar start
     elif bayestar.is_bayestarStart( description ):
