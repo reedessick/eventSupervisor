@@ -192,8 +192,9 @@ if opts.basic:
     alert = {
              'alert_type' : 'new',
              'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
-             'group'      : event['group'],
-             'pipeline'   : event['pipeline'],
+             'object'     : {'group'    : event['group'],
+                             'pipeline' : event['pipeline'],
+                            },
             }
 
     #------- EventCreation

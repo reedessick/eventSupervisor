@@ -140,6 +140,8 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
         template = "%.2f-(.*).json"%event['gpstime'] ### NOTE: may be fragile
+        template = template.replace('.00', '.0') ### This is required because of the peculiarities of how oLIB 
+                                                 ### names things when the event lands on an integer second
         self.warning, action_required = esUtils.check4file( graceid, gdb, template, tagnames=None, verbose=verbose, regex=True, logTag=logger.name if verbose else None )
         if verbose or annotate:
             ### format message
