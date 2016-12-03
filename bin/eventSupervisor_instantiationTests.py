@@ -106,12 +106,15 @@ if opts.notify:
 
     graceid = 'FakeEvent'
     alert = {
-        'uid' : graceid
+        'uid' : graceid,
+        'object' : {'group'    : 'a',
+                    'pipeline' : 'b',
+                   },
         }
     t0 = time.time()
     options = {
         'dt'       : '10.0',
-        'ignoreInj' : 'True',
+        'ignore inj' : 'True',
         'by email' : 'a',
 #        'by sms'   : 'b c',    ### NOTE: not currently implemented
 #        'by phone' : 'd e f',  ### NOTE: not currently implemented
