@@ -53,7 +53,7 @@ def writeGDBLog( gdb, graceid, message, tagnames=[] ):
     """
     writes a standard event_supervisor log message into gracedb
     """
-    gdb.writeLog( graceid, message="ES:"+message, tagnames=['event_supervisor']+tagnames )
+    gdb.writeLog( graceid, message="ES: "+message, tagname=['event_supervisor']+tagnames )
 
 def emailWarning(subject, body, email):
     """
