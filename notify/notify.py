@@ -26,9 +26,6 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
         by email
         by sms
         by phone
-        email on success
-        email on failure
-        email on exception
     """
     description = "notify people by email, sms or phone"
     name        = "notify"
@@ -49,73 +46,31 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
 
         timeout = float(options['dt']) ### how long we wait before we ping people
 
-        emailOnSuccess = options['email on success'].split() 
-        emailOnFailure = options['email on failure'].split() 
-        emailOnException = options['email on exception'].split()
+        email = options['email'].split() ### list of people to warn if this fails...
 
         ### generate tasks
         tasks = []
         taskTag = "%s.%s"%(logTag, self.name)
 
         if byEmail: ### only add if the list is not empty
-            tasks.append(notifyByEmail(
-                             timeout, 
-                             group, 
-                             pipeline, 
-                             search=search, 
-                             emailOnSuccess=emailOnSuccess, 
-                             emailOnFailure=emailOnFailure, 
-                             emailOnException=emailOnException, 
-                             notificationList=byEmail, 
-                             ignoreInj=ignoreInj, 
-                             logDir=logDir, 
-                             logTag=taskTag,
-                         ) 
-            )
+            tasks.append( notifyByEmail(timeout, group, pipeline, search=search, email=email, notificationList=byEmail, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
         if bySMS:
-            raise NotImplementedError('currently do not support sms specifically, try using notifyByEmail')
-            tasks.append(notifyBySMS(
-                             timeout,
-                             group, 
-                             pipeline, 
-                             search=search, 
-                             emailOnSuccess=emailOnSucces, 
-                             emailOnFailure=emailOnFailure, 
-                             emailOnException=emailOnException, 
-                             notificationList=bySMS, 
-                             ignoreInj=ignoreInj, 
-                             logDir=logDir, 
-                             logTag=taskTag,
-                         ) 
-            )
+            raise NotImplementedError('currently do not support sms specifically, try using email')
+            tasks.append( notifyBySMS(timeout, group, pipeline, search=search, email=email, notificationList=bySMS, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
         if byPhone:
             raise NotImplementedError('currently do not suport phone')
-            tasks.append(notifyByPhone(
-                             timeout, 
-                             group, 
-                             pipeline, 
-                             search=search, 
-                             emailOnSuccess=emailOnSucces, 
-                             emailOnFailure=emailOnFailure, 
-                             emailOnException=emailOnException, 
-                             notificationList=byPhone, 
-                             ignoreInj=ignoreInj, 
-                             logDir=logDir, 
-                             logTag=taskTag,
-                         ) 
-            )
+            tasks.append( notifyByPhone(timeout, group, pipeline, search=search, email=email, notificationList=byPhone, ignoreInj=ignoreInj, logDir=logDir, logTag=taskTag) )
 
         ### wrap up instantiation
-        super(NotifyItem, self).__init__( 
-            graceid,
-            gdb,
-            t0,
-            tasks,
-            annotate=annotate,
-            warnings=warnings,
-            logDir=logDir,
-            logTag=logTag,
-        )
+        super(NotifyItem, self).__init__( graceid,
+                                          gdb,
+                                          t0,
+                                          tasks,
+                                          annotate=annotate,
+                                          warnings=warnings,
+                                          logDir=logDir,
+                                          logTag=logTag,
+                                        )
 
 class notifyByEmail(esUtils.EventSupervisorTask):
     """
@@ -124,7 +79,7 @@ class notifyByEmail(esUtils.EventSupervisorTask):
     description = "notify folks by email that a new event was created"
     name        = "notifyByEmail"
 
-    def __init__(self, timeout, group, pipeline, search='', emailOnSuccess=[], emailOnFailure=[], emailOnException=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search='', email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
         self.notificationList = notificationList
         self.ignoreInj        = ignoreInj
 
@@ -132,14 +87,11 @@ class notifyByEmail(esUtils.EventSupervisorTask):
         self.pipeline = pipeline
         self.search   = search
 
-        super(notifyByEmail, self).__init__( 
-            timeout, 
-            emailOnSuccess=emailOnSuccess,
-            emailOnFailure=emailOnFailure,
-            emailOnException=emailOnException,
-            logDir=logDir,
-            logTag=logTag,
-        )
+        super(notifyByEmail, self).__init__( timeout, 
+                                             email=email,
+                                             logDir=logDir,
+                                             logTag=logTag,
+                                           )
 
     def notifyByEmail(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -184,7 +136,7 @@ class notifyBySMS(esUtils.EventSupervisorTask):
     description = "notify folks by SMS that a new event was created"
     name        = "notifyBySMS"
 
-    def __init__(self, timeout, group, pipeline, search='', emailOnSuccess=[], emailOnFailure=[], emailOnException=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search='', email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
         self.notificationList = notificationList
         self.ignoreInj        = ignoreInj
 
@@ -192,14 +144,11 @@ class notifyBySMS(esUtils.EventSupervisorTask):
         self.pipeline = pipeline
         self.search   = search
 
-        super(notifyBySMS, self).__init__( 
-            timeout,
-            emailOnSuccess=emailOnSuccess,
-            emailOnFailure=emailOnFailure,
-            emailOnException=emailOnException,
-            logDir=logDir,
-            logTag=logTag,
-        )
+        super(notifyBySMS, self).__init__( timeout,
+                                           email=email,
+                                           logDir=logDir,
+                                           logTag=logTag,
+                                         )
 
     def notifyBySMS(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -235,7 +184,7 @@ class notifyByPhone(esUtils.EventSupervisorTask):
     description = "notify folks by phone that a new event was created"
     name        = "notifyByPhone"
 
-    def __init__(self, timeout, group, pipeline, search='', emailOnSuccess=[], emailOnFailure=[], emailOnException=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search='', email=[], notificationList=[], ignoreInj=False, logDir='.', logTag='iQ'):
         self.notificationList = notificationListe
         self.ignoreInj        = ignoreInj
 
@@ -243,14 +192,11 @@ class notifyByPhone(esUtils.EventSupervisorTask):
         self.pipeline = pipeline
         self.search   = search
 
-        super(notifyByPhone, self).__init__( 
-            timeout,
-            emailOnSuccess=emailOnSuccess,
-            emailOnFailure=emailOnFailure,
-            emailOnException=emailOnException,
-            logDir=logDir,
-            logTag=logTag,
-        )
+        super(notifyByPhone, self).__init__( timeout,
+                                             email=email,
+                                             logDir=logDir,
+                                             logTag=logTag,
+                                           )
 
     def notifyByPhone(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """

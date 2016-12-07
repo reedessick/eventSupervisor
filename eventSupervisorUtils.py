@@ -289,13 +289,7 @@ class EventSupervisorQueueItem(utils.QueueItem):
             self.expiration = self.tasks[0].expiration
             if self.hasExpired():
                 task = self.tasks.pop(0) ### extract this task
-                task.execute( 
-                    self.graceid, 
-                    self.gdb, 
-                    verbose=verbose, 
-                    annotate=self.annotate, 
-                    warnings=self.warnings,
-                ) ### perform this task
+                task.execute( self.graceid, self.gdb, verbose=verbose, annotate=self.annotate, warnings=self.warnings ) ### perform this task
                 ### NOTE: this next step could introduce a race condition, althouth it is unlikely to ever actually matter
                 ###   a more proper solution would be to give task objects "complete" attributes and to check that, but
                 ###   this should work well enough
@@ -324,11 +318,8 @@ class EventSupervisorTask(utils.Task):
     name = "eventSupervisorTask"
     description = "a task for event supervisor"
 
-    def __init__(self, timeout, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ', **kwargs ):
-        self.emailOnSuccess = emailOnSuccess
-        self.emailOnFailure = emailOnfailure
-        self.emailOnException = emailOnException
-
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ', **kwargs ):
+        self.email = email
         self.warning = None
         self.logDir = logDir
 
@@ -344,20 +335,11 @@ class EventSupervisorTask(utils.Task):
 
         try:
             if getattr(self, self.name)( graceid, gdb, verbose=verbose, annotate=annotate, **self.kwargs ):
-                if warnings and self.emailOnfailure:
+                if warnings and self.email:
                     subject = "%s: %s requires attention"%(graceid, self.name)
                     url = gdb2url( gdb, graceid )
-                    body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\nwarning : %s"\
-                               %(graceid, self.name, url, self.description, self.warning)
-                    emailWarning(subject, body, email=self.emailOnFailure)
-
-            else:
-                if warnings and self.emailOnSuccess:
-                    subject = "%s: %s succeeded"%(graceid, self.name)
-                    url = gdb2url( gdb, graceid )
-                    body = "%s: %s succeeded\n%s\nevent_supervisor found only expected behavior when performing %s\nnotes : %s"\
-                               %(graceid, self.name, url, self.description, self.warning)
-                    emailWarning(subject, body, email=self.emailOnSuccess)
+                    body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\nwarning : %s"%(graceid, self.name, url, self.description, self.warning)
+                    emailWarning(subject, body, email=self.email)
         
         except Exception as e:
             trcbk = traceback.format_exc().strip("\n")
@@ -365,12 +347,11 @@ class EventSupervisorTask(utils.Task):
                 logger.warn( '%s raised an exception!'%self.name )
                 logger.warn( trcbk )
 
-            if warnings and self.emailOnException:
+            if warnings and self.email:
                 subject = "%s: %s FAILED"%(graceid, self.name)
                 url = gdb2url( gdb, graceid )
-                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"\
-                           %(graceid, self.name, url, self.description, trcbk)
-                emailWarning(subject, body, email=self.emailOnException)
+                body = "%s: %s check FAILED\n%s\nevent_supervisor caught an exception when performing %s\n%s"%(graceid, self.name, url, self.description, trcbk)
+                emailWarning(subject, body, email=self.email)
 
     def eventSupervisorTask(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         '''

@@ -20,9 +20,7 @@ class EMBrightItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt
-        email on success
-        email on failure
-        email on exception
+        email
     """
     description = "a check that EM bright classifer posted a result"
     name        = "em bright"
@@ -31,20 +29,9 @@ class EMBrightItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
+        email = options['email'].split()
 
-        emailOnSuccess = options['email on success'].split()
-        emailOnFailure = options['email on failure'].split()
-        emailOnException = options['email on exception'].split()
-
-        tasks = [emBrightCheck(
-                     timeout, 
-                     emailOnSuccess=emailOnSuccess, 
-                     emailOnFailure=emailOnFailure, 
-                     emailOnException=emailOnException, 
-                     logDir=logDir, 
-                     logTag='%s.%s'%(logTag, self.name),
-                 ),
-        ]
+        tasks = [emBrightCheck(timeout, email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
         super(EMBrightItem, self).__init__( graceid,
                                               gdb,
                                               t0,
@@ -62,6 +49,13 @@ class emBrightCheck(esUtils.EventSupervisorTask):
     description = "a check that EM bright classifier posted a result"
     name        = "emBright"
 
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
+        super(emBrightCheck, self).__init__( timeout,
+                                               email=email,
+                                               logDir=logDir,
+                                               logTag=logTag,
+                                             )
+
     def emBright(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that emBright posted a result
@@ -73,15 +67,14 @@ class emBrightCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         jsonname = "Source_Classification_%s.json"%(graceid) ### NOTE: this may be fragile
-        self.warning, action_required = esUtils.check4file( 
-                                            graceid,
-                                            gdb,
-                                            jsonname,
-                                            regex=False,
-                                            tagnames=None,
-                                            verbose=verbose,
-                                            logTag=logger.name if verbose else None,
-                                        )
+        self.warning, action_required = esUtils.check4file( graceid,
+                                                    gdb,
+                                                    jsonname,
+                                                    regex=False,
+                                                    tagnames=None,
+                                                    verbose=verbose,
+                                                    logTag=logger.name if verbose else None,
+                                                  )
         if verbose or annotate:
             ### format message
             if action_required:

@@ -19,9 +19,7 @@ class LLDQReportItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt
-        email on success
-        email on failure
-        email on exception
+        email
     """
     description = "a check that the lldq-report page was posted"
     name        = "lldqReport"
@@ -31,21 +29,10 @@ class LLDQReportItem(esUtils.EventSupervisorQueueItem):
 
         ### extract params
         timeout = float(options['dt'])
-
-        emailOnSuccess = options['email on success'].split()
-        emailOnFailure = options['email on failure'].split()
-        emailOnException = options['email on exception'].split()
+        email = options['email'].split()
 
         ### generate tasks
-        tasks = [lldqReportCheck(
-                     timeout, 
-                     emailOnSuccess=emailOnSuccess, 
-                     emailOnFailure=emailOnFailure, 
-                     emailOnException=emailOnException, 
-                     logDir=logDir, 
-                     logTag='%s.%s'%(logTag, self.name),
-                 ),
-        ]
+        tasks = [lldqReportCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
 
         ### wrap up instantiation
         super(LLDQReportItem, self).__init__( graceid,
@@ -64,6 +51,13 @@ class lldqReportCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that the lldq-report page was posted"
     name        = "lldqReport"
+
+    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
+        super(lldqReportCheck, self).__init__( timeout,
+                                              email=email,
+                                              logDir=logDir,
+                                              logTag=logTag,
+                                            )
 
     def lldqReport(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
