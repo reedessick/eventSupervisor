@@ -362,7 +362,7 @@ class FARCheck(esUtils.EventSupervisorTask):
                     if verbose:
                         logger.debug( message )
                     if annotate:
-                        gdb.writeGDBLog( gdb, graceid, message )
+                        esUtils.writeGDBLog( gdb, graceid, message )
 
                 return True ### action_required=True
 
@@ -375,7 +375,7 @@ class FARCheck(esUtils.EventSupervisorTask):
                     if verbose:
                         logger.debug( message )
                     if annotate:
-                        gdb.writeGDBLog( gdb, graceid, message )
+                        esUtils.writeGDBLog( gdb, graceid, message )
 
                 return False ### action_required=False
 
