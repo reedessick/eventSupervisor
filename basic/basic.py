@@ -33,7 +33,9 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
         pipeline
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "event creation"
 
@@ -44,31 +46,65 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
 
         ### extract parameters from config file
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate task instances
         taskTag = "%s.%s"%(logTag, self.name)
         if pipeline=="CWB":
-            tasks = [cWBTriggerCheck(timeout, email=email, logDir=logDir, logTag=taskTag)]
+            tasks = [cWBTriggerCheck(
+                         timeout, 
+                         emailOnSuccess=emailOnSuccess, 
+                         emailOnFailure=emailOnFailure, 
+                         emailOnException=emailOnException, 
+                         logDir=logDir, 
+                         logTag=taskTag
+                     ),
+            ]
         elif pipeline=="LIB":
-            tasks = [oLIBTriggerCheck(timeout, email=email, logDir=logDir, logTag=taskTag)]
+            tasks = [oLIBTriggerCheck(
+                         timeout, 
+                         emailOnSuccess=emailOnSuccess, 
+                         emailOnFailure=emailOnFailure, 
+                         emailOnException=emailOnException, 
+                         logDir=logDir, 
+                         logTag=taskTag
+                     ),
+            ]
         elif pipeline in ["gstlal", "MBTAOnline", "gstlal-spiir", "pycbc"]:
-            tasks = [cbcCoincCheck(timeout, email=email, logDir=logDir, logTag=taskTag), 
-                     cbcPSDCheck(timeout, email=email, logDir=logDir, logTag=taskTag)
-                    ]
+            tasks = [cbcCoincCheck(
+                         timeout, 
+                         emailOnSuccess=emailOnSuccess, 
+                         emailOnFailure=emailOnFailure, 
+                         emailOnException=emailOnException, 
+                         logDir=logDir, 
+                         logTag=taskTag,
+                     ), 
+                     cbcPSDCheck(
+                         timeout, 
+                         emailOnSuccess=emailOnSuccess, 
+                         emailOnFailure=emailOnFailure, 
+                         emailOnException=emailOnException, 
+                         logDir=logDir, 
+                         logTag=taskTag,
+                     ),
+            ]
         else:
             raise ValueError("pipeline=%s not understood"%pipeline)
 
         ### wrap  up instantiation
-        super(EventCreationItem, self).__init__( graceid, 
-                                                 gdb,
-                                                 t0, 
-                                                 tasks, 
-                                                 annotate=annotate,
-                                                 warnings=warnings,
-                                                 logDir=logDir,
-                                                 logTag=logTag,
-                                                )
+        super(EventCreationItem, self).__init__( 
+            graceid, 
+            gdb,
+            t0, 
+            tasks, 
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class cWBTriggerCheck(esUtils.EventSupervisorTask):
     """
@@ -76,13 +112,6 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
     """
     description = "a check of the trigger.txt file for cWB events"
     name        = "cWBTrigger"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(cWBTriggerCheck, self).__init__( timeout, 
-                                               email=email,
-                                               logDir=logDir,
-                                               logTag=logTag,
-                                             )
 
     def cWBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -119,13 +148,6 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     """
     description ="a check of the trigger.json file for oLIB events"
     name        = "oLIBTrigger"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(oLIBTriggerCheck, self).__init__( timeout, 
-                                                email=email,
-                                                logDir=logDir,
-                                                logTag=logTag,
-                                              )
 
     def oLIBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -165,13 +187,6 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
     description = "check coinc.xml file for CBC events"
     name        = "cbcCoinc"
 
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(cbcCoincCheck, self).__init__( timeout, 
-                                             email=email,
-                                             logDir=logDir,
-                                             logTag=logTag,
-                                           )
-
     def cbcCoinc(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check for coinc.xml file
@@ -203,13 +218,6 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
     """
     description = "check psd.xml.gz file for CBC events"
     name        = "cbcPSD"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(cbcPSDCheck, self).__init__( timeout, 
-                                           email=email,
-                                           logDir=logDir,
-                                           logTag=logTag,
-                                         )
 
     def cbcPSD(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -250,7 +258,9 @@ class FARItem(esUtils.EventSupervisorQueueItem):
         min far
         max far
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "check sanity of reported FAR"
     name        = "far"
@@ -263,21 +273,35 @@ class FARItem(esUtils.EventSupervisorQueueItem):
         self.maxFAR = float(options['max far'])
 
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [FARCheck(timeout, maxFAR=self.maxFAR, minFAR=self.minFAR, email=email, logDir=logDir, logTag="%s.%s"%(logTag, self.name))]
+        tasks = [FARCheck(
+                     timeout, 
+                     maxFAR=self.maxFAR, 
+                     minFAR=self.minFAR, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag="%s.%s"%(logTag, self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(FARItem, self).__init__( graceid, 
-                                       gdb, 
-                                       t0, 
-                                       tasks, 
-                                       annotate=annotate,
-                                       warnings=warnings,
-                                       logDir=logDir,
-                                       logTag=logTag,
-                                     )
+        super(FARItem, self).__init__( 
+            graceid, 
+            gdb, 
+            t0, 
+            tasks, 
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class FARCheck(esUtils.EventSupervisorTask):
     """
@@ -286,15 +310,18 @@ class FARCheck(esUtils.EventSupervisorTask):
     description = "a check for propper FAR"
     name        = "far"
 
-    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, maxFAR=1.0, minFAR=0.0, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.maxFAR = maxFAR
         self.minFAR = minFAR
         
-        super(FARCheck, self).__init__( timeout, 
-                                        email=email,
-                                        logDir=logDir,
-                                        logTag=logTag,
-                                      )
+        super(FARCheck, self).__init__( 
+            timeout, 
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def far(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -384,7 +411,9 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
         win-
         maxRate
         dt 
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "check local rates of events"
     name        = "local rate"
@@ -404,21 +433,37 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
         maxRate = float(options['max rate'])
 
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### gnerate tasks
-        tasks = [ localRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name)) ] 
+        tasks = [localRateCheck(
+                     timeout, 
+                     group, 
+                     pipeline, 
+                     search=search, 
+                     pWin=pWin, 
+                     mWin=mWin, 
+                     maxRate=maxRate, 
+                     email=email, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ] 
 
         ### wrap up instantiation
-        super(LocalRateItem, self).__init__( graceid, 
-                                             gdb,
-                                             t0, 
-                                             tasks,
-                                             annotate=annotate,
-                                             warnings=warnings,
-                                             logDir=logDir,
-                                             logTag=logTag,
-                                           )
+        super(LocalRateItem, self).__init__( 
+            graceid, 
+            gdb,
+            t0, 
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class localRateCheck(esUtils.EventSupervisorTask):
     """
@@ -426,7 +471,7 @@ class localRateCheck(esUtils.EventSupervisorTask):
     """
     name = "localRate"
 
-    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.description = "a check of local rates for %s_%s"%(group, pipeline)
         if search:
             self.description = "%s_%s"%(description, search)
@@ -438,11 +483,14 @@ class localRateCheck(esUtils.EventSupervisorTask):
         self.mWin=mWin
         self.maxRate=maxRate
 
-        super(localRateCheck, self).__init__( timeout, 
-                                              email=email,
-                                              logDir=logDir,
-                                              logTag=logTag,
-                                            )
+        super(localRateCheck, self).__init__( 
+            timeout, 
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def localRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
         """
@@ -513,7 +561,9 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
         win-
         maxRate
         dt 
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "check creation rates of events"
     name        = "creation rate"
@@ -533,21 +583,39 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
         maxRate = float(options['max rate'])
 
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [ createRateCheck(timeout, group, pipeline, search=search, pWin=pWin, mWin=mWin, maxRate=maxRate, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name)) ]
+        tasks = [createRateCheck(
+                     timeout, 
+                     group, 
+                     pipeline, 
+                     search=search, 
+                     pWin=pWin, 
+                     mWin=mWin, 
+                     maxRate=maxRate, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(CreateRateItem, self).__init__( graceid,
-                                              gdb,
-                                              t0,
-                                              tasks,
-                                              annotate=annotate,
-                                              warnings=warnings,
-                                              logDir='.',
-                                              logTag='.',
-                                            )
+        super(CreateRateItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir='.',
+            logTag='.',
+        )
 
 class createRateCheck(esUtils.EventSupervisorTask):
     """
@@ -555,7 +623,7 @@ class createRateCheck(esUtils.EventSupervisorTask):
     """
     name = "createRate"
 
-    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, group, pipeline, search=None, pWin=5.0, mWin=5.0, maxRate=2.0, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.description = "a check of creation rate for %s_%s"%(group, pipeline)
         if search:
             self.description = "%s_%s"%(self.description, search)
@@ -567,11 +635,14 @@ class createRateCheck(esUtils.EventSupervisorTask):
         self.mWin=mWin
         self.maxRate=maxRate
 
-        super(createRateCheck, self).__init__( timeout,
-                                              email=email,
-                                              logDir=logDir,
-                                              logTag=logTag,
-                                            )
+        super(createRateCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def createRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
         """
@@ -639,7 +710,9 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "check that the unblind injection search completed"
     name        = "external triggers"
@@ -649,21 +722,33 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
 
         ### extract params from config
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [externalTriggersCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag,self.name))]
+        tasks = [externalTriggersCheck(
+                     timeout, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag,self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(ExternalTriggersItem, self).__init__( graceid, 
-                                                    gdb,
-                                                    t0, 
-                                                    tasks, 
-                                                    annotate=annotate,
-                                                    warnings=warnings,
-                                                    logDir=logDir,
-                                                    logTag=logTag,
-                                                  )
+        super(ExternalTriggersItem, self).__init__( 
+            graceid, 
+            gdb,
+            t0, 
+            tasks, 
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class externalTriggersCheck(esUtils.EventSupervisorTask):
     """
@@ -672,16 +757,6 @@ class externalTriggersCheck(esUtils.EventSupervisorTask):
     description = "a check that the external triggers search was completed"
     name        = "externalTriggers"
 
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        """
-        a check that the external triggers search was completed
-        """
-        super(externalTriggersCheck, self).__init__( timeout, 
-                                                     email=email,
-                                                     logDir=logDir,
-                                                     logTag=logTag,
-                                                   )
-    
     def externalTriggers(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that the external triggers search was completed
@@ -728,7 +803,9 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt 
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "check that the unblind injection search completed"
     name        = "unblind injections"
@@ -738,21 +815,33 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
 
         ### exract parameters from config
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [unblindInjectionsCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
+        tasks = [unblindInjectionsCheck(
+                     timeout, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 )
+        ]
 
         ### wrap up instantiation
-        super(UnblindInjectionsItem, self).__init__( graceid, 
-                                                     gdb,
-                                                     t0, 
-                                                     tasks, 
-                                                     annotate=annotate,
-                                                     warnings=warnings,
-                                                     logDir=logDir,
-                                                     logTag=logTag,
-                                                   )
+        super(UnblindInjectionsItem, self).__init__( 
+            graceid, 
+            gdb,
+            t0, 
+            tasks, 
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class unblindInjectionsCheck(esUtils.EventSupervisorTask):
     """
@@ -760,16 +849,6 @@ class unblindInjectionsCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that the unblind injections search was completed"
     name        = "unblindInjections"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        """
-        a check that the unblind injections search was completed
-        """
-        super(unblindInjectionsCheck, self).__init__( timeout, 
-                                                      email=email,
-                                                      logDir=logDir,
-                                                      logTag=logTag,
-                                                    )
 
     def unblindInjections(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """

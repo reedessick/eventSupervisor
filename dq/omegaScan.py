@@ -27,9 +27,10 @@ class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt
-        email
-    args:
         chansets
+        email on success
+        email on failure
+        email on exception
     """
     name = "omega scan start"
 
@@ -38,25 +39,38 @@ class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
 
         ### extract params
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on excpetion'].split()
 
         self.chansets = options['chansets'].split()
 
         self.description = "a check that OmegaScans were started for %s"%(", ".join(self.chansets))
 
         ### generate tasks
-        tasks = [omegaScanStartCheck(timeout, self.chansets, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
+        tasks = [omegaScanStartCheck(
+                     timeout, 
+                     self.chansets, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+                ]
 
         ### wrap up instantiation
-        super(OmegaScanStartItem, self).__init__( graceid,
-                                                  gdb,
-                                                  t0,
-                                                  tasks,
-                                                  annotate=annotate,
-                                                  warnings=warnings,
-                                                  logDir=logDir,
-                                                  logTag=logTag,
-                                                )
+        super(OmegaScanStartItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class omegaScanStartCheck(esUtils.EventSupervisorTask):
     """
@@ -64,14 +78,17 @@ class omegaScanStartCheck(esUtils.EventSupervisorTask):
     """
     name = "omegaScanStart"
 
-    def __init__(self, timeout, chansets, email=[], logDir='.', logTag='iQ'): 
+    def __init__(self, timeout, chansets, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'): 
         self.chansets = chansets
         self.description = "a check that OmegaScans were started for %s"%(", ".join(chansets))
-        super(omegaScanStartCheck, self).__init__( timeout,
-                                                  email=email,
-                                                  logDir=logDir,
-                                                  logTag=logTag,
-                                                )
+        super(omegaScanStartCheck, self).__init__(
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def omegaScanStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -116,7 +133,9 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
     options:
         data dt
         finish dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "omega scan"
 
@@ -126,7 +145,9 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
         data_dt = float(options['data dt'])
         finish_dt = float(options['finish dt'])
 
-        email = options['email'].split()
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
 #        self.chansets = options['chansets'].split()
         self.chansets = alert['object']['comment'].strip('automatic OmegaScans begun for: ').split('.')[0].split(', ') ### FIXME: this may be fragile
@@ -136,18 +157,37 @@ class OmegaScanItem(esUtils.EventSupervisorQueueItem):
         taskTag = '%s.%s'%(logTag, self.name)
         tasks = []
         for chanset in self.chansets:
-            tasks.append( omegaScanDataCheck(data_dt, chanset, email=email, logDir=logDir, logTag=taskTag) )
-        tasks.append( omegaScanFinishCheck(finish_dt, self.chansets, email=email, logDir=logDir, logTag=taskTag) )
+            tasks.append(omegaScanDataCheck(
+                             data_dt, 
+                             chanset, 
+                             emailOnSuccess=emailOnSuccess, 
+                             emailOnFailure=emailOnFailure, 
+                             emailOnException=emailOnException, 
+                             logDir=logDir, 
+                             logTag=taskTag,
+                         ) 
+            )
+        tasks.append(omegaScanFinishCheck(
+                         finish_dt, 
+                         self.chansets, 
+                         emailOnSuccess=emailOnSuccess, 
+                         emailOnFailure=emailOnFailure, 
+                         emailOnException=emailOnException, 
+                         logDir=logDir, 
+                         logTag=taskTag,
+                     ) 
+        )
 
-        super(OmegaScanItem, self).__init__( graceid,
-                                             gdb,
-                                             t0,
-                                             tasks,
-                                             annotate=annotate,
-                                             warnings=warnings,
-                                             logDir=logDir,
-                                             logTag=logTag,
-                                           )
+        super(OmegaScanItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class omegaScanDataCheck(esUtils.EventSupervisorTask):
     """
@@ -155,14 +195,17 @@ class omegaScanDataCheck(esUtils.EventSupervisorTask):
     """
     name = "omegaScanData"
 
-    def __init__(self, timeout, chanset, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, chanset, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.chanset = chanset
         self.description = "a check that OmegaScans posted data for %s"%(chanset)
-        super(omegaScanDataCheck, self).__init__( timeout, 
-                                                  email=email,
-                                                  logDir=logDir,
-                                                  logTag=logTag,
-                                                )
+        super(omegaScanDataCheck, self).__init__( 
+            timeout, 
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def omegaScanData(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -173,16 +216,17 @@ class omegaScanDataCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         jsonname = "%s.json"%self.chanset
-        self.warning, action_required = esUtils.check4file( graceid,
-                                                    gdb,
-                                                    jsonname,
-                                                    regex=False,
-                                                    tagnames=None,
-                                                    verbose=verbose,
-                                                    logFragment=None,
-                                                    logRegex=False,
-                                                    logTag=logger.name if verbose else None,
-                                                  )
+        self.warning, action_required = esUtils.check4file( 
+                                            graceid,
+                                            gdb,
+                                            jsonname,
+                                            regex=False,
+                                            tagnames=None,
+                                            verbose=verbose,
+                                            logFragment=None,
+                                            logRegex=False,
+                                            logTag=logger.name if verbose else None,
+                                        )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -204,14 +248,17 @@ class omegaScanFinishCheck(esUtils.EventSupervisorTask):
     """
     name = "omegaScanFinish"
 
-    def __init__(self, timeout, chansets, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, chansets, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.chansets = chansets
         self.description = "a check that OmegaScans finished for %s"%(", ".join(chansets))
-        super(omegaScanFinishCheck, self).__init__( timeout,
-                                                    email=email,
-                                                    logDir=logDir,
-                                                    logTag=logTag,
-                                                  )
+        super(omegaScanFinishCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def omegaScanFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """

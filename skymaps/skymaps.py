@@ -29,7 +29,9 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
         fitsname
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "skymap sanity"
 
@@ -40,21 +42,34 @@ class SkymapSanityItem(esUtils.EventSupervisorQueueItem):
 
         ### extract parameters from config
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [skymapSanityCheck(timeout, self.fitsname, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
+        tasks = [skymapSanityCheck(
+                     timeout, 
+                     self.fitsname, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(SkymapSanityItem, self).__init__( graceid,
-                                                gdb,
-                                                t0,
-                                                tasks,
-                                                annotate=annotate,
-                                                warnings=warnings,
-                                                logDir=logDir,
-                                                logTag=logTag,
-                                              )
+        super(SkymapSanityItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class skymapSanityCheck(esUtils.EventSupervisorTask):
     """
@@ -62,15 +77,18 @@ class skymapSanityCheck(esUtils.EventSupervisorTask):
     """
     name = "skymapSanity"
 
-    def __init__(self, timeout, fitsname, sumThr=1e-6, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, sumThr=1e-6, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
         self.sumThr = sumThr ### require the skymap to be normalized to within sumThr of 1
-        super(skymapSanityCheck, self).__init__( timeout,
-                                                 email=email,
-                                                 logDir=logDir,
-                                                 logTag=logTag,
-                                               )
+        super(skymapSanityCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
     
     def skymapSanity(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -167,7 +185,9 @@ class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
         tagnames
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "plot skymap"
 
@@ -180,21 +200,35 @@ class PlotSkymapItem(esUtils.EventSupervisorQueueItem):
 
         ### extract parameters from config
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [plotSkymapCheck(timeout, self.fitsname, self.tagnames, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
+        tasks = [plotSkymapCheck(
+                     timeout, 
+                     self.fitsname, 
+                     self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(PlotSkymapItem, self).__init__( graceid,
-                                              gdb,
-                                              t0,
-                                              tasks,
-                                              annotate=annotate,
-                                              warnings=warnings,
-                                              logDir=logDir,
-                                              logTag=logTag,
-                                            )
+        super(PlotSkymapItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class plotSkymapCheck(esUtils.EventSupervisorTask):
     """
@@ -202,15 +236,18 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
     """
     name = "plotSkymap"
 
-    def __init__(self, timeout, fitsname, tagnames, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, tagnames, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
         self.tagnames = sorted(tagnames)
-        super(plotSkymapCheck, self).__init__( timeout,
-                                               email=email,
-                                               logDir=logDir,
-                                               logTag=logTag,
-                                             )
+        super(plotSkymapCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def plotSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -221,7 +258,14 @@ class plotSkymapCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         figname = "%s.png"%(self.fitsname.split('.')[0]) ### NOTE: this may be fragile
-        self.warning, action_required = esUtils.check4file( graceid, gdb, figname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None ) ### loog for the figure
+        self.warning, action_required = esUtils.check4file(
+                                            graceid, 
+                                            gdb, 
+                                            figname, 
+                                            tagnames=self.tagnames, 
+                                            verbose=verbose, 
+                                            logTag=logger.name if verbose else None,
+                                         ) ### looK for the figure
 
         if verbose or annotate:
             ### format message
@@ -252,7 +296,9 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
         tagnames
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "skyviewer"
 
@@ -265,21 +311,35 @@ class SkyviewerItem(esUtils.EventSupervisorQueueItem):
 
         ### extract parameters from config
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [skyviewerCheck(timeout, self.fitsname, self.tagnames, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
+        tasks = [skyviewerCheck(
+                     timeout, 
+                     self.fitsname, 
+                     self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(SkyviewerItem, self).__init__( graceid,
-                                             gdb,
-                                             t0,
-                                             tasks,
-                                             annotate=annotate,
-                                             warnings=warnings,
-                                             logDir=logDir,
-                                             logTag=logTag,
-                                           )
+        super(SkyviewerItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class skyviewerCheck(esUtils.EventSupervisorTask):
     """
@@ -287,15 +347,18 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
     """
     name = "skyviewer"
 
-    def __init__(self, timeout, fitsname, tagnames, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, tagnames, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.description = "check sanity and formatting of %s"%fitsname
         self.fitsname = fitsname
         self.tagnames = sorted(tagnames)
-        super(skyviewerCheck, self).__init__( timeout,
-                                              email=email,
-                                              logDir=logDir,
-                                              logTag=logTag,
-                                            )
+        super(skyviewerCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def skyviewer(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
