@@ -67,7 +67,7 @@ parser.add_option("", "--notify", default=False, action="store_true")
 
 # basic
 parser.add_option("", "--basic", default=False, action="store_true")
-parser.add_option("", "--approvalProcessor", default=False, action="store_true")
+#parser.add_option("", "--approvalProcessor", default=False, action="store_true")
 
 # skymaps
 parser.add_option("", "--skymaps", default=False, action="store_true")
@@ -102,7 +102,7 @@ opts.verbose = opts.verbose or opts.Verbose
 
 opts.notify            = opts.notify            or opts.everything
 opts.basic             = opts.basic             or opts.everything
-opts.approvalProcessor = opts.approvalProcessor or opts.everything
+#opts.approvalProcessor = opts.approvalProcessor or opts.everything
 opts.skymaps           = opts.skymaps           or opts.everything
 opts.skymapSummary     = opts.skymapSummary     or opts.everything
 opts.bayestar          = opts.bayestar          or opts.everything
@@ -147,6 +147,13 @@ else:                               ### assume this is a FakeDb directory
 #-------------------------------------------------
 
 logger.info( "graceid : %s"%graceid )
+
+#-------------------------------------------------
+
+### load config file
+logger.info( "loading config from : %s"%configname )
+config = SafeConfigParser()
+config.read( configname )
 
 #-------------------------------------------------
 
@@ -313,10 +320,24 @@ if opts.omegaScan:
     alert = {
              'alert_type' : 'update',
              'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
+             'object' : {'comment': 'automatic Omega Scans begun for: %s.'%(", ".join(config.get('h1 omega scan start', 'chansets').split())),
+                        },
             }
 
     #------- OmegaScan
     name = 'h1 omega scan'
+    tests.append( (name, alert) )
+
+    #--- set up inputs
+    alert = {
+             'alert_type' : 'update',
+             'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
+             'object' : {'comment': 'automatic Omega Scans begun for: chanset1, chanset2.',
+                        },
+            }
+
+    #------- OmegaScan
+    name = 'omega scan'
     tests.append( (name, alert) )
 
 #------------------------
@@ -534,6 +555,7 @@ if opts.libPE:
 
 #------------------------
 
+'''
 if opts.approvalProcessor:
 
     raise NotImplementedError("approvalProcessor.ApprovalProcessorPrelimDQItem")
@@ -595,15 +617,9 @@ if opts.approvalProcessor:
     #------- ApprovalProcessorGCN
     name = 'approval processor gcn'
     tests.append( (name, alert) )
+'''
 
 #-------------------------------------------------
-
-### load config file
-logger.info( "loading config from : %s"%configname )
-config = SafeConfigParser()
-config.read( configname )
-
-#-------------------
 
 ### actually test the items
 for name, alert in tests:

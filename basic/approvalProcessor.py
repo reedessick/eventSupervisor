@@ -121,7 +121,7 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
 
             ### post message
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 

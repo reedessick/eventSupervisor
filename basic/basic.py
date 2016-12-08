@@ -122,7 +122,7 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
-            logger.debug( "    retrieving event details" )
+            logger.debug( "retrieving event details" )
         event = gdb.event( graceid ).json() ### we need the gpstime, so we query
 
         filename = "trigger_%.4f.txt"%event['gpstime'] ### NOTE: this may be fragile
@@ -447,7 +447,9 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
                      pWin=pWin, 
                      mWin=mWin, 
                      maxRate=maxRate, 
-                     email=email, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
                      logDir=logDir, 
                      logTag='%s.%s'%(logTag, self.name),
                  ),

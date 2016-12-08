@@ -116,7 +116,7 @@ class snglFITSStartCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -125,7 +125,7 @@ class snglFITSStartCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -287,7 +287,7 @@ class snglFITSFinishCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -296,7 +296,7 @@ class snglFITSFinishCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -394,7 +394,7 @@ class multFITSStartCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -403,7 +403,7 @@ class multFITSStartCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -445,7 +445,7 @@ class MultFITSItem(esUtils.EventSupervisorQueueItem):
 
         emailOnSuccess = options['email on success'].split()
         emailOnFailure = options['email on failure'].split()
-        emailOnException = options['email on exception '].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
         taskTag = '%s.%s'%(logTag, self.name)
@@ -569,7 +569,7 @@ class multFITSFinishCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -578,7 +578,7 @@ class multFITSFinishCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True

@@ -326,7 +326,7 @@ class EventSupervisorTask(utils.Task):
 
     def __init__(self, timeout, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ', **kwargs ):
         self.emailOnSuccess = emailOnSuccess
-        self.emailOnFailure = emailOnfailure
+        self.emailOnFailure = emailOnFailure
         self.emailOnException = emailOnException
 
         self.warning = None
@@ -344,7 +344,7 @@ class EventSupervisorTask(utils.Task):
 
         try:
             if getattr(self, self.name)( graceid, gdb, verbose=verbose, annotate=annotate, **self.kwargs ):
-                if warnings and self.emailOnfailure:
+                if warnings and self.emailOnFailure:
                     subject = "%s: %s requires attention"%(graceid, self.name)
                     url = gdb2url( gdb, graceid )
                     body = "%s: %s requires attention\n%s\nevent_supervisor found suspicous behavior when performing %s\nwarning : %s"\

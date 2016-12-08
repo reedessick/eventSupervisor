@@ -92,7 +92,7 @@ class idqStartCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ GraceDB follow-up started as expected at %s"%(self.ifo)
         super(idqStartCheck, self).__init__( 
             timeout,
-            emailOnSucess=emailOnSuccess,
+            emailOnSuccess=emailOnSuccess,
             emailOnFailure=emailOnFailure,
             emailOnException=emailOnException,
             logDir=logDir,
@@ -302,7 +302,6 @@ class IDQItem(esUtils.EventSupervisorQueueItem):
                           roc_dt, 
                           self.ifo, 
                           classifier, 
-                          email=email, 
                           emailOnSuccess=emailOnSuccess, 
                           emailOnFailure=emailOnFailure, 
                           emailOnException=emailOnException, 
@@ -435,7 +434,7 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
             timeout,
             emailOnSuccess=emailOnSuccess,
             emailOnFailure=emailOnFailure,
-            emailOn=emailOnException,
+            emailOnException=emailOnException,
             logDir=logDir,
             logTag=logTag,
         )
@@ -456,7 +455,7 @@ class idqFAPFrameCheck(esUtils.EventSupervisorTask):
                                             regex=True, 
                                             tagnames=None, 
                                             verbose=verbose, 
-                                            ogFragment=fragment, 
+                                            logFragment=fragment, 
                                             logRegex=True,
                                             logTag=logger.name if verbose else None,
                                         )
@@ -487,7 +486,7 @@ class idqRankCheck(esUtils.EventSupervisorTask):
         self.description = "a check that iDQ reported a rank for %s at %s"%(self.classifier, self.ifo)
         super(idqRankCheck, self).__init__(
             timeout,
-            emailOnSucces=emailOnSuccess,
+            emailOnSuccess=emailOnSuccess,
             emailOnFailure=emailOnFailure,
             emailOnException=emailOnException,
             logDir=logDir,
@@ -873,7 +872,7 @@ class idqCalibrationPlotCheck(esUtils.EventSupervisorTask):
             timeout,
             emailOnSuccess=emailOnSuccess,
             emailOnFailure=emailOnFailure,
-            emailOnExeption=emailOnException,
+            emailOnException=emailOnException,
             logDir=logDir,
             logTag=logTag,
         )

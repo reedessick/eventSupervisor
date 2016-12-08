@@ -42,7 +42,7 @@ class OmegaScanStartItem(esUtils.EventSupervisorQueueItem):
 
         emailOnSuccess = options['email on success'].split()
         emailOnFailure = options['email on failure'].split()
-        emailOnException = options['email on excpetion'].split()
+        emailOnException = options['email on exception'].split()
 
         self.chansets = options['chansets'].split()
 
