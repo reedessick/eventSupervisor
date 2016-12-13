@@ -59,7 +59,22 @@ from dq import segDB2grcDB
 qid = {} ### queueItemDict
          ### contains mapping of names -> QueueItem objects
          ### used to standardize instantiation of QueueItems
-for mod in [notify, basic, approvalProcessor, skymaps, skymapSummary, bayestar, bayeswavePE, cwbPE, libPE, lalinf, embright, dq, idq, omegaScan, segDB2grcDB]:
+for mod in [notify, 
+            basic,
+            approvalProcessor, 
+            skymaps, 
+            skymapSummary, 
+            bayestar, 
+            bayeswavePE, 
+            cwbPE, 
+            libPE, 
+            lalinf, 
+            embright, 
+            dq, 
+            idq, 
+            omegaScan, 
+            segDB2grcDB,
+           ]:
     qid.update( extractChildren( mod, esUtils.EventSupervisorQueueItem ) )
 
 #-------------------------------------------------
@@ -70,53 +85,55 @@ for mod in [notify, basic, approvalProcessor, skymaps, skymapSummary, bayestar, 
 
 ### behvior when new alerts are witnessed
 new = [
-#  'approval processor prelim dq',
-  'event creation',
-  'far',
-  'local rate',
-  'creation rate',
-  'external triggers',
-  'unblind injections',
-  'lldqReport',
-  'idq start',
-  'h1 omega scan start',
-  'l1 omega scan start',
-  'segdb2grcdb start',
-  'notify',
-  'bayeswave pe start',
-  'cwb pe',
-  'lalinf start',
-  'lib pe start',
-  ]
+#    'approval processor prelim dq',
+    'event creation',
+    'far',
+    'local rate',
+    'creation rate',
+    'external triggers',
+    'unblind injections',
+    'lldqReport',
+    'idq start',
+    'h1 omega scan start',
+    'l1 omega scan start',
+    'segdb2grcdb start',
+    'notify',
+    'bayeswave pe start',
+    'cwb pe',
+    'lalinf start',
+    'lib pe start',
+]
 
 ### behavior if certian checks are satisfied/alerts are received
 ### NOTE: keys can be Task names but values can ONLY contain Item names
 parent_child = {
 ### parent name : [child name]
-  'idq start'             : ['idq'],
-  'idqGlitchFAP'          : [], # ['approval processor idq'], ### FIXME: not implemented...
-  'idqActiveChan'         : ['idq omega scan start'], 
-  'h1 omega scan start'   : ['h1 omega scan'],
-  'l1 omega scan start'   : ['l1 omega scan'], 
-  'segdb2grcdb start'     : ['segdb2grcdb'],
-  'psd'                   : ['bayestar start', 'em bright'],
-  'bayestar start'        : ['bayestar'],
-  'bayeswave pe start'    : ['bayeswave pe'],
-  'lalinf start'          : ['lalinf'],
-  'lib pe start'          : ['lib pe'],
-  'snglFITS start'        : ['snglFITS'],
-  'snglFITSFinish'        : ['multFITS start'],
-  'multFITS start'        : ['multFITS'],
-#  'approvalProcessorSegDBStartCheck' : ['approval processor segdb'], ### FIXME: not implemented...
-  }
+    'idq start'             : ['idq'],
+    'idqGlitchFAP'          : [], # ['approval processor idq'], ### FIXME: not implemented...
+    'idqActiveChan'         : ['idq omega scan start'], 
+    'h1 omega scan start'   : ['h1 omega scan'],
+    'l1 omega scan start'   : ['l1 omega scan'], 
+    'segdb2grcdb start'     : ['segdb2grcdb'],
+    'psd'                   : ['bayestar start', 
+                               'em bright',
+                              ],
+    'bayestar start'        : ['bayestar'],
+    'bayeswave pe start'    : ['bayeswave pe'],
+    'lalinf start'          : ['lalinf'],
+    'lib pe start'          : ['lib pe'],
+    'snglFITS start'        : ['snglFITS'],
+    'snglFITSFinish'        : ['multFITS start'],
+    'multFITS start'        : ['multFITS'],
+#    'approvalProcessorSegDBStartCheck' : ['approval processor segdb'], ### FIXME: not implemented...
+}
 
 ### special behavior if certain file types are seen
 fits = [
-  'skymap sanity',
-  'plot skymap',
-  'skyviewer',
-  'snglFITS start',
-  ]
+    'skymap sanity',
+    'plot skymap',
+    'skyviewer',
+    'snglFITS start',
+]
 
 #-------------------------------------------------
 
@@ -177,7 +194,17 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
                 ### check if there's a FAR threshold
                 ###    we don't have a far Threshold        or        the event has a FAR           the threshold is above the event's value
                 if (not config.has_option(name, 'far thr')) or ((far!=None) and (config.getfloat(name, 'far thr') >= far)):
-                    items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
+                    items.append(qid[name]( 
+                                     alert, 
+                                     t0, 
+                                     dict(config.items(name)), 
+                                     gdb, 
+                                     annotate=annotate, 
+                                     warnings=warnings, 
+                                     logDir=logDir, 
+                                     logTag=logTag, 
+                                 ) 
+                    )
         completed = 0
 
     else: ### need to parse this further
@@ -199,7 +226,17 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
                 if filename.endswith('.fits.gz') or filename.endswith('.fits'):
                     for name in fits: ### iterate over names that are needed for new FITS files
                         if config.has_section( name ):
-                            items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
+                            items.append(qid[name]( 
+                                             alert, 
+                                             t0, 
+                                             dict(config.items(name)), 
+                                             gdb, 
+                                             annotate=annotate, 
+                                             warnings=warnings, 
+                                             logDir=logDir, 
+                                             logTag=logTag,
+                                         ) 
+                            )
 
                 else:
                     pass ### not sure what to do here... are there other file types that require special action?
@@ -213,7 +250,17 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
             if parent_child.has_key(update_name): ### ensure we know what to do with this...
                 for name in parent_child[update_name]:
                     if config.has_section( name ):
-                        items.append( qid[name]( alert, t0, dict( config.items( name ) ), gdb, annotate=annotate, warnings=warnings, logDir=logDir, logTag=logTag ) )
+                        items.append(qid[name]( 
+                                         alert, 
+                                         t0, 
+                                         dict(config.items(name)), 
+                                         gdb, 
+                                         annotate=annotate, 
+                                         warnings=warnings, 
+                                         logDir=logDir, 
+                                         logTag=logTag, 
+                                     ) 
+                        )
 
             ### FIXME: determine which QueueItems/Tasks need to be marked complete based on this update
             ###  >>>>>>>>>>>>>>>>>> HOW DO WE DO THIS CLEANLY? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -298,12 +345,14 @@ def parseUpdate( alert, config ):
 
     ### l1 omega scan start
     ### ensure we actually care about this
-    elif config.has_section('l1 omega scan start') and omegaScan.is_OmegaScanStart( description, chansets=config.get('l1 omega scan start', 'chansets').split() ):
+    elif config.has_section('l1 omega scan start') \
+             and omegaScan.is_OmegaScanStart( description, chansets=config.get('l1 omega scan start', 'chansets').split() ):
         return 'l1 omega scan start'
 
     ### h1 omega scan start
     ### ensure that we actually care about this
-    elif config.has_section('h1 omega scan start') and omegaScan.is_OmegaScanStart( description, chansets=config.get('h1 omega scan start', 'chansets').split() ):
+    elif config.has_section('h1 omega scan start') \
+             and omegaScan.is_OmegaScanStart( description, chansets=config.get('h1 omega scan start', 'chansets').split() ):
         return 'h1 omega scan start'
 
     ### unspecified omega scan start

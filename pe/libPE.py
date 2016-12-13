@@ -23,7 +23,9 @@ class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "a check that LIB PE started"
     name        = "lib pe start"
@@ -32,18 +34,31 @@ class LIBPEStartItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
-        email = options['email'].split()
 
-        tasks = [libPEStartCheck(timeout, email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
-        super(LIBPEStartItem, self).__init__( graceid,
-                                              gdb,
-                                              t0,
-                                              tasks,
-                                              annotate=annotate,
-                                              warnings=warnings,
-                                              logDir=logDir,
-                                              logTag=logTag,
-                                            )
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
+
+        tasks = [libPEStartCheck(
+                     timeout, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure,
+                     emailOnException=emailOnException,
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
+
+        super(LIBPEStartItem, self).__init__(
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class libPEStartCheck(esUtils.EventSupervisorTask):
     """
@@ -51,13 +66,6 @@ class libPEStartCheck(esUtils.EventSupervisorTask):
     """    
     description = "a check that LIB PE started"
     name        = "libPEStart"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(libPEStartCheck, self).__init__( timeout,
-                                               email=email,
-                                               logDir=logDir,
-                                               logTag=logTag,
-                                             )
 
     def libPEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -98,7 +106,9 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
         skymap dt
         skymap tagnames
         finish dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "a check that LIB PE produced the expected data and finished"
     name        = "lib pe"
@@ -114,23 +124,56 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
             skymap_tagnames = skymap_tagnames.split()
         finish_dt = float(options['finish dt'])
 
-        email = options['email'].split()
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         taskTag = '%s.%s'%(logTag, self.name)
-        tasks = [libPEPostSampCheck(postsamp_dt, email=email, logDir=logDir, logTag=logTag),
-                 libPEBayesFactorsCheck(bayesFct_dt, email=email, logDir=logDir, logTag=logTag),
-                 libPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir, logTag=logTag),
-                 libPEFinishCheck(finish_dt, email=email, logDir=logDir, logTag=logTag)
-                ]
-        super(LIBPEItem, self).__init__( graceid, 
-                                         gdb,
-                                         t0,
-                                         tasks,
-                                         annotate=annotate,
-                                         warnings=warnings,
-                                         logDir=logDir,
-                                         logTag=logTag,
-                                       )
+        tasks = [libPEPostSampCheck(
+                     postsamp_dt, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=logTag,
+                 ),
+                 libPEBayesFactorsCheck(
+                     bayesFct_dt, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=logTag,
+                 ),
+                 libPESkymapCheck(
+                     skymap_dt, 
+                     tagnames=skymap_tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=logTag,
+                 ),
+                 libPEFinishCheck(
+                     finish_dt,
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=logTag,
+                 ),
+        ]
+
+        super(LIBPEItem, self).__init__( 
+            graceid, 
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class libPEPostSampCheck(esUtils.EventSupervisorTask):
     """
@@ -138,13 +181,6 @@ class libPEPostSampCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that LIB PE posted posterior samples"
     name        = "libPEPostSamp"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(libPEPostSampCheck, self).__init__( timeout,
-                                                  email=email,
-                                                  logDir=logDir,
-                                                  logTag=logTag,
-                                                )
 
     def libPEPostSamp(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -174,13 +210,6 @@ class libPEBayesFactorsCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that LIB PE posted Bayes Factors"
     name        = "libPEBayesFactors"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(libPEBayesFactorsCheck, self).__init__( timeout,
-                                                  email=email,
-                                                  logDir=logDir,
-                                                  logTag=logTag,
-                                                )
 
     def libPEBayesFactors(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -217,13 +246,16 @@ class libPESkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that LIB PE posted a skymap"
     name        = "libPESkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, tagnames=None, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.tagnames = tagnames
-        super(libPESkymapCheck, self).__init__( timeout,
-                                                email=email,
-                                                logDir=logDir,
-                                                logTag=logTag,
-                                              )
+        super(libPESkymapCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def libPESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -252,13 +284,6 @@ class libPEFinishCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that LIB PE finished"
     name        = "libPEFinish"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(libPEFinishCheck, self).__init__( timeout,
-                                                email=email,
-                                                logDir=logDir,
-                                                logTag=logTag,
-                                              )
 
     def libPEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """

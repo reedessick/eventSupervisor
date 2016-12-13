@@ -38,7 +38,9 @@ class SnglFITSStartItem(esUtils.EventSupervisorQueueItem):
         fitsname
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "snglFITS start"
 
@@ -52,21 +54,35 @@ class SnglFITSStartItem(esUtils.EventSupervisorQueueItem):
 
         ### extract params from config
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [snglFITSStartCheck(timeout, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
+        tasks = [snglFITSStartCheck(
+                     timeout, 
+                     self.fitsname, 
+                     tagnames=self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(SnglFITSStartItem, self).__init__( graceid,
-                                                      gdb,
-                                                      t0,
-                                                      tasks,
-                                                      annotate=annotate,
-                                                      warnings=warnings,
-                                                      logDir=logDir,
-                                                      logTag=logTag,
-                                                    )
+        super(SnglFITSStartItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class snglFITSStartCheck(esUtils.EventSupervisorTask):
     """
@@ -74,15 +90,18 @@ class snglFITSStartCheck(esUtils.EventSupervisorTask):
     """
     name = "snglFITSStart"
 
-    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, tagnames=[], emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.fitsname = fitsname
         self.tagnames = tagnames ### currently ignored...
         self.description = "check that snglFITS started processing %s"%fitsname
-        super(snglFITSStartCheck, self).__init__( timeout,
-                                                       email=email,
-                                                       logDir=logDir,
-                                                       logTag=logTag,
-                                                     )
+        super(snglFITSStartCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def snglFITSStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -121,7 +140,9 @@ class SnglFITSItem(esUtils.EventSupervisorQueueItem):
     options:
         html dt
         finish dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "snglFITS"
 
@@ -137,24 +158,46 @@ class SnglFITSItem(esUtils.EventSupervisorQueueItem):
         ### extract params from config
         html_dt   = float(options['html dt'])
         finish_dt = float(options['finish dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
         taskTag = '%s.%s'%(logTag, self.name)
-        tasks = [snglFITShtmlCheck(html_dt, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir, logTag=taskTag),
-                 snglFITSFinishCheck(finish_dt, self.fitsname, tagnames=self.tagnames, email=email, logDir=logDir, logTag=taskTag),
-                ]
+        tasks = [snglFITShtmlCheck(
+                     html_dt, 
+                     self.fitsname, 
+                     tagnames=self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+                 snglFITSFinishCheck(
+                     finish_dt, 
+                     self.fitsname, 
+                     tagnames=self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(SnglFITSItem, self).__init__( graceid,
-                                            gdb,
-                                            t0,
-                                            tasks,
-                                            annotate=annotate,
-                                            warnings=warnings,
-                                            logDir=logDir,
-                                            logTag=logTag,
-                                          )
+        super(SnglFITSItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class snglFITShtmlCheck(esUtils.EventSupervisorTask):
     """
@@ -162,15 +205,18 @@ class snglFITShtmlCheck(esUtils.EventSupervisorTask):
     """
     name = "snglFITShtml"
 
-    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, tagnames=[], emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.fitsname = fitsname
         self.tagnames = tagnames ### currently ignored
         self.description = "check that snglFITS posted an html for %s"%fitsname
-        super(snglFITShtmlCheck, self).__init__( timeout,
-                                                       email=email,
-                                                       logDir=logDir,
-                                                       logTag=logTag,
-                                                     )
+        super(snglFITShtmlCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def snglFITShtml(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -183,16 +229,17 @@ class snglFITShtmlCheck(esUtils.EventSupervisorTask):
         htmlname = "%s-skymapSummary.html"%(self.fitsname.split('.fits')[0]) ### NOTE: this may be fragile
         fragment = "skymap summary for .*%s.*can be found.*here.*"%(self.fitsname) ### NOTE: this may be fragile
 
-        self.warning, action_required = esUtils.check4file( graceid,
-                                                    gdb,
-                                                    htmlname,
-                                                    regex=False,
-                                                    tagnames=None,
-                                                    verbose=verbose,
-                                                    logFragment=fragment,
-                                                    logRegex=True,
-                                                    logTag=logger.name if verbose else None,
-                                                  )
+        self.warning, action_required = esUtils.check4file( 
+                                            graceid,
+                                            gdb,
+                                            htmlname,
+                                            regex=False,
+                                            tagnames=None,
+                                            verbose=verbose,
+                                            logFragment=fragment,
+                                            logRegex=True,
+                                            logTag=logger.name if verbose else None,
+                                        )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -214,15 +261,18 @@ class snglFITSFinishCheck(esUtils.EventSupervisorTask):
     """
     name = "snglFITSFinish"
 
-    def __init__(self, timeout, fitsname, tagnames=[], email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsname, tagnames=[], emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.fitsname = fitsname
         self.tagnames = tagnames ### currently ignored
         self.description = "check that snglFITS finished processing %s"%fitsname
-        super(snglFITSFinishCheck, self).__init__( timeout,
-                                                       email=email,
-                                                       logDir=logDir,
-                                                       logTag=logTag,
-                                                     )
+        super(snglFITSFinishCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def snglFITSFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -263,7 +313,9 @@ class MultFITSStartItem(esUtils.EventSupervisorQueueItem):
         fitsnames
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "multFITS start"
 
@@ -280,21 +332,35 @@ class MultFITSStartItem(esUtils.EventSupervisorQueueItem):
 
         ### extract params from config
         timeout = float(options['dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
-        tasks = [multFITSStartCheck(timeout, self.fitsnames, tagnames=self.tagnames, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
+        tasks = [multFITSStartCheck(
+                     timeout, 
+                     self.fitsnames, 
+                     tagnames=self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(MultFITSStartItem, self).__init__( graceid,
-                                                      gdb,
-                                                      t0,
-                                                      tasks,
-                                                      annotate=annotate,
-                                                      warnings=warnings,
-                                                      logDir=logDir,
-                                                      logTag=logTag,
-                                                    )
+        super(MultFITSStartItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class multFITSStartCheck(esUtils.EventSupervisorTask):
     """
@@ -302,15 +368,18 @@ class multFITSStartCheck(esUtils.EventSupervisorTask):
     """
     name = "multFITSStart"
 
-    def __init__(self, timeout, fitsnames, tagnames=[], email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsnames, tagnames=[], emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.fitsnames = fitsnames
         self.tagnames = tagnames ### currently ignored
         self.description = "check that multFITS started processing %s"%(", ".join(fitsnames))
-        super(multFITSStartCheck, self).__init__( timeout,
-                                                       email=email,
-                                                       logDir=logDir,
-                                                       logTag=logTag,
-                                                     )
+        super(multFITSStartCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def multFITSStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -349,7 +418,9 @@ class MultFITSItem(esUtils.EventSupervisorQueueItem):
     options:
         html dt
         finish dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     name = "multFITS"
 
@@ -371,24 +442,45 @@ class MultFITSItem(esUtils.EventSupervisorQueueItem):
         ### extract params from config
         html_dt   = float(options['html dt'])
         finish_dt = float(options['finish dt'])
-        email = options['email'].split()
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         ### generate tasks
         taskTag = '%s.%s'%(logTag, self.name)
-        tasks = [multFITShtmlCheck(html_dt, tagnames=self.tagnames, email=email, logDir=logDir, logTag=taskTag),
-                 multFITSFinishCheck(finish_dt, self.fitsnames, tagnames=self.tagnames, email=email, logDir=logDir, logTag=taskTag),
-                ]
+        tasks = [multFITShtmlCheck(
+                     html_dt, 
+                     tagnames=self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+                 multFITSFinishCheck(
+                     finish_dt, 
+                     self.fitsnames, 
+                     tagnames=self.tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+        ]
 
         ### wrap up instantiation
-        super(MultFITSItem, self).__init__( graceid,
-                                                      gdb,
-                                                      t0,
-                                                      tasks,
-                                                      annotate=annotate,
-                                                      warnings=warnings,
-                                                      logDir=logDir,
-                                                      logTag=logTag,
-                                                    )
+        super(MultFITSItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class multFITShtmlCheck(esUtils.EventSupervisorTask):
     """
@@ -396,14 +488,17 @@ class multFITShtmlCheck(esUtils.EventSupervisorTask):
     """
     name = "multFITShtml"
 
-    def __init__(self, timeout, tagnames=[], email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, tagnames=[], emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.tagnames = tagnames ### currently ignored
         self.description = "check that multFITS posted an html"
-        super(multFITShtmlCheck, self).__init__( timeout,
-                                                       email=email,
-                                                       logDir=logDir,
-                                                       logTag=logTag,
-                                                     )
+        super(multFITShtmlCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def multFITShtml(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -416,16 +511,17 @@ class multFITShtmlCheck(esUtils.EventSupervisorTask):
         htmlname = "%s-skymapComparison.html"%(graceid) ### NOTE: this may be fragile
         fragment = "comparison of skymaps can be found <a href=\"(.*)\">here</a>"
 
-        self.warning, action_required = esUtils.check4file( graceid,
-                                                    gdb,
-                                                    htmlname,
-                                                    regex=False,
-                                                    tagnames=None,
-                                                    verbose=verbose,
-                                                    logFragment=fragment,
-                                                    logRegex=True,
-                                                    logTag=logger.name if verbose else None,
-                                                  )
+        self.warning, action_required = esUtils.check4file( 
+                                            graceid,
+                                            gdb,
+                                            htmlname,
+                                            regex=False,
+                                            tagnames=None,
+                                            verbose=verbose,
+                                            logFragment=fragment,
+                                            logRegex=True,
+                                            logTag=logger.name if verbose else None,
+                                        )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -447,15 +543,18 @@ class multFITSFinishCheck(esUtils.EventSupervisorTask):
     """
     name = "multFITSFinish"
 
-    def __init__(self, timeout, fitsnames, tagnames=[], email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, fitsnames, tagnames=[], emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.fitsnames = fitsnames
         self.tagnames = tagnames ### currently ignored...
         self.description = "check that multFITS fimished processing %s"%(", ".join(fitsnames))
-        super(multFITSFinishCheck, self).__init__( timeout,
-                                                       email=email,
-                                                       logDir=logDir,
-                                                       logTag=logTag,
-                                                     )
+        super(multFITSFinishCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def multFITSFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """

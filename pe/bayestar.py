@@ -23,7 +23,9 @@ class BayestarStartItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "a check that BAYESTAR started as expected"
     name        = "bayestar start"
@@ -32,18 +34,31 @@ class BayestarStartItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
-        email = options['email'].split()
 
-        tasks = [bayestarStartCheck(timeout, email=email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
-        super(BayestarStartItem, self).__init__( graceid,
-                                                 gdb,
-                                                 t0,
-                                                 tasks,
-                                                 annotate=annotate,
-                                                 warnings=warnings,
-                                                 logDir=logDir,
-                                                 logTag=logTag,
-                                               )
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
+
+        tasks = [bayestarStartCheck(
+                     timeout, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
+
+        super(BayestarStartItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class bayestarStartCheck(esUtils.EventSupervisorTask):
     """
@@ -51,13 +66,6 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that bayestar started as expected"
     name        = "bayestarStart"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(bayestarStartCheck, self).__init__( timeout,
-                                                  email=email,
-                                                  logDir=logDir,
-                                                  logTag=logTag,
-                                                )
 
     def bayestarStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -96,7 +104,9 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
         skymap dt
         skymap tagnames
         finish dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "a check that BAYESTAR produced the expected data and finished"
     name        = "bayestar"
@@ -110,21 +120,40 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
             skymap_tagnames = skymap_tagnames.split()
         finish_dt = float(options['finish dt'])
 
-        email = options['email'].split()
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         taskTag = '%s.%s'%(logTag, self.name)
-        tasks = [bayestarSkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir, logTag=taskTag),
-                 bayestarFinishCheck(finish_dt, email=email, logDir=logDir, logTag=taskTag)
+        tasks = [bayestarSkymapCheck(
+                     skymap_dt, 
+                     tagnames=skymap_tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+                 bayestarFinishCheck(
+                     finish_dt, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
                 ]
-        super(BayestarItem, self).__init__( graceid,
-                                            gdb,
-                                            t0,
-                                            tasks,
-                                            annotate=annotate,
-                                            warnings=warnings,
-                                            logDir=logDir,
-                                            logTag=logTag,
-                                          )
+
+        super(BayestarItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     """
@@ -133,13 +162,16 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that bayestar produced a skymap"
     name        = "bayestarSkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, tagnames=None, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.tagnames = tagnames
-        super(bayestarSkymapCheck, self).__init__( timeout, 
-                                                   email=email,
-                                                   logDir=logDir,
-                                                   logTag=logTag,
-                                                 )
+        super(bayestarSkymapCheck, self).__init__( 
+            timeout, 
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def bayestarSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -168,13 +200,6 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that bayestar finished as expected"
     name        = "bayestarFinish"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(bayestarFinishCheck, self).__init__( timeout,
-                                                   email=email,
-                                                   logDir=logDir,
-                                                   logTag=logTag,
-                                                 )
 
     def bayestarFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """

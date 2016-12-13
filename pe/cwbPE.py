@@ -19,7 +19,9 @@ class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
         graceid
     options:
         dt
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "a check that cWB PE started"
     name        = "cwb pe start"
@@ -28,18 +30,31 @@ class CWBPEStartItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         timeout = float(options['dt'])
-        email = options['email'].split()
 
-        tasks = [cWBPEStartCheck(timeout, email, logDir=logDir, logTag='%s.%s'%(logTag, self.name))]
-        super(CWBPEStartItem, self).__init__( graceid,
-                                              gdb,
-                                              t0,
-                                              tasks,
-                                              annotate=annotate,
-                                              warnings=warnings,
-                                              logDir=logDir,
-                                              logTag=logTag,
-                                            )
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
+
+        tasks = [cWBPEStartCheck(
+                     timeout, 
+                     emailOnSuccess=emailOnSuccess,
+                     emailOnFailure=emailOnFailure,
+                     emailOnException=emailOnException,
+                     logDir=logDir, 
+                     logTag='%s.%s'%(logTag, self.name),
+                 ),
+        ]
+
+        super(CWBPEStartItem, self).__init__( 
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class cWBPEStartCheck(esUtils.EventSupervisorTask):
     """
@@ -47,13 +62,6 @@ class cWBPEStartCheck(esUtils.EventSupervisorTask):
     """    
     description = "a check that cWB PE started"
     name        = "cWBPEStart"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(cWBPEStartCheck, self).__init__( timeout,
-                                               email=email,
-                                               logDir=logDir,
-                                               logTag=logTag,
-                                             )
 
     def cWBPEStart(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -75,7 +83,9 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
         estimate dt
         skymap dt
         skymap tagnames
-        email
+        email on success
+        email on failure
+        email on exception
     """
     description = "a check that cWB PE produced the expected data and finished"
     name        = "cwb pe"
@@ -90,23 +100,56 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
         if skymap_tagnames !=None:
             skymap_tagnames = skymap_tagnames.split()
 
-        email = options['email'].split()
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
 
         taskTag = '%s.%s'%(logTag, self.name)
-        tasks = [cWBPECEDCheck(ced_dt, email=email, logDir=logDir, logTag=taskTag),
-                 cWBPEEstimateCheck(estimate_dt, email=email, logDir=logDir, logTag=taskTag),
-                 cWBPESkymapCheck(skymap_dt, tagnames=skymap_tagnames, email=email, logDir=logDir, logTag=taskTag),
-#                 cWBPEFinishCheck(timeout, email=email, logDir=logDir, logTag=taskTag) ### NOT IMPLEMENTED
+        tasks = [cWBPECEDCheck(
+                     ced_dt, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+                 cWBPEEstimateCheck(
+                     estimate_dt, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+                 cWBPESkymapCheck(
+                     skymap_dt, 
+                     tagnames=skymap_tagnames, 
+                     emailOnSuccess=emailOnSuccess, 
+                     emailOnFailure=emailOnFailure, 
+                     emailOnException=emailOnException, 
+                     logDir=logDir, 
+                     logTag=taskTag,
+                 ),
+#                 cWBPEFinishCheck(
+#                     timeout, 
+#                     emailOnSuccess=emailOnSuccess, 
+#                     emailOnFailure=emailOnFailure, 
+#                     emailOnException=emailOnException, 
+#                     logDir=logDir, 
+#                     logTag=taskTag,
+#                 ), ### NOT IMPLEMENTED
                 ]
-        super(CWBPEItem, self).__init__( graceid, 
-                                         gdb,
-                                         t0,
-                                         tasks,
-                                         annotate=annotate,
-                                         warnings=warnings,
-                                         logDir=logDir,
-                                         logTag=logTag,
-                                       )
+
+        super(CWBPEItem, self).__init__( 
+            graceid, 
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
 class cWBPECEDCheck(esUtils.EventSupervisorTask):
     """
@@ -114,13 +157,6 @@ class cWBPECEDCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that cWB PE posted a link to a CED page"
     name        = "cWBPECED"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(cWBPECEDCheck, self).__init__( timeout,
-                                             email=email,
-                                             logDir=logDir,
-                                             logTag=logTag,
-                                           )
 
     def cWBPECED(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -156,13 +192,6 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE posted estimates of parameters"
     name        = "cWBPEEstimate"
 
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(cWBPEEstimateCheck, self).__init__( timeout,
-                                                  email=email,
-                                                  logDir=logDir,
-                                                  logTag=logTag,
-                                                )
-
     def cWBPEEstimate(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that cWB PE posted posterior samples
@@ -197,13 +226,16 @@ class cWBPESkymapCheck(esUtils.EventSupervisorTask):
     description = "a check that cWB PE posted a skymap"
     name        = "cWBPESkymap"
 
-    def __init__(self, timeout, tagnames=None, email=[], logDir='.', logTag='iQ'):
+    def __init__(self, timeout, tagnames=None, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
         self.tagnames = tagnames
-        super(cWBPESkymapCheck, self).__init__( timeout,
-                                                email=email,
-                                                logDir=logDir,
-                                                logTag=logTag,
-                                              )
+        super(cWBPESkymapCheck, self).__init__( 
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
 
     def cWBPESkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
@@ -232,13 +264,6 @@ class cWBPEFinishCheck(esUtils.EventSupervisorTask):
     """
     description = "a check that cWB PE finished"
     name        = "cWBPEFinish"
-
-    def __init__(self, timeout, email=[], logDir='.', logTag='iQ'):
-        super(cWBPEFinishCheck, self).__init__( timeout,
-                                                email=email,
-                                                logDir=logDir,
-                                                logTag=logTag,
-                                              )
 
     def cWBPEFinish(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
