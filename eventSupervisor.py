@@ -85,55 +85,55 @@ for mod in [notify,
 
 ### behvior when new alerts are witnessed
 new = [
-#  'approval processor prelim dq',
-  'event creation',
-  'far',
-  'local rate',
-  'creation rate',
-  'external triggers',
-  'unblind injections',
-  'lldqReport',
-  'idq start',
-  'h1 omega scan start',
-  'l1 omega scan start',
-  'segdb2grcdb start',
-  'notify',
-  'bayeswave pe start',
-  'cwb pe',
-  'lalinf start',
-  'lib pe start',
-  ]
+#    'approval processor prelim dq',
+    'event creation',
+    'far',
+    'local rate',
+    'creation rate',
+    'external triggers',
+    'unblind injections',
+    'lldqReport',
+    'idq start',
+    'h1 omega scan start',
+    'l1 omega scan start',
+    'segdb2grcdb start',
+    'notify',
+    'bayeswave pe start',
+    'cwb pe',
+    'lalinf start',
+    'lib pe start',
+]
 
 ### behavior if certian checks are satisfied/alerts are received
 ### NOTE: keys can be Task names but values can ONLY contain Item names
 parent_child = {
 ### parent name : [child name]
-  'idq start'             : ['idq'],
-  'idqGlitchFAP'          : [], # ['approval processor idq'], ### FIXME: not implemented...
-  'idqActiveChan'         : ['idq omega scan start'], 
-  'h1 omega scan start'   : ['h1 omega scan'],
-  'l1 omega scan start'   : ['l1 omega scan'], 
-  'segdb2grcdb start'     : ['segdb2grcdb'],
-  'psd'                   : ['bayestar start', 
-                             'em bright',
-                            ],
-  'bayestar start'        : ['bayestar'],
-  'bayeswave pe start'    : ['bayeswave pe'],
-  'lalinf start'          : ['lalinf'],
-  'lib pe start'          : ['lib pe'],
-  'snglFITS start'        : ['snglFITS'],
-  'snglFITSFinish'        : ['multFITS start'],
-  'multFITS start'        : ['multFITS'],
-#  'approvalProcessorSegDBStartCheck' : ['approval processor segdb'], ### FIXME: not implemented...
-  }
+    'idq start'             : ['idq'],
+    'idqGlitchFAP'          : [], # ['approval processor idq'], ### FIXME: not implemented...
+    'idqActiveChan'         : ['idq omega scan start'], 
+    'h1 omega scan start'   : ['h1 omega scan'],
+    'l1 omega scan start'   : ['l1 omega scan'], 
+    'segdb2grcdb start'     : ['segdb2grcdb'],
+    'psd'                   : ['bayestar start', 
+                               'em bright',
+                              ],
+    'bayestar start'        : ['bayestar'],
+    'bayeswave pe start'    : ['bayeswave pe'],
+    'lalinf start'          : ['lalinf'],
+    'lib pe start'          : ['lib pe'],
+    'snglFITS start'        : ['snglFITS'],
+    'snglFITSFinish'        : ['multFITS start'],
+    'multFITS start'        : ['multFITS'],
+#    'approvalProcessorSegDBStartCheck' : ['approval processor segdb'], ### FIXME: not implemented...
+}
 
 ### special behavior if certain file types are seen
 fits = [
-  'skymap sanity',
-  'plot skymap',
-  'skyviewer',
-  'snglFITS start',
-  ]
+    'skymap sanity',
+    'plot skymap',
+    'skyviewer',
+    'snglFITS start',
+]
 
 #-------------------------------------------------
 
