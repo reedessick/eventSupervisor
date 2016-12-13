@@ -184,11 +184,12 @@ if opts.fits:
     alert = {
              'alert_type'  : 'update',
              'uid'         : 'G123FAKE',
-             'group'       : 'CBC',
-             'pipeline'    : 'gstlal',
              'description' : 'a meaningless description meant to avoid triggering anything',
              'file'        : 'fake.fits.gz',
-             'object'      : {'tag_names':['faketag']},
+             'object'      : {'tag_names':['faketag'],
+                              'group'    : 'CBC',
+                              'pipeline' : 'gstlal',
+                             },
             }
     queue          = utils.SortedQueue()
     queueByGraceID = dict()
@@ -323,8 +324,9 @@ if opts.idqStart:
     alert = {
              'alert_type'  : 'update',
              'uid'         : 'G123FAKE',
-             'group'       : 'CBC',
-             'pipeline'    : 'gstlal',
+             'object' : {'group'       : 'CBC',
+                         'pipeline'    : 'gstlal',
+                         },
              'description' : 'Started searching for iDQ information within [1162558843.270, 1162558843.370] at H1',
              'file'        : '',
             }
@@ -350,8 +352,9 @@ if opts.idqGlitchFAP:
     alert = {
              'alert_type'  : 'update',
              'uid'         : 'G123FAKE',
-             'group'       : 'CBC',
-             'pipeline'    : 'gstlal',
+             'object' : {'group'       : 'CBC',
+                         'pipeline'    : 'gstlal',
+                        },
              'description' : 'minimum glitch-FAP for ovl at H1 within [1162558843.270, 1162558843.370] is 1.000e+00',
              'file'        : 'https://gracedb.ligo.org/apiweb/events/G260778/files/H1_ovl_minFAP_G260778-1162558843-0.json',
             }
@@ -373,8 +376,9 @@ if opts.idqActiveChan:
     alert = {
              'alert_type'  : 'update',
              'uid'         : 'G123FAKE',
-             'group'       : 'CBC',
-             'pipeline'    : 'gstlal',
+             'object' : {'group'       : 'CBC',
+                         'pipeline'    : 'gstlal',
+                        },
              'description' : 'iDQ (possible) active channels for ovl at L1 between [1162558838.320, 1162558848.320]',
              'file'        : 'https://gracedb.ligo.org/apiweb/events/G260778/files/L1_ovl_chanlist_G260778-1162558838-10.json',
             }
@@ -399,9 +403,11 @@ if opts.omegaScanStart:
     alert = {
              'alert_type'  : 'update',
              'uid'         : 'G123FAKE',
-             'group'       : 'CBC',
-             'pipeline'    : 'gstlal',
-             'description' : 'automatic OmegaScans begun for: %s'%(', '.join(config.get(name, 'chansets').split())),
+             'object' : {'group'       : 'CBC',
+                         'pipeline'    : 'gstlal',
+                         'comment' : 'automatic OmegaScans begun for: %s'%(', '.join(config.get(name+' start', 'chansets').split())),
+                        },
+             'description' : 'automatic OmegaScans begun for: %s'%(', '.join(config.get(name+' start', 'chansets').split())),
              'file'        : '',
             }
     queue          = utils.SortedQueue()
@@ -429,8 +435,9 @@ if opts.segDbStart:
     alert = {
              'alert_type'  : 'update',
              'uid'         : 'G123FAKE',
-             'group'       : 'CBC',
-             'pipeline'    : 'gstlal',
+             'object' : {'group'       : 'CBC',
+                         'pipeline'    : 'gstlal',
+                        },
              'description' : 'began searching for segments in : https://segments.ligo.org',
              'file'        : '', 
             }
@@ -461,8 +468,9 @@ if opts.bayestarStart:
     alert = {
              'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'CBC',
-             'pipeline' : 'gstlal',
+             'object' : {'group'    : 'CBC',
+                         'pipeline' : 'gstlal',
+                        },
              'description' : 'INFO:BAYESTAR:starting sky localization',
              'file'        : '',
             }
@@ -493,8 +501,9 @@ if opts.bayeswavePEStart:
     alert = {
              'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'CBC',
-             'pipeline' : 'gstlal',
+             'object' : {'group'    : 'CBC',
+                         'pipeline' : 'gstlal',
+                        },
              'description' : 'BayesWaveBurst launched',
              'file'        : '',
             }
@@ -525,8 +534,9 @@ if opts.lalinfStart:
     alert = {
              'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'CBC',
-             'pipeline' : 'gstlal',
+             'object' : {'group'    : 'CBC',
+                         'pipeline' : 'gstlal',
+                        },
              'description' : 'LALInference online estimation started',
              'file'        : '',
             }
@@ -557,8 +567,9 @@ if opts.libPEStart:
     alert = {
              'alert_type' : 'update',
              'uid'      : 'G123FAKE',
-             'group'    : 'CBC',
-             'pipeline' : 'gstlal',
+             'object' : {'group'    : 'CBC',
+                         'pipeline' : 'gstlal',
+                        },
              'description' : 'LIB Parameter estimation started.',
              'file'        : '',
             }

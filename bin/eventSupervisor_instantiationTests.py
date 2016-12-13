@@ -32,6 +32,8 @@ from eventSupervisor.dq import segDB2grcDB
 
 import time
 
+from ConfigParser import SafeConfigParser
+
 from optparse import OptionParser
 
 #-------------------------------------------------
@@ -41,12 +43,14 @@ parser = OptionParser(usage=usage, description=description)
 ### check everything
 parser.add_option('', '--everything', default=False, action="store_true", help="run tests for everything")
 
+parser.add_option('-c', '--config', default=None, type='string')
+
 # notify
 parser.add_option("", "--notify", default=False, action="store_true")
 
 # basic
 parser.add_option("", "--basic", default=False, action="store_true")
-parser.add_option("", "--approvalProcessor", default=False, action="store_true")
+#parser.add_option("", "--approvalProcessor", default=False, action="store_true")
 
 # skymaps
 parser.add_option("", "--skymaps", default=False, action="store_true")
@@ -71,9 +75,12 @@ parser.add_option("", "--segDB2grcDB", default=False, action="store_true")
 
 opts, args = parser.parse_args()
 
+if not opts.config:
+    opts.config = raw_input('--config=')
+
 opts.notify            = opts.notify            or opts.everything
 opts.basic             = opts.basic             or opts.everything
-opts.approvalProcessor = opts.approvalProcessor or opts.everything
+#opts.approvalProcessor = opts.approvalProcessor or opts.everything
 opts.skymaps           = opts.skymaps           or opts.everything
 opts.skymapSummary     = opts.skymapSummary     or opts.everything
 opts.bayestar          = opts.bayestar          or opts.everything
@@ -96,6 +103,12 @@ annotate = False
 
 #-------------------------------------------------
 
+print "reaing config from : %s"%opts.config
+config = SafeConfigParser()
+config.read(opts.config)
+
+#-------------------------------------------------
+
 if opts.notify:
     print "testing notify/notify.py"
 
@@ -112,14 +125,7 @@ if opts.notify:
                    },
         }
     t0 = time.time()
-    options = {
-        'dt'       : '10.0',
-        'ignore inj' : 'True',
-        'by email' : 'a',
-#        'by sms'   : 'b c',    ### NOTE: not currently implemented
-#        'by phone' : 'd e f',  ### NOTE: not currently implemented
-        'email' : 'g',
-        }
+    options = dict( config.items('notify') )
 
     ### instantiate Item
     item = notify.NotifyItem( alert, t0, options, gdb, annotate=annotate )
@@ -130,22 +136,31 @@ if opts.notify:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 ) ### NOTE: only using 'by email' right now...
     assert( len(item.completedTasks) == 0 ) 
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ### asser stuff about Tasks    
     tasks = dict( (task.name, task) for task in item.tasks )
 
     byEmail = tasks['notifyByEmail']
-    assert( byEmail.notificationList == ['a'] )
-    assert( byEmail.expiration == t0+10.0 )
+    assert( byEmail.notificationList == options['by email'].split() )
+    assert( byEmail.expiration == t0+float(options['dt']) )
+    assert( byEmail.emailOnSuccess == options['email on success'].split() )
+    assert( byEmail.emailOnFailure == options['email on failure'].split() )
+    assert( byEmail.emailOnException == options['email on exception'].split() )
 
 #    bySMS   = tasks['notifyBySMS']
-#    assert( bySMS.notificationList == ['b', 'c'] )
-#    assert( bySMS.expiration == t0+10.0 )
+#    assert( bySMS.notificationList == options['by sms'].split() )
+#    assert( bySMS.expiration == t0+float(options['dt']))
+#    assert( byEmail.emailOnSuccess == options['email on success'].split() )
+#    assert( byEmail.emailOnFailure == options['email on failure'].split() )
+#    assert( byEmail.emailOnException == options['email on exception'].split() )
 
 #    byPhone = tasks['notifyByPhone']
-#    assert( byPhone.notificationList == ['d', 'e', 'f'] )
-#    assert( byPhone.expiration == t0+10.0 )
+#    assert( byPhone.notificationList == options['by phone'].split() )
+#    assert( byPhone.expiration == t0+float(options['dt']) )
+#    assert( byEmail.emailOnSuccess == options['email on success'].split() )
+#    assert( byEmail.emailOnFailure == options['email on failure'].split() )
+#    assert( byEmail.emailOnException == options['email on exception'].split() )
 
     ### actually run the execute() method for the Item and the Tasks and check how everything ticks through?
     print "        WARNING: notifyCheck Task.execute() not implemented and not tested"
@@ -165,16 +180,13 @@ if opts.basic:
 
     ### cwb
     graceid = 'FakeEvent'
-    pipeline = 'cwb'
+    pipeline = 'CWB'
     alert = {
         'uid' : graceid,
-        'pipeline' : pipeline,
+        'object' : {'pipeline' : pipeline,},
         }
     t0 = time.time()
-    options = {
-        'dt' : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('event creation'))
 
     item = basic.EventCreationItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -182,28 +194,27 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   cWBTriggerCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: cWBTriggerCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
 
     ### olib
     graceid = 'FakeEvent'
-    pipeline = 'lib'
+    pipeline = 'LIB'
     alert = {
         'uid' : graceid,
-        'pipeline' : pipeline,
+        'object' : {'pipeline' : pipeline,}
         }
     t0 = time.time()
-    options = {
-        'dt' : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('event creation'))
 
     item = basic.EventCreationItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -211,28 +222,27 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   oLIBTriggercheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: oLIBTriggerCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
 
     ### gstlal
-    for pipeline in ['gstlal', 'mbtaonline', 'pycbc']:
+    for pipeline in ['gstlal', 'gstlal-spiir', 'MBTAOnline', 'pycbc']:
         graceid = 'FakeEvent'
         alert = {
             'uid' : graceid,
-            'pipeline' : pipeline,
+            'object' : {'pipeline' : pipeline,},
             }
         t0 = time.time()
-        options = {
-            'dt' : '10.0',
-            'email' : 'a',
-            }
+        options = dict(config.items('event creation'))
 
         item = basic.EventCreationItem( alert, t0, options, gdb, annotate=annotate )
         assert( item.graceid == graceid )
@@ -240,19 +250,23 @@ if opts.basic:
         assert( item.complete == False )
         assert( len(item.tasks) == 2 )
         assert( len(item.completedTasks) == 0 )
-        assert( item.expiration == t0+10.0 )
+        assert( item.expiration == t0+float(options['dt']) )
 
         tasks = dict( (task.name, task) for task in item.tasks )
         coinc = tasks['cbcCoinc']
         psd   = tasks['cbcPSD']
         ###   cbcCoincCheck
-        assert( coinc.expiration == t0+10.0 )
-        assert( coinc.email == ['a'] )
+        assert( coinc.expiration == t0+float(options['dt']) )
+        assert( coinc.emailOnSuccess == options['email on success'].split() )
+        assert( coinc.emailOnFailure == options['email on failure'].split() )
+        assert( coinc.emailOnException == options['email on exception'].split() )
         print "        WARNING: cbcCoincCheck Task.execute() not implemented and not tested"
 
         ###   cbcPSDCheck
-        assert( psd.expiration == t0+10.0 )
-        assert( psd.email == ['a'] )
+        assert( psd.expiration == t0+float(options['dt']) )
+        assert( psd.emailOnSuccess == options['email on success'].split() )
+        assert( psd.emailOnFailure == options['email on failure'].split() )
+        assert( psd.emailOnException == options['email on exception'].split() )
         print "        WARNING: cbcPSDCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -263,18 +277,13 @@ if opts.basic:
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
-        'pipeline': 'pipeline',
-        'group' : 'group',
-        'search' : 'search',
+        'object' : {'pipeline': 'pipeline',
+                    'group' : 'group',
+                    'search' : 'search',
+                   },
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'win+' : '5.0',
-        'win-' : '5.0',
-        'max rate' : 2.0,
-        'email' : 'a',
-        }
+    options = dict(config.items('creation rate'))
 
     item = basic.CreateRateItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -282,31 +291,30 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ### createRateCheck
     task = item.tasks[0]
     assert( task.pipeline == "pipeline" )
     assert( task.group == "group" )
     assert( task.search == "search" )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ["a"] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.pWin == float(options['win+']) )
+    assert( task.mWin == float(options['win-']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     ### check again when search is not specified
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
-        'pipeline': 'pipeline',
-        'group' : 'group',
+        'object': {'pipeline': 'pipeline',
+                   'group' : 'group',
+                  },
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'win+' : '5.0',
-        'win-' : '5.0',
-        'max rate' : 2.0,
-        'email' : 'a',
-        }
+    options = dict(config.items('creation rate'))
 
     item = basic.CreateRateItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -314,15 +322,17 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   createRateCheck
     task = item.tasks[0]
     assert( task.pipeline == "pipeline" )
     assert( task.group == "group" )
     assert( task.search == None )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ["a"] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: CreateRateCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
 
@@ -334,18 +344,13 @@ if opts.basic:
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
-        'pipeline' : 'pipeline',
-        'group' : 'group',
-        'search' : 'search',
+        'object' : {'pipeline' : 'pipeline',
+                    'group' : 'group',
+                    'search' : 'search',
+                   },
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'win+' : '5.0',
-        'win-' : '5.0',
-        'max rate' : 2.0,
-        'email' : 'a',
-        }
+    options = dict(config.items('local rate'))
 
     item = basic.LocalRateItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -353,31 +358,30 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ### localRateCheck
     task = item.tasks[0]
     assert( task.pipeline == "pipeline" )
     assert( task.group == "group" )
     assert( task.search == "search" )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ["a"] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.pWin == float(options['win+']) )
+    assert( task.mWin == float(options['win-']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     ### check again when search is not specified
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
-        'pipeline': 'pipeline',
-        'group' : 'group',
+        'object' : {'pipeline': 'pipeline',
+                    'group' : 'group',
+                   },
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'win+' : '5.0',
-        'win-' : '5.0',
-        'max rate' : 2.0,
-        'email' : 'a',
-        }
+    options = dict(config.items('local rate'))
 
     item = basic.LocalRateItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -385,15 +389,17 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   localRateCheck
     task = item.tasks[0]
     assert( task.pipeline == "pipeline" )
     assert( task.group == "group" )
     assert( task.search == None )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ["a"] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: LocalRateCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
 
@@ -407,12 +413,7 @@ if opts.basic:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'min far' : '0.0',
-        'max far' : '5.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('far'))
 
     item = basic.FARItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -420,14 +421,16 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   FARCheck
     task = item.tasks[0]
-    assert( task.minFAR == 0.0 )
-    assert( task.maxFAR == 5.0 )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.minFAR == float(options['min far']) )
+    assert( task.maxFAR == float(options['max far']) )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: FARCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
@@ -442,10 +445,7 @@ if opts.basic:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('external triggers'))
 
     item = basic.ExternalTriggersItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -453,12 +453,14 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   externalTriggersCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: ExternalTriggersCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
 
@@ -472,10 +474,7 @@ if opts.basic:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('unblind injections'))
 
     item = basic.UnblindInjectionsItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -483,12 +482,14 @@ if opts.basic:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   unblindInjectionsCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: unblindInjectionsCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
 
@@ -496,8 +497,11 @@ if opts.basic:
 
 #-------------------------------------------------
 
+'''
 if opts.approvalProcessor:
     print "testing basic/approvalProcessor.py"
+
+    raise NotImplementedError
 
     #--------------------
     # ApprovalProcessroPrelimDQItem
@@ -509,11 +513,7 @@ if opts.approvalProcessor:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'far dt'   : '10.0',
-#        'seg start dt'   : '20.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('approval processor prelim dq'))
 
     item = approvalProcessor.ApprovalProcessorPrelimDQItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -521,15 +521,17 @@ if opts.approvalProcessor:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 ) ### NOTE: only using "far dt" right now
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
 
     ###   approvalProcessorFARCheck
     far = tasks['approvalProcessorFAR']
-    assert( far.expiration == t0+10.0 )
-    assert( far.email == ['a'] )
+    assert( far.expiration == t0+float(options['dt']) )
+    assert( far.emailOnSuccess == options['email on success'].split() )
+    assert( far.emailOnFailure == options['email on failure'].split() )
+    assert( far.emailOnException == options['email on exception'].split() )
     print "        WARNING: approvalProcessorFARCheck Task.execute() not implemented and not tested"
 
     ###   approvalProcessorSegDBStartCheck
@@ -548,12 +550,7 @@ if opts.approvalProcessor:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'flags dt' : '10.0',
-        'flags' : 'H1:DMT-ANALYSIS_READY:1',
-        'finish dt' : '20.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('approval processor segdb'))
 
     item = approvalProcessor.ApprovalProcessorSegDBItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -561,21 +558,25 @@ if opts.approvalProcessor:
     assert( item.complete == False )
     assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
     flags = tasks['approvalProcessorSegDBFlags']
     finish = tasks['approvalProcessorSegDBFinish']
     ###   approvalProcessorSegDBFlagsCheck
-    assert( flags.expiration == t0+10.0 )
-    assert( flags.email == ['a'] )
+    assert( flags.expiration == t0+float(options['flags dt']) )
+    assert( flags.emailOnSuccess == options['email on success'].split() )
+    assert( flags.emailOnFailure == options['email on failure'].split() )
+    assert( flags.emailOnException == options['email on exception'].split() )
     assert( flags.flags == ['H1:DMT-ANALYSIS_READY:1'] )
     print "        WARNING: approvalProcessorFARCheck Task.execute() not implemented and not tested"
 
     ###   approvalProcessorSegDBFinishCheck
-    assert( finish.expiration == t0+20.0 )
-    assert( finish.email == ['a'] )
+    assert( finish.expiration == t0+float(options['finish dt']) )
+    assert( finish.emailOnSuccess == options['email on success'].split() )
+    assert( finish.emailOnFailure == options['email on failure'].split() )
+    assert( finish.emailOnException == options['email on exception'].split() )
     print "        WARNING: approvalProcessorFARCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -589,10 +590,7 @@ if opts.approvalProcessor:
         'description' : 'blah blah blah H1',
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('approval processor idq'))
 
     item = approvalProcessor.ApprovalProcessoriDQItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -601,12 +599,14 @@ if opts.approvalProcessor:
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
     assert( item.ifo == "H1" )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   approvalProcessoriDQglitchFAPCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     assert( task.ifo == "H1" )
     print "        WARNING: approvalProcessoriDQglitchFAPCheck Task.execute() not implemented and not tested"
 
@@ -620,10 +620,7 @@ if opts.approvalProcessor:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('approval processor voevent'))
 
     item = approvalProcessor.ApprovalProcessorVOEventItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -631,20 +628,24 @@ if opts.approvalProcessor:
     assert( item.complete == False )
     assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
     create = tasks['approvalProcessorVOEventCreation']
     distrb = tasks['approvalProcessorVOEventDistribution']
     ###   approvalProcessorVOEventCreationCheck
-    assert( create.expiration == t0+10.0 )
-    assert( create.email == ["a"] )
+    assert( create.expiration == t0+float(options['dt']) )
+    assert( create.emailOnSuccess == options['email on success'].split() )
+    assert( create.emailOnFailure == options['email on failure'].split() )
+    assert( create.emailOnException == options['email on exception'].split() )
     print "        WARNING: approvalProcessorVOEventCreationCheck Task.execute() not implemented and not tested"
 
     ###   approvalProcessorVOEventDistributionCheck
-    assert( distrb.expiration == t0+10.0 )
-    assert( distrb.email == ["a"] )
+    assert( distrb.expiration == t0+float(options['dt']) )
+    assert( distrib.emailOnSuccess == options['email on success'].split() )
+    assert( distrib.emailOnFailure == options['email on failure'].split() )
+    assert( distrib.emailOnException == options['email on exception'].split() )
     print "        WARNING: approvalProcessorVOEventDistributionCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -657,10 +658,7 @@ if opts.approvalProcessor:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('approval processor gcn'))
 
     item = approvalProcessor.ApprovalProcessorGCNItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -668,23 +666,28 @@ if opts.approvalProcessor:
     assert( item.complete == False )
     assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
     create = tasks['approvalProcessorGCNCreation']
     distrb = tasks['approvalProcessorGCNDistribution']
     ###   approvalProcessorGCNCreationCheck
-    assert( create.expiration == t0+10.0 )
-    assert( create.email == ["a"] )
+    assert( create.expiration == t0+float(options['dt']) )
+    assert( create.emailOnSuccess == options['email on success'].split() )
+    assert( create.emailOnFailure == options['email on failure'].split() )
+    assert( create.emailOnException == options['email on exception'].split() )
     print "        WARNING: approvalProcessorGCNCreationCheck Task.execute() not implemented and not tested"
 
     ###   approvalProcessorGCNDistributionCheck
-    assert( create.expiration == t0+10.0 )
-    assert( create.email == ["a"] )
+    assert( distrib.expiration == t0+float(options['dt']) )
+    assert( distrib.emailOnSuccess == options['email on success'].split() )
+    assert( distrib.emailOnFailure == options['email on failure'].split() )
+    assert( distrib.emailOnException == options['email on exception'].split() )
     print "        WARNING: approvalProcessorGCNdistributionCheck Task.execute() not implemented and not tested"
 
     print "    approvalProcessor.py passed all tests sucessfully!"
+'''
 
 #-------------------------------------------------
 
@@ -705,10 +708,7 @@ if opts.skymaps:
         'object' : {'tagnames':[]},
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('skymap sanity'))
 
     item = skymaps.SkymapSanityItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -717,13 +717,15 @@ if opts.skymaps:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   skymapSanityCheck
     task = item.tasks[0]
     assert( task.fitsname == fitsname )
-    assert( task.expiration == t0+10.0 ) 
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) ) 
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: skymapSanityCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
@@ -738,13 +740,10 @@ if opts.skymaps:
     alert = {
         'uid' : graceid,
         'file' : fitsname,
-        'object' : {'tagnames':[]},
+        'object' : {'tag_names':[]},
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('plot skymap'))
 
     item = skymaps.PlotSkymapItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -754,13 +753,15 @@ if opts.skymaps:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   plotSkymapCheck
     task = item.tasks[0]
     assert( task.fitsname == fitsname )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: plotSkymapCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
@@ -775,13 +776,10 @@ if opts.skymaps:
     alert = {
         'uid' : graceid,
         'file' : fitsname,
-        'object' : {'tagnames':[]},
+        'object' : {'tag_names':[]},
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('skyviewer'))
 
     item = skymaps.SkyviewerItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -791,13 +789,15 @@ if opts.skymaps:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   skyviewerCheck
     task = item.tasks[0]
     assert( task.fitsname == fitsname )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: skyviewerCheck Task.execute() not implemented and not tested"
 #    raise NotImplementedError("actually test Task.execute() for this Item")
@@ -819,30 +819,29 @@ if opts.skymapSummary:
     alert = {
         'uid' : graceid,
         'file' : filename,
-        'object' : {'tagnames':['sky_loc']},
+        'object' : {'tag_names':['sky_loc']},
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('snglFITS start'))
 
     item = skymapSummary.SnglFITSStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.fitsname == filename )
-#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
+#    assert( item.tagnames == alert['object']['tag_names'] ) ### FIXME: this should fail...
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   skymapSummaryStartCheck
     task = item.tasks[0]
     assert( task.fitsname == filename )
-#    assert( task.tagnames == ['sky_loc'] )
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+#    assert( task.tagnames == alert['object']['tag_names'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: skymapSummaryStartCheck Task.execute() not implemented and not tested"
 
@@ -856,23 +855,20 @@ if opts.skymapSummary:
     alert = {
         'uid' : graceid,
         'description' : 'started skymap summary for <a href="not real">%s</a>'%filename,
+        'object' : {'tag_names' : []},
         }
     t0 = time.time()
-    options = {
-        'html dt'   : '10.0',
-        'finish dt' : '20.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('snglFITS'))
 
     item = skymapSummary.SnglFITSItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.fitsname == filename )
-#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
+#    assert( item.tagnames == alert['object']['tag_names'] ) ### FIXME: this should fail...
     assert( item.complete == False )
     assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['html dt']), float(options['finish dt'])) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
@@ -880,16 +876,20 @@ if opts.skymapSummary:
     finish = tasks['snglFITSFinish']
     ###   skymapSummaryDataCheck
     assert( data.fitsname == filename )
-#    assert( data.tagnames == ['sky_loc'] ) ### this should fail...
-    assert( data.expiration == t0+10.0 )
-    assert( data.email == ['a'] )
+#    assert( data.tagnames == alert['object']['tag_names'] ) ### this should fail...
+    assert( data.expiration == t0+float(options['html dt']) )
+    assert( data.emailOnSuccess == options['email on success'].split() )
+    assert( data.emailOnFailure == options['email on failure'].split() )
+    assert( data.emailOnException == options['email on exception'].split() )
     print "        WARNING: skymapSummaryDataCheck Task.execute() not implemented and not tested"
 
     ###   skymapSummaryFinishCheck
     assert( finish.fitsname == filename )
-#    assert( finish.tagnames == ['sky_loc'] ) ### this should fail...
-    assert( finish.expiration == t0+20.0 )
-    assert( finish.email == ['a'] )
+#    assert( finish.tagnames == alert['object']['tag_names'] ) ### this should fail...
+    assert( finish.expiration == t0+float(options['finish dt']) )
+    assert( finish.emailOnSuccess == options['email on success'].split() )
+    assert( finish.emailOnFailure == options['email on failure'].split() )
+    assert( finish.emailOnException == options['email on exception'].split() )
     print "        WARNING: skymapSummaryFinishCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -906,29 +906,29 @@ if opts.skymapSummary:
     alert = {
         'uid' : graceid,
         'description' : 'finished skymap summary for DOES NOT MATTER',
+        'object' : {'tag_names' : []},
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('multFITS start'))
 
     item = skymapSummary.MultFITSStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.fitsnames == filenames )
-#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
+#    assert( item.tagnames == alert-'object']['tag_names'] ) ### FIXME: this should fail...
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   skymapSummaryStartCheck
     task = item.tasks[0]
     assert( task.fitsnames == filenames )
-#    assert( task.tagnames == ['sky_loc'] ) ### FIXME: this should break...
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+#    assert( task.tagnames == alert['object']['tag_names'] ) ### FIXME: this should break...
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: skymapSummaryStartCheck Task.execute() not implemented and not tested"
 
@@ -943,39 +943,40 @@ if opts.skymapSummary:
     alert = {
         'uid' : graceid,
         'description' : 'started skymap comparison for <a href="not real">%s</a>, <a href="not real either">%s</a>'%tuple(filenames),
+        'object' : {'tag_names':[]},
         }
     t0 = time.time()
-    options = {
-        'html dt'   : '10.0',
-        'finish dt' : '20.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('multFITS'))
 
     item = skymapSummary.MultFITSItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.fitsnames == filenames )
-#    assert( item.tagnames == ['sky_loc'] ) ### FIXME: this should fail...
+#    assert( item.tagnames == alert['object']['tag_names'] ) ### FIXME: this should fail...
     assert( item.complete == False )
     assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['html dt']), float(options['finish dt'])) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
     data = tasks['multFITShtml']
     finish = tasks['multFITSFinish']
     ###   skymapSummaryDataCheck
-#    assert( data.tagnames == ['sky_loc'] ) ### this should fail...
-    assert( data.expiration == t0+10.0 )
-    assert( data.email == ['a'] )
+#    assert( data.tagnames == alert['object']['tag_names'] ) ### this should fail...
+    assert( data.expiration == t0+float(options['html dt']) )
+    assert( data.emailOnSuccess == options['email on success'].split() )
+    assert( data.emailOnFailure == options['email on failure'].split() )
+    assert( data.emailOnException == options['email on exception'].split() )
     print "        WARNING: skymapSummaryDataCheck Task.execute() not implemented and not tested"
 
     ###   skymapSummaryFinishCheck
     assert( finish.fitsnames == filenames )
-#    assert( finish.tagnames == ['sky_loc'] ) ### this should fail...
-    assert( finish.expiration == t0+20.0 )
-    assert( finish.email == ['a'] )
+#    assert( finish.tagnames == alert['object']['tag_names'] ) ### this should fail...
+    assert( finish.expiration == t0+float(options['finish dt']) )
+    assert( finish.emailOnSuccess == options['email on success'].split() )
+    assert( finish.emailOnFailure == options['email on failure'].split() )
+    assert( finish.emailOnException == options['email on exception'].split() )
     print "        WARNING: skymapSummaryFinishCheck Task.execute() not implemented and not tested"
 
     print "    skymapSummary.py passed all tests sucessfully!"
@@ -997,10 +998,7 @@ if opts.bayestar:
         'uid' : graceid,
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('bayestar start'))
 
     item = bayestar.BayestarStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1008,12 +1006,14 @@ if opts.bayestar:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   bayestarStartCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: bayestarStartCheck Task.execute() not implemented and not tested"
 
@@ -1027,12 +1027,7 @@ if opts.bayestar:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'skymap dt'   : '10.0',
-        'skymap tagnames'   : 'sky_loc lvem',
-        'finish dt' : '20.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('bayestar'))
 
     item = bayestar.BayestarItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1040,21 +1035,25 @@ if opts.bayestar:
     assert( item.complete == False )
     assert( len(item.tasks) == 2 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['skymap dt']), float(options['finish dt'])) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
     skymap = tasks['bayestarSkymap']
     finish = tasks['bayestarFinish']
     ###   bayestarSkymapCheck
-    assert( skymap.expiration == t0+10.0 )
-    assert( skymap.email == ['a'] )
-    assert( skymap.tagnames == ['sky_loc', 'lvem'] )
+    assert( skymap.expiration == t0+float(options['skymap dt']) )
+    assert( skymap.emailOnSuccess == options['email on success'].split() )
+    assert( skymap.emailOnFailure == options['email on failure'].split() )
+    assert( skymap.emailOnException == options['email on exception'].split() )
+    assert( skymap.tagnames == options['skymap tagnames'].split() )
     print "        WARNING: bayestarSkymapCheck Task.execute() not implemented and not tested"
 
     ###   bayestarFinishItem
-    assert( finish.expiration == t0+20.0 )
-    assert( finish.email == ['a'] )
+    assert( finish.expiration == t0+float(options['finish dt']) )
+    assert( finish.emailOnSuccess == options['email on success'].split() )
+    assert( finish.emailOnFailure == options['email on failure'].split() )
+    assert( finish.emailOnException == options['email on exception'].split() )
     print "        WARNING: bayestarFinishCheck Task.execute() not implemented and not tested"
 
     print "    bayestar.py passed all tests sucessfully!"
@@ -1074,10 +1073,7 @@ if opts.embright:
         'uid' : graceid,
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('em bright'))
 
     item = embright.EMBrightItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1085,12 +1081,14 @@ if opts.embright:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   emBrightCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: emBrigthCheck Task.execute() not implemented and not tested"
 
@@ -1111,10 +1109,7 @@ if opts.bayeswavePE:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('bayeswave pe start'))
 
     item = bayeswavePE.BayesWavePEStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1122,12 +1117,14 @@ if opts.bayeswavePE:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   bayeswavePEStartCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
 
     print "        WARNING: bayeswavePEStartCheck Task.execute() not implemented and not tested"
 
@@ -1141,14 +1138,7 @@ if opts.bayeswavePE:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'post samp dt'   : '10.0',
-        'estimate dt' : '20.0',
-        'bayes factor dt' : '30.0',
-        'skymap dt' : '40.0',
-        'skymap tagnames' : 'sky_loc',
-        'email' : 'a',
-        }
+    options = dict(config.items('bayeswave pe'))
 
     item = bayeswavePE.BayesWavePEItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1156,7 +1146,7 @@ if opts.bayeswavePE:
     assert( item.complete == False )
     assert( len(item.tasks) == 4 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['post samp dt']), float(options['estimate dt']), float(options['bayes factor dt']), float(options['skymap dt'])) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
@@ -1166,23 +1156,31 @@ if opts.bayeswavePE:
     skymap = tasks['bayeswavePESkymap']
 
     ###   bayeswavePEPostSampCheck
-    assert( postSamp.expiration == t0+10.0 )
-    assert( postSamp.email == ['a'] )
+    assert( postSamp.expiration == t0+float(options['post samp dt']) )
+    assert( postSamp.emailOnSuccess == options['email on success'].split() )
+    assert( postSamp.emailOnFailure == options['email on failure'].split() )
+    assert( postSamp.emailOnException == options['email on exception'].split() )
     print "        WARNING: bayeswavePEPostSampCheck Task.execute() not implemented and not tested"
 
     ###   bayeswavePEBayesFactorsCheck
-    assert( baysFact.expiration == t0+30.0 )
-    assert( baysFact.email == ['a'] )
+    assert( baysFact.expiration == t0+float(options['bayes factor dt']) )
+    assert( baysFact.emailOnSuccess == options['email on success'].split() )
+    assert( baysFact.emailOnFailure == options['email on failure'].split() )
+    assert( baysFact.emailOnException == options['email on exception'].split() )
     print "        WARNING: bayeswavePEBayesFactorCheck Task.execute() not implemented and not tested"
 
     ###   bayeswavePEEstimateCheck
-    assert( estimate.expiration == t0+20.0 )
-    assert( estimate.email == ['a'] )
+    assert( estimate.expiration == t0+float(options['estimate dt']) )
+    assert( estimate.emailOnSuccess == options['email on success'].split() )
+    assert( estimate.emailOnFailure == options['email on failure'].split() )
+    assert( estimate.emailOnException == options['email on exception'].split() )
     print "        WARNING: bayeswavePEEstimateCheck Task.execute() not implemented and not tested"
 
     ###   bayeswavePESkymapCheck
-    assert( skymap.expiration == t0+40.0 )
-    assert( skymap.email == ['a'] )
+    assert( skymap.expiration == t0+float(options['skymap dt']) )
+    assert( skymap.emailOnSuccess == options['email on success'].split() )
+    assert( skymap.emailOnFailure == options['email on failure'].split() )
+    assert( skymap.emailOnException == options['email on exception'].split() )
     assert( skymap.tagnames == ['sky_loc'] )
     print "        WARNING: bayeswavePESkymapCheck Task.execute() not implemented and not tested"
 
@@ -1205,13 +1203,7 @@ if opts.cwbPE:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'ced dt'   : '10.0',
-        'estimate dt' : '20.0',
-        'skymap dt' : '30.0',
-        'skymap tagnames' : 'sky_loc lvem',
-        'email' : 'a',
-        }
+    options = dict(config.items('cwb pe'))
 
     item = cwbPE.CWBPEItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1219,7 +1211,7 @@ if opts.cwbPE:
     assert( item.complete == False )
     assert( len(item.tasks) == 3 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['ced dt']), float(options['estimate dt']), float(options['skymap dt'])) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
@@ -1228,18 +1220,24 @@ if opts.cwbPE:
     sky = tasks['cWBPESkymap']
 
     ###   cWBPECEDCheck
-    assert( ced.expiration == t0+10.0 )
-    assert( ced.email == ['a'] )
+    assert( ced.expiration == t0+float(options['ced dt']) )
+    assert( ced.emailOnSuccess == options['email on success'].split() )
+    assert( ced.emailOnFailure == options['email on failure'].split() )
+    assert( ced.emailOnException == options['email on exception'].split() )
     print "        WARNING: cWBCEDCheck Task.execute() not implemented and not tested"
 
     ###   cWBPEEstimateCheck
-    assert( est.expiration == t0+20.0 )
-    assert( est.email == ['a'] )
+    assert( est.expiration == t0+float(options['estimate dt']) )
+    assert( est.emailOnSuccess == options['email on success'].split() )
+    assert( est.emailOnFailure == options['email on failure'].split() )
+    assert( est.emailOnException == options['email on exception'].split() )
     print "        WARNING: cWBPEEstimateCheck Task.execute() not implemented and not tested"
 
     ###   cWBPESkymapCheck
-    assert( sky.expiration == t0+30.0 )
-    assert( sky.email == ['a'] )
+    assert( sky.expiration == t0+float(options['skymap dt']) )
+    assert( sky.emailOnSuccess == options['email on success'].split() )
+    assert( sky.emailOnFailure == options['email on failure'].split() )
+    assert( sky.emailOnException == options['email on exception'].split() )
     assert( sky.tagnames == ['sky_loc', 'lvem'] )
     print "        WARNING: cWBPESkymapCheck Task.execute() not implemented and not tested"
 
@@ -1260,10 +1258,7 @@ if opts.libPE:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('lib pe start'))
 
     item = libPE.LIBPEStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1271,12 +1266,14 @@ if opts.libPE:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   libPEStartCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: libPEStartCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -1289,14 +1286,7 @@ if opts.libPE:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'post samp dt'   : '20.0',
-        'bayes factor dt' : '10.0',
-        'skymap dt' : '30.0',
-        'skymap tagnames' : 'sky_loc lvem',
-        'finish dt' : '40.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('lib pe'))
 
     item = libPE.LIBPEItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1304,7 +1294,7 @@ if opts.libPE:
     assert( item.complete == False )
     assert( len(item.tasks) == 4 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['bayes factor dt']), float(options['post samp dt']), float(options['skymap dt']), float(options['finish dt'])) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
@@ -1314,24 +1304,32 @@ if opts.libPE:
     finish = tasks['libPEFinish']
 
     ###   libPEBayesFactorsCheck
-    assert( bysFct.expiration == t0+10.0 )
-    assert( bysFct.email == ['a'] )
+    assert( bysFct.expiration == t0+float(options['bayes factor dt']) )
+    assert( bysFct.emailOnSuccess == options['email on success'].split() )
+    assert( bysFct.emailOnFailure == options['email on failure'].split() )
+    assert( bysFct.emailOnException == options['email on exception'].split() )
     print "        WARNING: libPEBayesFactorsCheck Task.execute() not implemented and not tested"
 
     ###   libPEPostSampCheck
-    assert( pstSmp.expiration == t0+20.0 )
-    assert( pstSmp.email == ['a'] )
+    assert( pstSmp.expiration == t0+float(options['post samp dt']) )
+    assert( pstSmp.emailOnSuccess == options['email on success'].split() )
+    assert( pstSmp.emailOnFailure == options['email on failure'].split() )
+    assert( pstSmp.emailOnException == options['email on exception'].split() )
     print "        WARNING: libPEPostSampCheck Task.execute() not implemented and not tested"
 
     ###   libPESkymapCheck
-    assert( skymap.expiration == t0+30.0 )
-    assert( skymap.email == ['a'] )
+    assert( skymap.expiration == t0+float(options['skymap dt']) )
+    assert( skymap.emailOnSuccess == options['email on success'].split() )
+    assert( skymap.emailOnFailure == options['email on failure'].split() )
+    assert( skymap.emailOnException == options['email on exception'].split() )
     assert( skymap.tagnames == ['sky_loc', 'lvem'] )
     print "        WARNING: libPESkymapCheck Task.execute() not implemented and not tested"
 
     ###   libPEFinishCheck
-    assert( finish.expiration == t0+40.0 )
-    assert( finish.email == ['a'] )
+    assert( finish.expiration == t0+float(options['finish dt']) )
+    assert( finish.emailOnSuccess == options['email on success'].split() )
+    assert( finish.emailOnFailure == options['email on failure'].split() )
+    assert( finish.emailOnException == options['email on exception'].split() )
     print "        WARNING: libPEFinishCheck Task.execute() not implemented and not tested"
 
     print "    libPE.py passed all tests sucessfully!"
@@ -1351,10 +1349,7 @@ if opts.lalinf:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('lalinf start'))
 
     item = lalinf.LALInfStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1362,12 +1357,14 @@ if opts.lalinf:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   lalinfStartCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: lalinfStartCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -1380,42 +1377,44 @@ if opts.lalinf:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'post samp dt'   : '10.0',
-        'skymap dt' : '20.0',
-        'skymap tagnames' : 'sky_loc lvem',
-        'finish dt' : '30.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('lalinf'))
 
     item = lalinf.LALInfItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 3 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+#    assert( len(item.tasks) == 3 )
+#    assert( item.expiration == t0+min(float(options['post samp dt']), float(options['skymap dt']), float(options['finish dt'])) )
+    assert( len(item.tasks) == 2 ) ### post samp is commented out...
+    assert( item.expiration == t0+min(float(options['skymap dt']), float(options['finish dt'])) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
-    pstSmp = tasks['lalinfPostSamp']
+#    pstSmp = tasks['lalinfPostSamp']
     skymap = tasks['lalinfSkymap']
     finish = tasks['lalinfFinish']
 
     ###   lalinfPostSampCheck
-    assert( pstSmp.expiration == t0+10.0 )
-    assert( pstSmp.email == ['a'] )
-    print "        WARNING: lalinfPostSampCheck Task.execute() not implemented and not tested"
+#    assert( pstSmp.expiration == t0+float(options['post samp dt']) )
+#    assert( pstSmp.emailOnSuccess == options['email on success'].split() )
+#    assert( pstSmp.emailOnFailure == options['email on failure'].split() )
+#    assert( pstSmp.emailOnException == options['email on exception'].split() )
+#    print "        WARNING: lalinfPostSampCheck Task.execute() not implemented and not tested"
 
     ###   lalinfSkymapCheck
-    assert( skymap.expiration == t0+20.0 )
-    assert( skymap.email == ['a'] )
+    assert( skymap.expiration == t0+float(options['skymap dt']) )
+    assert( skymap.emailOnSuccess == options['email on success'].split() )
+    assert( skymap.emailOnFailure == options['email on failure'].split() )
+    assert( skymap.emailOnException == options['email on exception'].split() )
     assert( skymap.tagnames == ['sky_loc', 'lvem'] )
     print "        WARNING: lalinfSkymapCheck Task.execute() not implemented and not tested"
 
     ###   lalinfFinishCheck
-    assert( finish.expiration == t0+30.0 )
-    assert( finish.email == ['a'] )
+    assert( finish.expiration == t0+float(options['finish dt']) )
+    assert( finish.emailOnSuccess == options['email on success'].split() )
+    assert( finish.emailOnFailure == options['email on failure'].split() )
+    assert( finish.emailOnException == options['email on exception'].split() )
     print "        WARNING: lalinfFinishCheck Task.execute() not implemented and not tested"
 
     print "    lalinf.py passed all tests sucessfully!"
@@ -1436,10 +1435,7 @@ if opts.dq:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('lldqReport'))
 
     item = dq.LLDQReportItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1447,12 +1443,14 @@ if opts.dq:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   dqSummaryCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: dqSummaryCheck Task.execute() not implemented and not tested"
 
     print "    dq.py passed all tests sucessfully!"
@@ -1472,11 +1470,7 @@ if opts.idq:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'ifos' : 'H L',
-        'email' : 'a',
-        }
+    options = dict(config.items('idq start'))
 
     item = idq.IDQStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1484,20 +1478,16 @@ if opts.idq:
     assert( item.complete == False )
     assert( len(item.tasks) == 2 ) ### there are 2 ifos
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
-    assert( item.ifos == ['H', 'L'] )
+    assert( item.expiration == t0+float(options['dt']) )
+    assert( item.ifos == options['ifos'].split() )
 
     ###   idqStartCheck
-    tasks = dict( (task.ifo, task) for task in item.tasks )
-    H = tasks['H']
-    L = tasks['L']
-
-    assert( H.expiration == t0+10.0 )
-    assert( H.email == ['a'] )
+    for task in item.tasks:
+        assert( task.expiration == t0++float(options['dt']) )
+        assert( task.emailOnSuccess == options['email on success'].split() )
+        assert( task.emailOnFailure == options['email on failure'].split() )
+        assert( task.emailOnException == options['email on exception'].split() )
     
-    assert( L.expiration == t0+10.0 )
-    assert( L.email == ['a'] )
-
     print "        WARNING: idqStartCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -1505,40 +1495,25 @@ if opts.idq:
     #--------------------
     print "    IDQItem"
 
+    ifo = 'H1'
+
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
-        'description' : 'blah blah blah H1',
+        'description' : 'blah blah blah %s'%ifo,
         }
     t0 = time.time()
-    options = {
-        'classifiers' : 'ovl B',
-        'tables dt' : '5.0',
-        'glitch fap dt' : '10.0',
-        'fap frame dt' : '20.0',
-        'rank frame dt' : '30.0',
-        'timeseries plot dt' : '40.0',
-        'active chan dt' : '50.0',
-        'active chan plot dt' : '60.0',
-        'calib dt' : '70.0',
-        'calib plot dt' : '80.0',
-        'roc dt' : '90.0',
-        'roc plot dt' : '100.0',
-        'calib stats dt' : '110.0',
-        'train stats dt' : '120.0',
-        'finish dt' : '130.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('idq'))
 
     item = idq.IDQItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 13*2+1 ) ### (13 checks per classifier and 2 classifiers) + (1 finish check)
+    assert( len(item.tasks) == 14*len(options['classifiers'].split())+1 ) ### (13 checks per classifier and 2 classifiers) + (1 finish check)
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+5.0 )
-    assert( item.ifo == 'H1' )
-    assert( item.classifiers == ['ovl', 'B'] )
+    assert( item.expiration == t0+min([float(options[key]) for key in options.keys() if "dt" in key]) )
+    assert( item.ifo == ifo ) ### set by alert!
+    assert( item.classifiers == options['classifiers'].split() )
 
     ### check tasks
     for classifier in item.classifiers:
@@ -1546,6 +1521,7 @@ if opts.idq:
 
         tables = tasks['idqTables']
         glchFAP = tasks['idqGlitchFAP']
+        rank = tasks['idqRank']
         fapFram = tasks['idqFAPFrame']
         rnkFram = tasks['idqRankFrame']
         timesrs = tasks['idqTimeseriesPlot']
@@ -1559,87 +1535,123 @@ if opts.idq:
         trainStats = tasks['idqTrainStats']
 
         ###   idqTablesCheck
-        assert( tables.expiration == t0+5.0 )
-        assert( tables.email == ['a'] )
-        assert( tables.ifo == 'H1' )
+        assert( tables.expiration == t0++float(options['tables dt']) )
+        assert( tables.emailOnSuccess == options['email on success'].split() )
+        assert( tables.emailOnFailure == options['email on failure'].split() )
+        assert( tables.emailOnException == options['email on exception'].split() )
+        assert( tables.ifo == ifo )
         print "        WARNING: idqTablesCheck Task.execute() not implemented and not tested"
 
         ###   idqGltichFAPCheck
-        assert( glchFAP.expiration == t0+10.0 )
-        assert( glchFAP.email == ['a'] )
-        assert( glchFAP.ifo == 'H1' )
+        assert( glchFAP.expiration == t0++float(options['glitch fap dt']) )
+        assert( glchFAP.emailOnSuccess == options['email on success'].split() )
+        assert( glchFAP.emailOnFailure == options['email on failure'].split() )
+        assert( glchFAP.emailOnException == options['email on exception'].split() )
+        assert( glchFAP.ifo == ifo )
+        print "        WARNING: idqGlitchFAPCheck Task.execute() not implemented and not tested"
+
+        ###   idqRankCheck
+        assert( rank.expiration == t0++float(options['glitch fap dt']) )
+        assert( rank.emailOnSuccess == options['email on success'].split() )
+        assert( rank.emailOnFailure == options['email on failure'].split() )
+        assert( rank.emailOnException == options['email on exception'].split() )
+        assert( rank.ifo == ifo )
         print "        WARNING: idqGlitchFAPCheck Task.execute() not implemented and not tested"
 
         ###   idqFAPFrameCheck
-        assert( fapFram.expiration == t0+20.0 )
-        assert( fapFram.email == ['a'] )
-        assert( fapFram.ifo == 'H1' )
+        assert( fapFram.expiration == t0++float(options['fap frame dt']) )
+        assert( fapFram.emailOnSuccess == options['email on success'].split() )
+        assert( fapFram.emailOnFailure == options['email on failure'].split() )
+        assert( fapFram.emailOnException == options['email on exception'].split() )
+        assert( fapFram.ifo == ifo )
         print "        WARNING: idqFAPFrameCheck Task.execute() not implemented and not tested"
  
         ###   idqRankFrameCheck
-        assert( rnkFram.expiration == t0+30.0 )
-        assert( rnkFram.email == ['a'] )
-        assert( rnkFram.ifo == 'H1' )
+        assert( rnkFram.expiration == t0++float(options['rank frame dt']) )
+        assert( rnkFram.emailOnSuccess == options['email on success'].split() )
+        assert( rnkFram.emailOnFailure == options['email on failure'].split() )
+        assert( rnkFram.emailOnException == options['email on exception'].split() )
+        assert( rnkFram.ifo == ifo )
         print "        WARNING: idqRankFrameCheck Task.execute() not implemented and not tested"
 
         ###   idqTimeseriesPlotCheck
-        assert( timesrs.expiration == t0+40.0 )
-        assert( timesrs.email == ['a'] )
-        assert( timesrs.ifo == 'H1' )
+        assert( timesrs.expiration == t0++float(options['timeseries plot dt']) )
+        assert( timesrs.emailOnSuccess == options['email on success'].split() )
+        assert( timesrs.emailOnFailure == options['email on failure'].split() )
+        assert( timesrs.emailOnException == options['email on exception'].split() )
+        assert( timesrs.ifo == ifo )
         print "        WARNING: idqTimeseriesPlotCheck Task.execute() not implemented and not tested"
 
         ###   idqActiveChanCheck
-        assert( actvChn.expiration == t0+50.0 )
-        assert( actvChn.email == ['a'] )
-        assert( actvChn.ifo == 'H1' )
+        assert( actvChn.expiration == t0++float(options['active chan dt']) )
+        assert( actvChn.emailOnSuccess == options['email on success'].split() )
+        assert( actvChn.emailOnFailure == options['email on failure'].split() )
+        assert( actvChn.emailOnException == options['email on exception'].split() )
+        assert( actvChn.ifo == ifo )
         print "        WARNING: idqActiveChanCheck Task.execute() not implemented and not tested"
 
         ###   idqActiveChanPlotCheck
-        assert( actvChnPlt.expiration == t0+60.0 )
-        assert( actvChnPlt.email == ['a'] )
-        assert( actvChnPlt.ifo == 'H1' )
+        assert( actvChnPlt.expiration == t0++float(options['active chan plot dt']) )
+        assert( actvChnPlt.emailOnSuccess == options['email on success'].split() )
+        assert( actvChnPlt.emailOnFailure == options['email on failure'].split() )
+        assert( actvChnPlt.emailOnException == options['email on exception'].split() )
+        assert( actvChnPlt.ifo == ifo )
         print "        WARNING: idqActiveChanPlotCheck Task.execute() not implemented and not tested"
 
         ###   idqCalibrationCheck
-        assert( calibration.expiration == t0+70.0 )
-        assert( calibration.email == ['a'] )
-        assert( calibration.ifo == 'H1' )
+        assert( calibration.expiration == t0++float(options['calib dt']) )
+        assert( calibration.emailOnSuccess == options['email on success'].split() )
+        assert( calibration.emailOnFailure == options['email on failure'].split() )
+        assert( calibration.emailOnException == options['email on exception'].split() )
+        assert( calibration.ifo == ifo )
         print "        WARNING: idqCalibrationCheck Task.execute() not implemented and not tested"
 
         ###   idqCalibrationPlotCheck
-        assert( calibrationPlt.expiration == t0+80.0 )
-        assert( calibrationPlt.email == ['a'] )
-        assert( calibrationPlt.ifo == 'H1' )
+        assert( calibrationPlt.expiration == t0++float(options['calib plot dt']) )
+        assert( calibrationPlt.emailOnSuccess == options['email on success'].split() )
+        assert( calibrationPlt.emailOnFailure == options['email on failure'].split() )
+        assert( calibrationPlt.emailOnException == options['email on exception'].split() )
+        assert( calibrationPlt.ifo == ifo )
         print "        WARNING: idqCalibrationPlotCheck Task.execute() not implemented and not tested"
 
         ###   idqROCCheck
-        assert( roc.expiration == t0+90.0 )
-        assert( roc.email == ['a'] )
-        assert( roc.ifo == 'H1' )
+        assert( roc.expiration == t0++float(options['roc dt']) )
+        assert( roc.emailOnSuccess == options['email on success'].split() )
+        assert( roc.emailOnFailure == options['email on failure'].split() )
+        assert( roc.emailOnException == options['email on exception'].split() )
+        assert( roc.ifo == ifo )
         print "        WARNING: idqROCCheck Task.execute() not implemented and not tested"
 
         ###   idqROCPlotCheck
-        assert( rocPlt.expiration == t0+100.0 )
-        assert( rocPlt.email == ['a'] )
-        assert( rocPlt.ifo == 'H1' )
+        assert( rocPlt.expiration == t0++float(options['roc plot dt']) )
+        assert( rocPlt.emailOnSuccess == options['email on success'].split() )
+        assert( rocPlt.emailOnFailure == options['email on failure'].split() )
+        assert( rocPlt.emailOnException == options['email on exception'].split() )
+        assert( rocPlt.ifo == ifo )
         print "        WARNING: idqROCPlotCheck Task.execute() not implemented and not tested"
 
         ###   idqCalibStatsCheck
-        assert( calibStats.expiration == t0+110.0 )
-        assert( calibStats.email == ['a'] )
-        assert( calibStats.ifo == 'H1' )
+        assert( calibStats.expiration == t0++float(options['calib stats dt']) )
+        assert( calibStats.emailOnSuccess == options['email on success'].split() )
+        assert( calibStats.emailOnFailure == options['email on failure'].split() )
+        assert( calibStats.emailOnException == options['email on exception'].split() )
+        assert( calibStats.ifo == ifo )
         print "        WARNING: idqCalibStatsCheck Task.execute() not implemented and not tested"
 
         ###   idqTrainStatsCheck
-        assert( trainStats.expiration == t0+120.0 )
-        assert( trainStats.email == ['a'] )
-        assert( trainStats.ifo == 'H1' )
+        assert( trainStats.expiration == t0++float(options['train stats dt']) )
+        assert( trainStats.emailOnSuccess == options['email on success'].split() )
+        assert( trainStats.emailOnFailure == options['email on failure'].split() )
+        assert( trainStats.emailOnException == options['email on exception'].split() )
+        assert( trainStats.ifo == ifo )
         print "        WARNING: idqTrainStatsCheck Task.execute() not implemented and not tested"
 
     task = [task for task in item.tasks if task.name=='idqFinish'][0]
-    assert( task.expiration == t0+130.0 )
-    assert( task.email == ['a'] )
-    assert( task.ifo == 'H1' )
+    assert( task.expiration == t0+float(options['finish dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
+    assert( task.ifo == ifo )
 
     print "    idq.py passed all tests sucessfully!"
 
@@ -1653,18 +1665,13 @@ if opts.omegaScan:
     #--------------------
     print "    L1OmegaScanStartItem"
 
-    chansets = 'l1_llhoft l1_r-reduced l1_r-standard'.split()
-
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'chansets' : ' '.join(chansets ),
-        'email' : 'a',
-        }
+    options = dict(config.items('l1 omega scan start'))
+    chansets = options['chansets'].split()
 
     item = omegaScan.L1OmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1672,15 +1679,17 @@ if opts.omegaScan:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
     assert( item.chansets == chansets )
 
     ###   omegaScanStartCheck
     task = item.tasks[0] ### only one task
 
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
-    assert( task.chansets == options['chansets'].split() )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
+    assert( task.chansets == chansets )
     print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -1694,11 +1703,7 @@ if opts.omegaScan:
         'object' : {'comment':'automatic OmegaScans begun for: %s. WARNING: we will not track the individual OmegaScan processes to ensure completion'%(', '.join(chansets))},
         }
     t0 = time.time()
-    options = {
-        'data dt'   : '10.0',
-        'finish dt' : '20.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('l1 omega scan'))
 
     item = omegaScan.L1OmegaScanItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1706,7 +1711,7 @@ if opts.omegaScan:
     assert( item.complete == False )
     assert( len(item.tasks) == len(chansets)+1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['data dt']), float(options['finish dt'])) )
     assert( item.chansets == chansets )
 
     alert = {
@@ -1727,14 +1732,18 @@ if opts.omegaScan:
 
     ###   omegaScanDataCheck
     for chanset, task in zip(chansets, dataTasks):
-        assert( task.expiration == t0+10.0 )
-        assert( task.email == ['a'] )
+        assert( task.expiration == t0+float(options['data dt']) )
+        assert( task.emailOnSuccess == options['email on success'].split() )
+        assert( task.emailOnFailure == options['email on failure'].split() )
+        assert( task.emailOnException == options['email on exception'].split() )
         assert( task.chanset == chanset )
     print "        WARNING: omegaScanDataCheck Task.execute() not implemented and not tested"
 
     ###   omegaScanFinishCheck
-    assert( finishTask.expiration == t0+20.0 )
-    assert( finishTask.email == ['a'] )
+    assert( finishTask.expiration == t0+float(options['finish dt']) )
+    assert( finishTask.emailOnSuccess == options['email on success'].split() )
+    assert( finishTask.emailOnFailure == options['email on failure'].split() )
+    assert( finishTask.emailOnException == options['email on exception'].split() )
     assert( finishTask.chansets == chansets )
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
 
@@ -1743,18 +1752,13 @@ if opts.omegaScan:
     #--------------------
     print "    H1OmegaScanStartItem"
 
-    chansets = 'h1_llhoft h1_r-selected'.split()
-
     graceid = 'FakeEvent'
     alert = {
         'uid' : graceid,
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'chansets' : ' '.join(chansets),
-        'email' : 'a',
-        }
+    options = dict(config.items('h1 omega scan start'))
+    chansets = options['chansets'].split()
 
     item = omegaScan.H1OmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1762,14 +1766,16 @@ if opts.omegaScan:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 ) ### 2 ifos
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
     assert( item.chansets == chansets )
 
     ###   omegaScanStartCheck
     task = item.tasks[0]
 
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     assert( task.chansets == chansets )
 
     print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
@@ -1785,11 +1791,7 @@ if opts.omegaScan:
         'object': {'comment':'automatic OmegaScans begun for: %s. WARNING: we will not track the individual OmegaScan processes to ensure completion'%(', '.join(chansets))},
         }
     t0 = time.time()
-    options = {
-        'data dt'   : '10.0',
-        'finish dt' : '20.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('h1 omega scan'))
 
     item = omegaScan.H1OmegaScanItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1797,7 +1799,7 @@ if opts.omegaScan:
     assert( item.complete == False )
     assert( len(item.tasks) == len(chansets)+1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['data dt']), float(options['finish dt'])) )
     assert( item.chansets == chansets )
 
     ### check tasks
@@ -1810,14 +1812,18 @@ if opts.omegaScan:
 
     ###   omegaScanDataCheck
     for chanset, task in zip(chansets, dataTasks):
-        assert( task.expiration == t0+10.0 )
-        assert( task.email == ['a'] )
+        assert( task.expiration == t0+float(options['data dt']) )
+        assert( task.emailOnSuccess == options['email on success'].split() )
+        assert( task.emailOnFailure == options['email on failure'].split() )
+        assert( task.emailOnException == options['email on exception'].split() )
         assert( task.chanset == chanset )
     print "        WARNING: omegaScanDataCheck Task.execute() not implemented and not tested"
 
     ###   omegaScanFinishCheck
-    assert( finishTask.expiration == t0+20.0 )
-    assert( finishTask.email == ['a'] )
+    assert( finishTask.expiration == t0+float(options['finish dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     assert( finishTask.chansets ==chansets )
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
 
@@ -1916,10 +1922,7 @@ if opts.segDB2grcDB:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'dt'   : '10.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('segdb2grcdb start'))
 
     item = segDB2grcDB.SegDB2GrcDBStartItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1927,12 +1930,14 @@ if opts.segDB2grcDB:
     assert( item.complete == False )
     assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+float(options['dt']) )
 
     ###   segDB2grcDBStartCheck
     task = item.tasks[0]
-    assert( task.expiration == t0+10.0 )
-    assert( task.email == ['a'] )
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
     print "        WARNING: segDB2grcDBStartCheck Task.execute() not implemented and not tested"
 
     #--------------------
@@ -1945,15 +1950,7 @@ if opts.segDB2grcDB:
         'uid' : graceid
         }
     t0 = time.time()
-    options = {
-        'flags dt'   : '10.0',
-        'flags' : 'H1:DMT-ANALYSIS_READY:1 L1:DMT-ANALYSIS_READY:1',
-        'veto def dt'   : '20.0',
-        'veto defs' : '', ### not implemented...
-        'any dt'   : '30.0',
-        'finish dt' : '40.0',
-        'email' : 'a',
-        }
+    options = dict(config.items('segdb2grcdb'))
 
     item = segDB2grcDB.SegDB2GrcDBItem( alert, t0, options, gdb, annotate=annotate )
     assert( item.graceid == graceid )
@@ -1961,36 +1958,44 @@ if opts.segDB2grcDB:
     assert( item.complete == False )
     assert( len(item.tasks) == 4 ) ### no veto defs ...
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+10.0 )
+    assert( item.expiration == t0+min(float(options['flags dt']), float(options['veto def dt']), float(options['any dt']), float(options['finish dt'])) )
 
     ###   segDB2grcDBFlagsCheck
     for flag, task in zip(options['flags'].split(), [task for task in item.tasks if task.name=='segDb2grcDBFlag']):
-        assert( task.expiration == t0+10.0 )
-        assert( task.email == ['a'] )
+        assert( task.expiration == t0+float(options['flags dt']) )
+        assert( task.emailOnSuccess == options['email on success'].split() )
+        assert( task.emailOnFailure == options['email on failure'].split() )
+        assert( task.emailOnException == options['email on exception'].split() )
         assert( task.flag == flag )
     print "        WARNING: segDB2grcDBFlagsCheck Task.execute() not implemented and not tested"
 
     ###   segDB2grcDBVetoDefCheck
     for vetoDef, task in zip(options['veto defs'].split(), [task for task in item.tasks if task.name=='segDb2grcDBVetoDef']):
-        assert( vetoDef.expiration == t0+20.0 )
-        assert( vetoDef.email == ['a'] )
-        assert( vetoDef.vetoDefs == vetoDef )
+        assert( task.expiration == t0+float(options['veto def dt']) )
+        assert( task.emailOnSuccess == options['email on success'].split() )
+        assert( task.emailOnFailure == options['email on failure'].split() )
+        assert( task.emailOnException == options['email on exception'].split() )
+        assert( task.vetoDefs == vetoDef )
     print "        WARNING: segDB2grcDBVetoDefCheck Task.execute() not implemented and not tested"
 
     ###   segDB2grcDBAnyCheck
     anyseg = [task for task in item.tasks if task.name=='segDB2grcDBAny']
     assert( len(anyseg) == 1 )
     anySeg = anyseg[0]
-    assert( anySeg.expiration == t0+30.0 )
-    assert( anySeg.email == ['a'] )
+    assert( anySeg.expiration == t0+float(options['any dt']) )
+    assert( anySeg.emailOnSuccess == options['email on success'].split() )
+    assert( anySeg.emailOnFailure == options['email on failure'].split() )
+    assert( anySeg.emailOnException == options['email on exception'].split() )
     print "        WARNING: segDB2grcDBAnyFinishCheck Task.execute() not implemented and not tested"
 
     ###   segDB2grcDBFinishCheck
     finish = [task for task in item.tasks if task.name=='segDB2grcDBFinish']
     assert( len(finish) == 1 )
     finish = finish[0]
-    assert( finish.expiration == t0+40.0 )
-    assert( finish.email == ['a'] )
+    assert( finish.expiration == t0+float(options['finish dt']) )
+    assert( finish.emailOnSuccess == options['email on success'].split() )
+    assert( finish.emailOnFailure == options['email on failure'].split() )
+    assert( finish.emailOnException == options['email on exception'].split() )
     print "        WARNING: segDB2grcDBFinishCheck Task.execute() not implemented and not tested"
 
     print "    segDB2grcDB.py passed all tests sucessfully!"
