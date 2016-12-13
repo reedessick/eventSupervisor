@@ -32,6 +32,8 @@ from eventSupervisor.dq import segDB2grcDB
 
 import time
 
+from ligo.gracedb.rest import GraceDb
+
 from ConfigParser import SafeConfigParser
 
 from optparse import OptionParser
@@ -95,10 +97,7 @@ opts.omegaScan         = opts.omegaScan         or opts.everything
 opts.segDB2grcDB       = opts.segDB2grcDB       or opts.everything
 
 ### set up standard options for QueueItems
-#from ligo.gracedb.rest import GraceDb
-#gdb = GraceDb( opts.gracedb_url )
-gdb = None
-
+gdb = GraceDb()
 annotate = False
 
 #-------------------------------------------------
@@ -898,9 +897,6 @@ if opts.skymapSummary:
     print "    MultFITSStartItem"
 
     graceid = 'G263969' ### extracted this by hand from GraceDb -> FRAGILE!
-
-    from ligo.gracedb.rest import GraceDb
-    gdb = GraceDb()
     filenames = [fits for fits in gdb.files( graceid ).json().keys() if fits.endswith('.fits') or fits.endswith('.fits.gz')]
 
     alert = {
