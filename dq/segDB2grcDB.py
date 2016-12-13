@@ -237,16 +237,17 @@ class segDB2grcDBFlagCheck(esUtils.EventSupervisorTask):
 
         flagname = self.flag.split(":")
         flagname = "%s-%s-(.*)-(.*).xml.gz"%(flagname[0], "_".join(_.replace("-","_") for _ in flagname[1:]))
-        self.warning, action_required = esUtils.check4file( graceid,
-                                                            gdb,
-                                                            flagname,
-                                                            regex=True,
-                                                            tagnames=None,
-                                                            verbose=verbose,
-                                                            logFragment=None,
-                                                            logRegex=False,
-                                                            logTag=logger.name if verbose else None,
-                                                          )
+        self.warning, action_required = esUtils.check4file( 
+                                            graceid,
+                                            gdb,
+                                            flagname,
+                                            regex=True,
+                                            tagnames=None,
+                                            verbose=verbose,
+                                            logFragment=None,
+                                            logRegex=False,
+                                            logTag=logger.name if verbose else None,
+                                        )
         if verbose or annotate:
             ### format message
             if action_required:
@@ -308,16 +309,17 @@ class segDB2grcDBAnyCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
 
         jsonname = "allActive-(.*)-(.*).json"
-        self.warning, action_required = esUtils.check4file( graceid,
-                                                            gdb,
-                                                            jsonname,
-                                                            regex=True,
-                                                            tagnames=None,
-                                                            verbose=verbose,
-                                                            logFragment=None,
-                                                            logRegex=False,
-                                                            logTag=logger.name if verbose else None,
-                                                          )
+        self.warning, action_required = esUtils.check4file( 
+                                            graceid,
+                                            gdb,
+                                            jsonname,
+                                            regex=True,
+                                            tagnames=None,
+                                            verbose=verbose,
+                                            logFragment=None,
+                                            logRegex=False,
+                                            logTag=logger.name if verbose else None,
+                                        )
         if verbose or annotate:
             ### format message
             if action_required:

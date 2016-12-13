@@ -180,7 +180,7 @@ class cWBPECEDCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( self.warning )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -205,7 +205,7 @@ class cWBPEEstimateCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False

@@ -116,7 +116,7 @@ class snglFITSStartCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -125,7 +125,7 @@ class snglFITSStartCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -287,7 +287,7 @@ class snglFITSFinishCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
@@ -296,7 +296,7 @@ class snglFITSFinishCheck(esUtils.EventSupervisorTask):
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -323,7 +323,7 @@ class MultFITSStartItem(esUtils.EventSupervisorQueueItem):
         graceid = alert['uid']
 
         ### query GraceDb to get all fits files for this event
-        self.fitsnames = [fits for fits in gdb.files( graceid ).json().keys() if fits.endswith('.fits') or fits.endswith('.fits.gz')] ### FIXME: subject to a race condition (another FITS is added between this query and when alert2html.py was launched
+        self.fitsnames = sorted([fits for fits in gdb.files( graceid ).json().keys() if fits.endswith('.fits') or fits.endswith('.fits.gz')]) ### FIXME: subject to a race condition (another FITS is added between this query and when alert2html.py was launched
 
 #        self.tagnames = alert['object']['tag_names'] ### these are the tags of the snglFITS finish message, not the fits file
         self.tagnames = [] ### FIXME: ignore these for now
@@ -394,16 +394,16 @@ class multFITSStartCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-        self.warning = "could not find multFITS start message for %s"%(", ".join(self.fitsname))
+        self.warning = "could not find multFITS start message for %s"%(", ".join(self.fitsnames))
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
@@ -434,6 +434,7 @@ class MultFITSItem(esUtils.EventSupervisorQueueItem):
         for fragment in alert['description'].split(','):
             self.fitsnames.append( expr.match( fragment ).group().split('>')[-1] ) ### NOTE: may be fragile!
 
+        self.fitsnames.sort() ### ensure these are sorted
 #        self.tagnames = alert['object']['tag_names'] ### these are the tags of the multFITS start message, not the FITS files
         self.tagnames = [] ### FIXME: ignore tags for now
 
@@ -569,16 +570,16 @@ class multFITSFinishCheck(esUtils.EventSupervisorTask):
             if verbose or annotate:
                 message = "no action required : "+self.warning
                 if verbose:
-                    logger.debug( "    "+message )
+                    logger.debug( message )
                 if annotate:
                     esUtils.writeGDBLog( gdb, graceid, message )
             return False ### action_required = False
 
-        self.warning = "could not find multFITS finish message for %s"%(", ".join(self.fitsname))
+        self.warning = "could not find multFITS finish message for %s"%(", ".join(self.fitsnames))
         if verbose or annotate:
             message = "action required : "+self.warning
             if verbose:
-                logger.debug( "    "+message )
+                logger.debug( message )
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
