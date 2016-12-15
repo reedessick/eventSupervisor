@@ -192,8 +192,8 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
         for name in new: ### iterate through names that neeed to be added
             if config.has_section( name ):
                 ### check if there's a FAR threshold
-                ###    we don't have a far Threshold        or        the event has a FAR           the threshold is above the event's value
-                if (not config.has_option(name, 'far thr')) or ((far!=None) and (config.getfloat(name, 'far thr') >= far)):
+                ###    we don't have a far Threshold or the event doesn't have a FAR or the threshold is above the event's value
+                if (not config.has_option(name, 'far thr')) or (far==None) or (config.getfloat(name, 'far thr') >= far):
                     items.append(qid[name]( 
                                      alert, 
                                      t0, 
@@ -205,6 +205,10 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
                                      logTag=logTag, 
                                  ) 
                     )
+                else: ### skip becuase FAR was too high
+                    logger.debug( 'skipping QueueItem=%s (large FAR %.3e > %.3e)'%(name, far, config.getfloat(name, 'far thr')) )
+            else:
+                logger.debug( 'skipping QueueItem=%s (no section in config)'%name )
         completed = 0
 
     else: ### need to parse this further
@@ -261,6 +265,8 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
                                          logTag=logTag, 
                                      ) 
                         )
+                    else:
+                        logger.debug( 'skipped QueueItem=%s (no section in config)'%name )
 
             ### FIXME: determine which QueueItems/Tasks need to be marked complete based on this update
             ###  >>>>>>>>>>>>>>>>>> HOW DO WE DO THIS CLEANLY? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
