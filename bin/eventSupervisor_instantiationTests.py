@@ -1042,7 +1042,7 @@ if opts.bayestar:
     assert( skymap.emailOnSuccess == options['email on success'].split() )
     assert( skymap.emailOnFailure == options['email on failure'].split() )
     assert( skymap.emailOnException == options['email on exception'].split() )
-    assert( skymap.tagnames == options['skymap tagnames'].split() )
+    assert( skymap.tagnames == (options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None) )
     print "        WARNING: bayestarSkymapCheck Task.execute() not implemented and not tested"
 
     ###   bayestarFinishItem
@@ -1177,7 +1177,7 @@ if opts.bayeswavePE:
     assert( skymap.emailOnSuccess == options['email on success'].split() )
     assert( skymap.emailOnFailure == options['email on failure'].split() )
     assert( skymap.emailOnException == options['email on exception'].split() )
-    assert( skymap.tagnames == ['sky_loc'] )
+    assert( skymap.tagnames == (options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None) )
     print "        WARNING: bayeswavePESkymapCheck Task.execute() not implemented and not tested"
 
     print "    bayeswavePE.py passed all tests sucessfully!"
@@ -1234,7 +1234,7 @@ if opts.cwbPE:
     assert( sky.emailOnSuccess == options['email on success'].split() )
     assert( sky.emailOnFailure == options['email on failure'].split() )
     assert( sky.emailOnException == options['email on exception'].split() )
-    assert( sky.tagnames == ['sky_loc', 'lvem'] )
+    assert( sky.tagnames == (options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None) )
     print "        WARNING: cWBPESkymapCheck Task.execute() not implemented and not tested"
 
     print "    cwbPE.py passed all tests sucessfully!"
@@ -1318,7 +1318,7 @@ if opts.libPE:
     assert( skymap.emailOnSuccess == options['email on success'].split() )
     assert( skymap.emailOnFailure == options['email on failure'].split() )
     assert( skymap.emailOnException == options['email on exception'].split() )
-    assert( skymap.tagnames == ['sky_loc', 'lvem'] )
+    assert( skymap.tagnames == (options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None) )
     print "        WARNING: libPESkymapCheck Task.execute() not implemented and not tested"
 
     ###   libPEFinishCheck
@@ -1403,7 +1403,7 @@ if opts.lalinf:
     assert( skymap.emailOnSuccess == options['email on success'].split() )
     assert( skymap.emailOnFailure == options['email on failure'].split() )
     assert( skymap.emailOnException == options['email on exception'].split() )
-    assert( skymap.tagnames == ['sky_loc', 'lvem'] )
+    assert( skymap.tagnames == (options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None) )
     print "        WARNING: lalinfSkymapCheck Task.execute() not implemented and not tested"
 
     ###   lalinfFinishCheck

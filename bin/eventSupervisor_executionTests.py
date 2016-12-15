@@ -43,7 +43,7 @@ def execute( item, cadence=0.1, verbose=False, Verbose=False ):
 
 parser = OptionParser(usage=usage, description=description)
 
-parser.add_option('-G', '--gracedb_url', default='https://gracedb-test.ligo.org/api/', type='string', help='default=https://gracedb-test.ligo.org/api/')
+parser.add_option('-G', '--gracedb_url', default='https://gracedb.ligo.org/api/', type='string', help='default=https://gracedb-test.ligo.org/api/')
 
 ### how the results are reported
 parser.add_option('-w', '--warnings', default=False, action='store_true', help='send email alerts')
