@@ -219,6 +219,17 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
     description = "check psd.xml.gz file for CBC events"
     name        = "cbcPSD"
 
+    def __init__(self, timeout, psdStrLenThr=100, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='.'):
+        self.psdStrLenThr = psdStrLenThr
+        super(cbcPSDCheck, self).__init__(
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
+
     def cbcPSD(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check for psd.xml.gz file
@@ -229,6 +240,12 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
 
         filename = "psd.xml.gz"
         self.warning, action_required = esUtils.check4file( graceid, gdb, filename, tagnames=None, verbose=verbose, logTag=logger.name if verbose else None )
+
+        #     found the file                      check it's length
+        if (not action_required) and (len(gdb.files(graceid, filename).read()) < self.psdStrLenThr): ### found file, but need to check whether it's empty
+            self.warning += ". However, the file's size seems suspiciously small."
+            action_required = True
+
         if verbose or annotate:
             ### format message
             if action_required:
@@ -242,6 +259,7 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
 
+            
         return action_required
 
 #-------------------------------------------------
