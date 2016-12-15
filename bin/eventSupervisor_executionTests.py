@@ -345,25 +345,25 @@ if opts.omegaScan:
 if opts.skymaps:
 
     ### set up inputs
-    fitsname = [fitsname for fitsname in gdb.files( graceid ).json().keys() if fitsname.endswith('.fits') or fitsname.endswith('.fits.gz')][0]
-    alert = {
+    for fitsname in [fitsname for fitsname in gdb.files( graceid ).json().keys() if fitsname.endswith('.fits') or fitsname.endswith('.fits.gz')]:
+        alert = {
              'alert_type' : 'update',
              'uid'        : graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
              'file'       : fitsname,
              'object'     : {'tag_names' : ['sky_loc']}
-            }
+        }
 
-    #------- SkymapSanity
-    name = 'skymap sanity'
-    tests.append( (name, alert) )
+        #------- SkymapSanity
+        name = 'skymap sanity'
+        tests.append( (name, alert) )
 
-    #------- PlotSkymap
-    name = 'plot skymap'
-    tests.append( (name, alert) )
+        #------- PlotSkymap
+        name = 'plot skymap'
+        tests.append( (name, alert) )
 
-    #------- Skyviewer
-    name = 'skyviewer'
-    tests.append( (name, alert) )
+        #------- Skyviewer
+        name = 'skyviewer'
+        tests.append( (name, alert) )
 
 #------------------------
 
