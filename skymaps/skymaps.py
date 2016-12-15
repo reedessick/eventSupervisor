@@ -369,7 +369,7 @@ class skyviewerCheck(esUtils.EventSupervisorTask):
             logger.info( "%s : %s"%(graceid, self.description) )
             logger.debug( "retrieving files")
 
-        jsonname = "%s.json"%(self.fitsname.strip(".gz").strip(".fits")) ### NOTE: this may be fragile
+        jsonname = "%s.json"%self.fitsname[:-8] if self.fitsname.endswith('.fits.gz') else "%s.json"%self.fitsname[:-5]
         self.warning, action_required = esUtils.check4file( graceid, gdb, jsonname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
 
         if verbose or annotate:
