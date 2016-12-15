@@ -119,9 +119,7 @@ class LIBPEItem(esUtils.EventSupervisorQueueItem):
         postsamp_dt = float(options['post samp dt'])
         bayesFct_dt = float(options['bayes factor dt'])
         skymap_dt = float(options['skymap dt'])
-        skymap_tagnames = options['skymap tagnames']
-        if skymap_tagnames !=None:
-            skymap_tagnames = skymap_tagnames.split()
+        skymap_tagnames = options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None
         finish_dt = float(options['finish dt'])
 
         emailOnSuccess = options['email on success'].split()

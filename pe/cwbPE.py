@@ -96,9 +96,7 @@ class CWBPEItem(esUtils.EventSupervisorQueueItem):
         ced_dt = float(options['ced dt'])
         estimate_dt = float(options['estimate dt'])
         skymap_dt = float(options['skymap dt'])
-        skymap_tagnames = options['skymap tagnames']
-        if skymap_tagnames !=None:
-            skymap_tagnames = skymap_tagnames.split()
+        skymap_tagnames = options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None
 
         emailOnSuccess = options['email on success'].split()
         emailOnFailure = options['email on failure'].split()
