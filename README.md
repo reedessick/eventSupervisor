@@ -1,5 +1,11 @@
 # eventSupervisor
 
+You can read the official documentation here
+
+  - http://eventsupervisor.readthedocs.io/en/latest/
+
+-------------------
+
 a holder for event_supervisor development based off the lvalertMP architecture. This should be run from O2 forward.
 
 we divide each basic type of follow-up process into a separate package. Within each of these packages, modules define extensions of the lvalertMPutils.QueueItem class and all the required methods to support them. These are then used within event_supervisor.parseAlert in response to lvalert messages and are managed dynamically through an instance of ligo.lvalert.interactiveQueue.interactiveQueue running via multiprocessing from lvalert_listenMP.
