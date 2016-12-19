@@ -10,7 +10,12 @@ We note that the help-strings of each *QueueItem* describe how the attributes ar
   - from a query to GraceDb.
 
 The help-strings of the *Tasks* briefly describe what is performed upon execution.
-**CHANGE HELP-STRINGS WITHIN THE CODE TO MAKE THIS TRUE**
+
+**CHANGE HELP-STRINGS WITHIN THE CODE TO MAKE THIS TRUE. 
+QueueItems should enumerate which Tasks they instantiate and when in addition to how they pull out attributes. 
+We should include which attributes are optional, etc. 
+Tasks need to have meaningful descriptions of what is actually carried out.
+Any helper methods should also have a meaningful helpstring describing how the action is performed instead of just what it does.**
 
 We do not enumerate the *name* attributes for the classes here, but as they serve mostly internal purposes that is seen as acceptable.
 What's more, we note that while the *QueueItems* and *Tasks* are defined in different modules, they are all treated equally.
