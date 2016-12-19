@@ -46,7 +46,7 @@ These extra attributes include
 It also ensures that all *Tasks* included in it are instances of *EventSupervisorTask*.
 The *QueueItem* automatically handles logging via the *logDir* and *logTag* attributes, which are used upon calls to *execute* to retrieve the appropriate logger.
 
-.. autoclass:: eventSupervisor.eventSupervisorUtils.EventSupervisorQueueItem
+.. autoclass:: eventSupervisorUtils.EventSupervisorQueueItem
 
 EventSupervisorTask
 ~~~~~~~~~~~~~~~~~~~
@@ -60,7 +60,7 @@ Delegation still occurs via *getattr(self, self.name)*, but upon execution *Even
 
 The Task also manages logging automatically upon calls to execute via *logDir* and *logTag* attributes. 
 
-.. autoclass:: eventSupervisor.eventSupervisorUtils.EventSupervisorTask
+.. autoclass:: eventSupervisorUtils.EventSupervisorTask
 
 Workflow within parseAlert
 --------------------------------------------------
