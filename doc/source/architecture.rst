@@ -27,8 +27,8 @@ Special Extensions unique to eventSupervisor
 **eventSupervisor** defines a extensions to the standard **lvalertMP** *QueueItem* and *Task* objects.
 These are called 
 
-* EventSupervisorQueueItem
-* EventSupervisorTask
+* :func:`eventSupervisor.eventSupervisorUtils.EventSupervisorQueueItem`
+* :func:`eventSupervisor.eventSupervisorUtils.EventSupervisorTask`
 
 EventSupervisorQueueItem
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,16 +37,16 @@ biggest thing is that it stores some attributes that are passed to *EventSupervi
 
 These extra attributes include
 
-  - graceid
-  - gdb (instance of ligo.gracedb.rest.GraceDb or equivalent)
-  - warnings
-  - annotate
-  - logDir
+  - *graceid*
+  - *gdb* (instance of :func:`ligo.gracedb.rest.GraceDb` or equivalent)
+  - *warnings*
+  - *annotate*
+  - *logDir*
 
 It also ensures that all *Tasks* included in it are instances of *EventSupervisorTask*.
 The *QueueItem* automatically handles logging via the *logDir* and *logTag* attributes, which are used upon calls to *execute* to retrieve the appropriate logger.
 
-.. autoclass:: eventSupervisorUtils.EventSupervisorQueueItem
+.. autoclass:: eventSupervisor.eventSupervisorUtils.EventSupervisorQueueItem
 
 EventSupervisorTask
 ~~~~~~~~~~~~~~~~~~~
@@ -54,13 +54,13 @@ EventSupervisorTask
 This is very similar to an *lvalertMP* *Task* except it provides special error handling and conditioning upon execution.
 Delegation still occurs via *getattr(self, self.name)*, but upon execution *EventSupervisorTask* can alert one of 3 lists of analysis
 
-  - emailOnSuccess
-  - emailOnFailure
-  - emailOnException
+  - *emailOnSuccess*
+  - *emailOnFailure*
+  - *emailOnException*
 
 The Task also manages logging automatically upon calls to execute via *logDir* and *logTag* attributes. 
 
-.. autoclass:: eventSupervisorUtils.EventSupervisorTask
+.. autoclass:: eventSupervisor.eventSupervisorUtils.EventSupervisorTask
 
 Workflow within parseAlert
 --------------------------------------------------
