@@ -14,20 +14,27 @@ Typically, the testing suite is called by hand when the developer is finished im
 eventSupervisor_instantiationTests.py
 --------------------------------------------------
 
-**WRITE ME**
+This script ensures that *QueueItems* and *Tasks* are instantiated correctly and that their attributes are set to the appropriate values.
+Several options allow the user to test different modules or broad classes of *QueueItems* such as ``--dq`` or ``--skymaps``.
 
+**WRITE ME**
 - basically copy the help string. Can we do this automatically?
 
 eventSupervisor_executionTests.py
 --------------------------------------------------
 
-**WRITE ME**
+This script ensures that *QueueItems* and *Tasks* actually perform their actions as expected. 
+It is the closest to a full-functionality test that is supported in these testing scripts. 
+Several options allow the user to test different modules or broad classes of *QueueItems* such as ``--dq`` or ``--skymaps``.
 
+**WRITE ME**
 - basically copy the help string. Can we do this automatically?
 
 eventSupervisor_assemblyTests.py
 --------------------------------------------------
 
-**WRITE ME**
+This script ensures that *QueueItems* are added to *queue* and *queueByGraceID* correctly by calling *parseAlert* with simulated input and a series of assertion statements on the output. 
+It provides several command line options corresponding to different possible types of *lvalert* announcements and therefore different actions.
 
+**WRITE ME**
 - basically copy the help string. Can we do this automatically?

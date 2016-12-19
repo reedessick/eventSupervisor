@@ -81,10 +81,4 @@ What's more, *QueueItems* are only actually created if the Config File has a sec
 *parseAlert* also supports basic thresholding on the False Alarm Rate (FAR) for *QueueItems* added when *alert_type=new*. 
 If the Config File has a *far thr* option under the associated section, the *QueueItem* will be added if the event has a FAR associated with it and that FAR is smaller than *far thr*. 
 
-*parseAlert* provides rather specific logging detailing each of these steps. For examples
-
-    *alert_type=new*
-        **WRITE ME: put in an example of what the log would say for new alerts**
-
-    *alert_type=update*
-        **WRITE ME: put in an example of what the log would say for update alerts**
+*parseAlert* provides rather specific logging detailing each of these steps.

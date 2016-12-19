@@ -60,20 +60,25 @@ Specifically, **eventSupervisor** can be run under **lvalertMP**.
 Connection to lvalertMP
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**WRITE ME!**
-Describe how this is structured via *SortedQueue*, *QueueItem*, and *Task* objects.
+**eventSupervisor** is run directly as a client library of **lvalertMP**. 
+This means that there is no specific executable associated with only **eventSupervisor**.
+Instead, *lvalert_listenMP* launched child processes that import the **eventSUpervisor** libraries.
+This means that **eventSupervisor** depends heavily on the general architecture established in **lvalertMP**.
+In particular, it uses the default logging supported within **lvalertMP** for all its logging and extends both the *QueueItem* and *Task* classes repeatedly as needed.
 
 Integration with Config File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**WRITE ME!**
-Focus on how important the *name* attribute is.
+**eventSupervisor** is also very closely integrated with its Config File.
+Each *QueueItem* is instantiated based on the options within the Config File. 
+These are automatically extracted by requiring the Config to have a section corresponding to the *QueueItem*'s *name* attribute.
+If a Config File does not have a corresponding section, that *QueueItem* is simply ignored.
+This allows us to minimize the number of special cases within *parseAlert*'s logic.
 
 Differences relative to O1
 --------------------------------------------------
 
-**WRITE ME**
-A single process that handles multiple events and processes multiple *lvalert* announcments instead of one process per event that only ingests information from *alert_type=new* announcements.
+**eventSupervisor** now consists of a single process that handles multiple events and processes multiple *lvalert* announcments instead of one process per event that only ingests information from *alert_type=new* announcements.
 Note, we could have used an architecture based on *lvalert_listen* to enable responses to *alert_type=update* annoncments as well.
 The main advantage of *lvalertMP* is that it allows us to ingest information from new alerts within the same process and therefore can reduce the number of queries made to GraceDb. 
 Again, this could have been done via *lvalert_listen*, but processes would likely have had to communicate through the filesystem.

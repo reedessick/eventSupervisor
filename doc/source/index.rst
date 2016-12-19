@@ -18,6 +18,7 @@ It is distributed as part of the Grinch library.
    assembly
    monitors
    logging
+   commands
    testing
    tutorial
    todo
