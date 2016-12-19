@@ -33,7 +33,7 @@ These are called
 EventSupervisorQueueItem
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-biggest thing is that it stores some attributes that are passed to *EventSupervisorTask* upon execution because *interactiveQueue* does not pass all these (it only passes a *verbose* kwarg).
+The biggest difference between *EventSupervisorQueueItem* and :func:`lvalertMP.lvalert.lvalertMPutils.QueueItem` is that it stores some attributes that are passed to *EventSupervisorTask* upon execution because *interactiveQueue* does not pass all these (it only passes a *verbose* kwarg).
 
 These extra attributes include
 
@@ -44,9 +44,8 @@ These extra attributes include
   - *logDir*
 
 It also ensures that all *Tasks* included in it are instances of *EventSupervisorTask*.
-The *QueueItem* automatically handles logging via the *logDir* and *logTag* attributes, which are used upon calls to *execute* to retrieve the appropriate logger.
-
-.. autoclass:: eventSupervisor.eventSupervisorUtils.EventSupervisorQueueItem
+The *QueueItem* automatically handles logging via the *logDir* and *logTag* attributes, which are used upon calls to *execute* to retrieve the appropriate logger. 
+For more detailed information, see :func:`eventSupervisor.eventSupervisorUtils.EventSupervisorQueueItem`.
 
 EventSupervisorTask
 ~~~~~~~~~~~~~~~~~~~
@@ -59,8 +58,7 @@ Delegation still occurs via *getattr(self, self.name)*, but upon execution *Even
   - *emailOnException*
 
 The Task also manages logging automatically upon calls to execute via *logDir* and *logTag* attributes. 
-
-.. autoclass:: eventSupervisor.eventSupervisorUtils.EventSupervisorTask
+For more detailed information, see :func:`eventSupervisor.eventSupervisorUtils.EventSupervisorTask`.
 
 Workflow within parseAlert
 --------------------------------------------------

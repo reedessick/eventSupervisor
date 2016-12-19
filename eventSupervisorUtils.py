@@ -21,7 +21,8 @@ def genItemLogger( directory, name, logTag='iQ', graceid=None ):
     """
     returns a logger set up for QueueItems
 
-    if a graceid is supplied, we also set up a FileHandler for that log specifically
+    if a graceid is supplied, we also set up a FileHandler for that log specifically.
+    directory is only used if we set up a FileHandler for the graceid. 
     """
     logger = logging.getLogger('%s.%s'%(logTag, name))
 
@@ -42,6 +43,7 @@ def genItemLogger( directory, name, logTag='iQ', graceid=None ):
 def genTaskLogger( directory, name, logTag='iQ' ):
     """
     returns a logger set up for Tasks
+    NOTE: directory is not used!
     """
     return logging.getLogger('%s.%s'%(logTag, name))
 
@@ -52,23 +54,23 @@ def genTaskLogger( directory, name, logTag='iQ' ):
 def writeGDBLog( gdb, graceid, message, tagnames=[] ):
     """
     writes a standard event_supervisor log message into gracedb
+    ensures the annotation is tagged "event_supervisor"
     """
     gdb.writeLog( graceid, message="ES: "+message, tagname=['event_supervisor']+tagnames )
 
 def emailWarning(subject, body, email):
     """
     issue an email to the addresses specified
-
-    delegates to lvalertMPutils.sendEmail
+    delegates to lvalertMPutils.sendEmail, which in turn delegates to the OS's mailx command
     """
     utils.sendEmail( email, body, subject )
 
 def gdb2url( gdb, graceid):
     """
-    generates a link to the gracedb page for graceid
+    generates a link to the gracedb page for graceid.
+    used when generationg email warnings about specific events.
     """
     return "%s/events/view/%s"%(gdb.service_url.strip('api/'), graceid)
-
 
 #---------------------------------------------------------------------------------------------------
 
@@ -76,7 +78,10 @@ def gdb2url( gdb, graceid):
 
 def isINJ( graceid, gdb, verbose=False, logTag='iQ' ):
     """
-    determines if the event is labeled as an injection
+    determines if the event is labeled as an injection.
+    Queries GraceDb for labels associated for this event and looks for an exact match for "INJ"
+
+    return True if labeled INJ else False
     """
     if verbose:
         logger = logging.getLogger('%s.isINJ'%logTag) ### inheritance of loggers controlled by kwarg
@@ -98,6 +103,8 @@ def isINJ( graceid, gdb, verbose=False, logTag='iQ' ):
 def filename2log( filename, logs, verbose=False, logTag='iQ' ):
     """
     finds the log associated with a given filename
+
+    return log or raise ValueError if no log is found
     """
     for log in logs[::-1]: ### iterate through logs in reverse so we get the most recent logs first
                            ### this means we will get the most recent version of files, if multiple exist
@@ -112,8 +119,12 @@ def filename2log( filename, logs, verbose=False, logTag='iQ' ):
 def check4log( graceid, gdb, fragment, tagnames=None, regex=False, verbose=False, logTag='iQ' ):
     """
     checks for the fragment in the logs for this graceid
+    Queries GraceDb for log messages.
 
-    return action_required
+    if tagnames!=None, we require tagnames to exactly match those of the log. 
+    if regex, we look for a regular expression match of the log comment with fragment instead of just "fragment in comment"
+
+    return False if found log else True
     """
     if verbose:
         logger = logging.getLogger('%s.check4log'%logTag)
@@ -150,8 +161,12 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
     """
     checks for the existence of a file and that it is tagged correctly
     if tagnames==None, we ignore check for tagnames
-
     if regex, we interpret filename as a search string for regular expressions
+    if logFragment!=None, we look for a match to the log comment as well
+    if logRegex, we use regular expressions when matching the log comment.
+
+    constructs a warning message describing the results of the query.
+    action_required is True if anything is not correct and False only if all parts of the query pass.
 
     return warning, action_required
     """
@@ -249,11 +264,31 @@ def check4file( graceid, gdb, filename, regex=False, tagnames=None, logFragment=
 
 class EventSupervisorQueueItem(utils.QueueItem):
     """
-    an object representing a sorted Queue to be used with event_supervisor
-    items are sorted by their expiration times (when they timeout)
+    an object representing a single follow up processes used with eventSupervisor
+    The basic idea is to group a list of Tasks within a QueueItem, with each Task corresponding to an individual bit of information that should be checked.
 
-    WARNING: we may want to replace this with the SortedContainers module's SortedList(WithKey?) 
-        almost certainly has faster insertion than what you've written and comes with many convenient features already implemented
+    requires the following arguments upon instantiation
+        - graceid  (the GraceId of the event this QueueItem will monitor)
+        - gdb      (an instance of ligo.gracedb.rest.GraceDb or equivalent)
+        - t0       (the time relative to which the expiration time is set. Passed to parent's __init__ to set Task expirations)
+        - tasks    (a list of EventSupervisorTasks. Does not have to be ordered)
+        - annotate (determines whether GraceDb is annotated when tasks are executed)
+        - warnings (determines whether email warnings are sent when tasks are executed)
+        - logDir   (used when instantiating a logger)
+        - logTag   (used when instantiating a logger)
+     
+    This is an extension of lvalertMPutils.QueueItem with special attributes defined for eventSupervisor. 
+    In particular, upon execution we call the Tasks with signature
+        task.execute( 
+            self.graceid, 
+            self.gdb, 
+            verbose=verbose, 
+            annotate=self.annotate, 
+            warnings=self.warnings
+        )
+    where the attributes are stored at instatiation time. 
+
+    We note that sorting and handling Tasks is accomplished within lvalertMPutils.QueueItem and we simply delegate to that functionality.
     """
     name = "event supervisor item"
     description = "a series of connected tasks for event supervisor"
@@ -275,11 +310,8 @@ class EventSupervisorQueueItem(utils.QueueItem):
 
     def execute(self, verbose=False):
         """
-        execute the next task
-
+        execute Tasks until all are complete or the remaining Tasks have not yet expired.
         NOTE: we overwrite the parent's method here because of the different signature for EventSupervisorTask.execute
-
-        editing the correct file!
         """
         if verbose:
             logger = genItemLogger( self.logDir, self.name, logTag=self.logTag, graceid=self.graceid )
@@ -317,9 +349,23 @@ class EventSupervisorQueueItem(utils.QueueItem):
 
 class EventSupervisorTask(utils.Task):
     """
-    a task to be completed by a QueueItem within event_supervisor
-    this basic object manages execution via delegation to a functionHandle supplied when instantiated
-    child classes may simply define their execution commands directly as part of the class definition
+    a task to be completed by an EventSupervisorQueueItem
+    this basic object manages execution via delegation to a method discoverable via
+        getattr(self, self.name)
+    While this is a bit of a backflip, it allows us to standardize the execution of each Task with a single function decleared here, rather than repeating code in each extension of this class.
+    Furthermore, by storing the actual execution code under a method accessible through getattr instead of a function handle, we allow Python to pickle these objects (function handles are not resolvable when pickling).
+
+    child classes may simply define their execution commands directly as part of the class definition, but this will overwrite the email and warning handling defined herein.
+    This basic class defines
+
+        - timeout          (the amount of time to wait before performing this Task)
+        - emailOnSuccess   (the list of email addresses to notify if the check completed successfully and did not find anything wrong)
+        - emailOnFailure   (the list of email addresses to notify if the check completed successfully and found suspicious behavior)
+        - emailOnException (the list of email addresses to notify if the check did not copmlete successfully)
+        - logDir           (directory into which loggers will be written. Passed to genTaskLogger in which it is not used...)
+        - logTag           (used to define the hierarchical logger names)
+
+    and captures any other arguments with **kwargs
     """
     name = "eventSupervisorTask"
     description = "a task for event supervisor"
@@ -336,7 +382,10 @@ class EventSupervisorTask(utils.Task):
 
     def execute(self, graceid, gdb, verbose=False, annotate=False, warnings=False):
         """
-        perform associated function call
+        perform associated function call by looking up a method via
+            getattr(self, self.name)( graceid, gdb, verbose=verbose, annotate=annotate, **self.kwargs )
+
+        if self.warnings and the appropriate email list is non-empty, constructs and sends email messages describing the check
         """
         if verbose:
             logger = genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -374,6 +423,7 @@ class EventSupervisorTask(utils.Task):
 
     def eventSupervisorTask(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         '''
-        required for syntactic completion of this class
+        required for syntactic completion of this class.
+        Currently just returns False
         '''
-        pass
+        return False

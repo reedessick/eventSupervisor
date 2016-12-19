@@ -15,13 +15,20 @@ class LLDQReportItem(esUtils.EventSupervisorQueueItem):
     """
     a check that a link to the DQ Summary page was posted
 
-    alert:
-        graceid
-    options:
-        dt
-        email on success
-        email on failure
-        email on exception
+    read from alert:
+
+        - graceid
+
+    read from options:
+
+        - dt
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Task:
+
+        - :func:`lldqReportCheck`
     """
     description = "a check that the lldq-report page was posted"
     name        = "lldqReport"
@@ -60,14 +67,20 @@ class LLDQReportItem(esUtils.EventSupervisorQueueItem):
 
 class lldqReportCheck(esUtils.EventSupervisorTask):
     """
-    a check that a link to the DQ Summary page was posted
+    a check that a link to the DQ Summary page was posted.
+    Looks for a log comment while ignoring tagnames and files.
+
+    created by:
+
+        - :func:`LLDQReportItem`
     """
     description = "a check that the lldq-report page was posted"
     name        = "lldqReport"
 
     def lldqReport(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        a check that a link to the lldq-report page was posted
+        a check that a link to the lldq-report page was posted.
+        looks for a log comment while ignoring tagnames and files
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )

@@ -21,6 +21,10 @@ def is_approvalProcessorSegDBStart( description ):
 
 class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a set of checks for approval_processor's preliminary DQ and vetting
 
     alert:
@@ -80,6 +84,10 @@ class ApprovalProcessorPrelimDQItem(esUtils.EventSupervisorQueueItem):
 
 class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approvalProcessor analyzed the FAR as expected
     """
     description = "checks for approval processor FAR messages"
@@ -129,6 +137,10 @@ class approvalProcessorFARCheck(esUtils.EventSupervisorTask):
 
 class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approvalProcessor started checking segments as expected
     """
     description = "a check that approvalProcessor started checking segments as expected"
@@ -142,6 +154,10 @@ class approvalProcessorSegDBStartCheck(esUtils.EventSupervisorTask):
         raise NotImplementedError(self.name)
 
 class ApprovalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
+    """
+    NOT IMPLEMENTED
+    """
+
     """
     check that approval processor completed segment checks
 
@@ -206,6 +222,10 @@ class ApprovalProcessorSegDBItem(esUtils.EventSupervisorQueueItem):
 
 class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approvalProcessor checked all the segment/flags as expected
     """
     description = "a check that approvalProcessor checked all the segment/flags as expected"
@@ -231,6 +251,10 @@ class approvalProcessorSegDBFlagsCheck(esUtils.EventSupervisorTask):
 
 class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approvalProcessor finished checking segments as expected
     """
     description = "a check that approvalProcessor finished checking segments as expected"
@@ -248,6 +272,10 @@ class approvalProcessorSegDBFinishCheck(esUtils.EventSupervisorTask):
 #-------------------------------------------------
 
 class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
+    """
+    NOT IMPLEMENTED
+    """
+
     """
     an item for monitoring approval processor's response to iDQ information
 
@@ -298,6 +326,10 @@ class ApprovalProcessoriDQItem(esUtils.EventSupervisorQueueItem):
 
 class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approvalProcessor responded to iDQ FAP reports as expected
     """
     description = "checks that approval processor recognized iDQ glitchFAP messages correctly"
@@ -326,6 +358,10 @@ class approvalProcessoriDQglitchFAPCheck(esUtils.EventSupervisorTask):
 #-------------------------------------------------
 
 class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
+    """
+    NOT IMPLEMENTED
+    """
+
     """
     an item for monitoring VOEvent generation and distribution
 
@@ -384,6 +420,10 @@ class ApprovalProcessorVOEventItem(esUtils.EventSupervisorQueueItem):
 
 class approvalProcessorVOEventCreationCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approval processor created the expected VOEvent
     """
     description = "a check that approval processor created the expected VOEvent"
@@ -398,6 +438,10 @@ class approvalProcessorVOEventCreationCheck(esUtils.EventSupervisorTask):
 
 class approvalProcessorVOEventDistributionCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approval processor distributed the VOEvent as expected
     """
     description = "a check that approval processor distributed the VOEvent"
@@ -411,6 +455,10 @@ class approvalProcessorVOEventDistributionCheck(esUtils.EventSupervisorTask):
         raise NotImplementedError(self.name)
 
 class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
+    """
+    NOT IMPLEMENTED
+    """
+
     """
     an item for monitoring GCN generation and distribution
 
@@ -468,6 +516,10 @@ class ApprovalProcessorGCNItem(esUtils.EventSupervisorQueueItem):
 
 class approvalProcessorGCNCreationCheck(esUtils.EventSupervisorTask):
     """
+    NOT IMPLEMENTED
+    """
+
+    """
     a check that approval processor created the GCN as expected
     """
     description = "a check that approval processor created the expected GCN"
@@ -481,6 +533,10 @@ class approvalProcessorGCNCreationCheck(esUtils.EventSupervisorTask):
         raise NotImplementedError(self.name)
 
 class approvalProcessorGCNDistributionCheck(esUtils.EventSupervisorTask):
+    """
+    NOT IMPLEMENTED
+    """
+
     """
     a check that approval processor distributed the GCN as expected
     """

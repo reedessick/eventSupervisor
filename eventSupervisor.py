@@ -150,14 +150,13 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     alert is the json dictionary to be parsed
     t0 is the time at which the message was received
     config is the ConfigParser.SaveConfigParser object representing which checks are to be performed
+    logTag is the root logger's name and is passed to QueueItems upon instantiation
 
-    this returns the change in the number of completed tasks that are in the queue. 
-    This is used by interactiveQueue.interactiveQueue to manage a garbage collector for completed tasks
+    This returns the change in the number of completed tasks that are in the queue even though this is not strictly required by interactiveQueue,
+    Note, interactiveQueue manages the number of completed tasks using SortedQueue's "completed" attribute.
 
     NOTE: if we mark something as complete within this method, we must remove it from queueByGraceID as well 
         but do not have to remove it from queue
-
-    Importantly, this function will ignore anything with "event_supervisor" in the tagnames
     """
     ### determine if this is a command and delegate accordingly
     graceid = alert['uid']
@@ -315,21 +314,25 @@ def parseUpdate( alert, config ):
     """
     determines the "name" of the update, which we use to determine what actions we need to take
     new QueueItems are defined through parent_child (dict)
-    and Items/Tasks that need to be marked complete are defined through ??????
+    
+    NOTE: Items/Tasks that need to be marked complete are not yet identified
 
-    need to key off these types of messages
-        idq start
-        idqGlitchFAP
-        idqActiveChan
-        hoft omega scan start
-        aux omega scan start
-        idq omega scan start
-        segdb2grcdb start
-        bayestar start
-        bayeswave pe start
-        lalinf start
-        lib pe start
-        skymap summary start
+    Currently we support actions based on identifying the following messages
+        idq start              (a message saying iDQ started at a particular IFO)
+        idqGlitchFAP           (a message containing iDQ glitch-FAP info from a single IFO)
+        idqActiveChan          (a message containing possible active channels from iDQ at a single IFO)
+        l1 omega scan start    (a message saying OmegaScan scheduling started at LLO. Requires a match to chansets)
+        h1 omega scan start    (a message saying OmegaScan scheduling started at LHO. Requires a match to chansets)
+        omega scan start       (a message saying OmegaScan scheduling started at an arbitrary IFO)
+        segdb2grcdb start      (a message saying SegDb queries were begun)
+        psd                    (a message containing an uploaded psd.xml.gz)
+        bayestar start         (a message saying Bayestar localization started)
+        bayeswave pe start     (a message saying BayesWave parameter estimation started)
+        lalinf start           (a message saying LALInference paremeter estimation started)
+        lib pe start           (a message saying LIB parameter information started)
+        snglFITS start         (a message saying individual skymap summary started for a single FITS file)
+        snglFITS finish        (a message saying individual skymap summary finished for a single FITS file)
+        multFITS start         (a message saying that skymap comparison started)
 
     if update is not recognized or we do not need to do anything based on it:
         return None

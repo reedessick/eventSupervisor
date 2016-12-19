@@ -28,14 +28,23 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
     """
     a check for propper event creation and readability of associated trigger files
 
-    alert:
-        graceid
-        pipeline
-    options:
-        dt
-        email on success
-        email on failure
-        email on exception
+    read from alert:
+
+        - graceid
+        - pipeline
+
+    read from options:
+
+        - dt
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Tasks (depending on pipeline)
+
+        - :func:`cWBTriggerCheck`
+        - :func:`oLIBTriggerCheck`
+        - :func:`cbcCoincCheck` and :func:`cbcPSDCheck`
     """
     name = "event creation"
 
@@ -108,7 +117,13 @@ class EventCreationItem(esUtils.EventSupervisorQueueItem):
 
 class cWBTriggerCheck(esUtils.EventSupervisorTask):
     """
-    check for cWB event creation, checking the trigger.txt file
+    check for cWB event creation, 
+    checks for the existence of a cWB "trigger_*.txt" file by exact match by predicting the filename from the gpstime.
+    ignores log comments and tagnames.
+
+    created by:
+
+        - :func:`EventCreationItem`
     """
     description = "a check of the trigger.txt file for cWB events"
     name        = "cWBTrigger"
@@ -116,8 +131,11 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
     def cWBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         query GraceDB to check for proper event creation
-        we check:
-            trigger_gpstime.txt
+        we check for the existence of:
+
+            trigger_%(gpstime).4f.txt
+
+        while ignoring log messages and tagnames
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -145,6 +163,12 @@ class cWBTriggerCheck(esUtils.EventSupervisorTask):
 class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     """
     check for oLIB event creation
+    checks for the existence of a "*.json" file by predicting the filename template using the gpstime and matching via regular expressions
+    ignores tagnames and log comments
+
+    created by:
+
+        - :func:`EventCreationItem`
     """
     description ="a check of the trigger.json file for oLIB events"
     name        = "oLIBTrigger"
@@ -152,8 +176,11 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
     def oLIBTrigger(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         event creation sanity check for oLIB
-        we check:
-            gpstime-.\.json
+        we check for the existence of :
+
+            %(gpstime).2f-(.*).json
+
+        while ignoring log messsages and tagnames
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -182,14 +209,19 @@ class oLIBTriggerCheck(esUtils.EventSupervisorTask):
 
 class cbcCoincCheck(esUtils.EventSupervisorTask):
     """
-    check for CBC event creation, checking coinc.xml file
+    check for CBC event creation, 
+    we check for the existence of a coinc.xml file while ignoring log messages and tagnames
+
+    created by:
+
+        - :func:`EventCreationItem`
     """
     description = "check coinc.xml file for CBC events"
     name        = "cbcCoinc"
 
     def cbcCoinc(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        check for coinc.xml file
+        check for coinc.xml file via direct string comparison while ignoring log comments and tagnames
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -214,7 +246,17 @@ class cbcCoincCheck(esUtils.EventSupervisorTask):
 
 class cbcPSDCheck(esUtils.EventSupervisorTask):
     """
-    check for CBC event creation, checking PSD.xml file
+    check for CBC event creation, 
+    we check for the existence of psd.xml.gz while ignoring log comments and tagnames
+    if psd.xml.gz exists, we ensure that a string representation is longer than self.psdStrLenThr via
+
+        len(gdb.files(graceid, filename).read()) < self.psdStrLenThr)
+
+    this hopefully ensures the PSD is not "empty" or mal-formatted, although it is a pretty loose constraint.
+
+    created by:
+
+        - :func:`EventCreationItem`
     """
     description = "check psd.xml.gz file for CBC events"
     name        = "cbcPSD"
@@ -232,7 +274,12 @@ class cbcPSDCheck(esUtils.EventSupervisorTask):
 
     def cbcPSD(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        check for psd.xml.gz file
+        check for existence of psd.xml.gz file while ignoring log comments and tagnames.
+        if psd.xml.gz exists, we ensure that a string representation is longer than self.psdStrLenThr via
+
+            len(gdb.files(graceid, filename).read()) < self.psdStrLenThr)
+
+        this hopefully ensures the PSD is not "empty" or mal-formatted, although it is a pretty loose constraint.        
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -270,15 +317,22 @@ class FARItem(esUtils.EventSupervisorQueueItem):
     """
     a check for propper FAR
 
-    alert:
-        graceid
-    options:
-        min far
-        max far
-        dt
-        email on success
-        email on failure
-        email on exception
+    read from alert:
+
+        - graceid
+
+    read from options:
+
+        - min far
+        - max far
+        - dt
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Task
+
+        - :func:`FARCheck`
     """
     description = "check sanity of reported FAR"
     name        = "far"
@@ -323,7 +377,13 @@ class FARItem(esUtils.EventSupervisorQueueItem):
 
 class FARCheck(esUtils.EventSupervisorTask):
     """
-    a check for propper FAR
+    a check for propper FAR.
+    ensures the FAR is defined and is within an acceptable range.
+    Queries GraceDb to retrieve the event's FAR.
+
+    created by:
+
+        - :func:`FARItem`
     """
     description = "a check for propper FAR"
     name        = "far"
@@ -344,6 +404,7 @@ class FARCheck(esUtils.EventSupervisorTask):
     def far(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         check the sanity of the reported FAR
+        Queries GraceDb for the event's data and ensures (FAR > self.minFAR) and (FAR < self.maxFAR)
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -419,19 +480,26 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
     """
     a check for local rate of events submitted to GraceDb around the event's gpstime
 
-    alert:
-        graceid
-        group
-        pipeline
-        search
-    options:
-        win+
-        win-
-        maxRate
-        dt 
-        email on success
-        email on failure
-        email on exception
+    read alert:
+
+        - graceid
+        - group
+        - pipeline
+        - search
+
+    read from options:
+
+        - win+
+        - win-
+        - maxRate
+        - dt 
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Task
+
+        - :func:`localRateCheck`
     """
     description = "check local rates of events"
     name        = "local rate"
@@ -487,7 +555,12 @@ class LocalRateItem(esUtils.EventSupervisorQueueItem):
 
 class localRateCheck(esUtils.EventSupervisorTask):
     """
-    a check for local rate of events submitted to GraceDB in the neighborhood of the event's gpstime
+    a check for local rate of events submitted to GraceDB in the neighborhood of the event's gpstime.
+    Queries GraceDb for neighbors within [gpstime-mWin, gpstime+pWin) and compares this to an acceptable rate.
+
+    created by:
+
+        - :func:`LocalRateItem`
     """
     name = "localRate"
 
@@ -515,7 +588,8 @@ class localRateCheck(esUtils.EventSupervisorTask):
     def localRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
         """
         check the local rate of triggers submitted to GraceDB
-        checks only around the event's gpstime : (gpstime-self.mWin, gpstime+self.pWin)
+        checks only around the event's gpstime : [gpstime-self.mWin, gpstime+self.pWin)
+        Queries GraceDb to find neighboring events
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -571,19 +645,26 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
     """
     a check for local rate of events submitted to GraceDb around the event's creation time
 
-    alert:
-        graceid
-        group
-        pipeline
-        search
-    options:
-        win+
-        win-
-        maxRate
-        dt 
-        email on success
-        email on failure
-        email on exception
+    read from alert:
+
+        - graceid
+        - group
+        - pipeline
+        - search
+
+    read from options:
+
+        - win+
+        - win-
+        - maxRate
+        - dt 
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Task
+
+        - :func:`createRateCheck`
     """
     description = "check creation rates of events"
     name        = "creation rate"
@@ -640,6 +721,11 @@ class CreateRateItem(esUtils.EventSupervisorQueueItem):
 class createRateCheck(esUtils.EventSupervisorTask):
     """
     a check for local rate of events submitted to GraceDB in the neighborhood of the event's creation time
+    Queries GraceDb for neighbors within [gpstime-mWin, gpstime+pWin] and compares the result with an acceptable rate
+
+    created by:
+
+        - :func:`CreateRateItem`
     """
     name = "createRate"
 
@@ -667,7 +753,8 @@ class createRateCheck(esUtils.EventSupervisorTask):
     def createRate(self, graceid, gdb, verbose=None, annotate=False, **kwargs):
         """
         check the local rate of triggers submitted to GraceDB
-        checks only around the event's creation time : (t-self.mWin, t+self.pWin)
+        checks only around the event's creation time : [t-self.mWin, t+self.pWin)
+        Queries GraceDb for neighbors
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -726,13 +813,20 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the external triggers search was completed
 
-    alert:
-        graceid
+    read from alert:
+
+        - graceid
+
     options:
-        dt
-        email on success
-        email on failure
-        email on exception
+
+        - dt
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Task:
+
+        - :func:`externalTriggersCheck`
     """
     description = "check that the unblind injection search completed"
     name        = "external triggers"
@@ -772,14 +866,20 @@ class ExternalTriggersItem(esUtils.EventSupervisorQueueItem):
 
 class externalTriggersCheck(esUtils.EventSupervisorTask):
     """
-    a check that the external triggers seach was completed
+    a check that the external triggers seach was completed.
+    looks for a log message only, ignoring tagnames and files
+
+    created by:
+
+        - :func:`ExternalTriggersItem`
     """
     description = "a check that the external triggers search was completed"
     name        = "externalTriggers"
 
     def externalTriggers(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        a check that the external triggers search was completed
+        a check that the external triggers search was completed.
+        looks for a log message only, ignoring tagnames and files
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
@@ -819,13 +919,20 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
     """
     a check that the unblind Injections search was completed
 
-    alert:
-        graceid
+    read from alert:
+
+        - graceid
+
     options:
-        dt 
-        email on success
-        email on failure
-        email on exception
+
+        - dt 
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Task:
+
+        - :func:`unblindInjectionsCheck`
     """
     description = "check that the unblind injection search completed"
     name        = "unblind injections"
@@ -865,14 +972,20 @@ class UnblindInjectionsItem(esUtils.EventSupervisorQueueItem):
 
 class unblindInjectionsCheck(esUtils.EventSupervisorTask):
     """
-    a check that the unblind injections search was completed
+    a check that the unblind injections search was completed.
+    looks for a log message only while ignoring tagnames and files.
+
+    created by:
+
+        - :func:`UnblindInjectionsItem`
     """
     description = "a check that the unblind injections search was completed"
     name        = "unblindInjections"
 
     def unblindInjections(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        a check that the unblind injections search was completed
+        a check that the unblind injections search was completed.
+        looks for a log message only while ignoring tagnames and files
         """
         ### NOTE: we do not delegate to esUtils.check4log here because we need to look for mutliple logs...
         if verbose:

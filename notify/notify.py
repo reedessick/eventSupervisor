@@ -18,17 +18,26 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
     """
     notify folks that a new event was created
 
-    alert:
-        graceid
-    options:
-        dt
-        ignoreInj
-        by email
-        by sms
-        by phone
-        email on success
-        email on failure
-        email on exception
+    read from alert:
+
+        - graceid
+
+    read from options:
+
+        - dt
+        - ignoreInj
+        - by email
+        - by sms
+        - by phone
+        - email on success
+        - email on failure
+        - email on exception
+
+    creates Tasks:
+
+        - :func:`notifyByEmail`
+        - :func:`notifyBySMS`   (NOT IMPLEMENTED)
+        - :func:`notifyByPhone` (NOT IMPLEMENTED)
     """
     description = "notify people by email, sms or phone"
     name        = "notify"
@@ -119,7 +128,11 @@ class NotifyItem(esUtils.EventSupervisorQueueItem):
 
 class notifyByEmail(esUtils.EventSupervisorTask):
     """
-    notify folks by email that a new event was created
+    notify folks by email that a new event was created by email.
+
+    created by:
+
+        - :func:`NotifyItem`
     """
     description = "notify folks by email that a new event was created"
     name        = "notifyByEmail"
@@ -143,7 +156,8 @@ class notifyByEmail(esUtils.EventSupervisorTask):
 
     def notifyByEmail(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        notify folks by email
+        notify folks with a descriptive email containing a link.
+        does *not* annotate GraceDb.
         """
         if verbose:
             ### set up logger
@@ -180,6 +194,10 @@ search   : %s
 class notifyBySMS(esUtils.EventSupervisorTask):
     """
     notify folks by SMS that new event was created
+
+    created by:
+
+        - :func:`NotifyItem`
     """
     description = "notify folks by SMS that a new event was created"
     name        = "notifyBySMS"
@@ -203,7 +221,9 @@ class notifyBySMS(esUtils.EventSupervisorTask):
 
     def notifyBySMS(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
-        notify folks by SMS
+        notify folks by SMS.
+
+        NOT IMPLEMENTED
         """
         if verbose:
             ### set up logger
@@ -231,6 +251,10 @@ class notifyBySMS(esUtils.EventSupervisorTask):
 class notifyByPhone(esUtils.EventSupervisorTask):
     """
     notify folks by phone that a new event was created
+
+    created by:
+
+        - :func:`NotifyItem`
     """
     description = "notify folks by phone that a new event was created"
     name        = "notifyByPhone"
@@ -255,6 +279,8 @@ class notifyByPhone(esUtils.EventSupervisorTask):
     def notifyByPhone(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         notify folks by phone
+
+        NOT IMPLEMENTED
         """
         if verbose:
             ### set up logger
