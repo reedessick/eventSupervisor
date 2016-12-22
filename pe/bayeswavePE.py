@@ -73,7 +73,7 @@ class bayeswavePEStartCheck(esUtils.EventSupervisorTask):
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
-        if not esUtils.check4log( graceid, gdb, "BayesWaveBurst launched", verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, "BayesWave launched", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found BayesWave PE starting message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
