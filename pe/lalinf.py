@@ -74,7 +74,7 @@ class lalinfStartCheck(esUtils.EventSupervisorTask):
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
-        if not esUtils.check4log( graceid, gdb, "LALInference online estimation started", verbose=verbose, logTag=logger.name if verbose else None ):
+        if not esUtils.check4log( graceid, gdb, "LALInference online parameter estimation started", verbose=verbose, logTag=logger.name if verbose else None ):
             self.warning = "found LALInference starting message"
             if verbose or annotate:
                 message = "no action required : "+self.warning
