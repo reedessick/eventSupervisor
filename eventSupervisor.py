@@ -118,6 +118,7 @@ parent_child = {
                                'em bright',
                               ],
     'bayestar start'        : ['bayestar'],
+    'bayestar skymap'       : ['bayestar finish'],
     'bayeswave pe start'    : ['bayeswave pe'],
     'lalinf start'          : ['lalinf'],
     'lib pe start'          : ['lib pe'],
@@ -385,6 +386,10 @@ def parseUpdate( alert, config ):
     ### bayestar start
     elif bayestar.is_bayestarStart( description ):
         return 'bayestar start'
+
+    ### bayestar skymap
+    elif bayestar.is_bayestarSkymap( description ):
+        return 'bayestar skymap'
 
     ### bayeswave pe start
     elif bayeswavePE.is_bayeswavePEStart( description ):

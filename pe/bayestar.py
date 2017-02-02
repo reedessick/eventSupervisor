@@ -13,6 +13,10 @@ def is_bayestarStart( description ):
     ''' identify whether description is for a bayestar start alert by matching a string fragment '''
     return "INFO:BAYESTAR:starting sky localization" in description
 
+def is_bayestarSkymap( description ):
+    ''' identify whether description is for a bayestar skymap alert by matching a string fragment '''
+    return "INFO:BAYESTAR:uploaded sky map" in description
+
 #---------------------------------------------------------------------------------------------------
 
 class BayestarStartItem(esUtils.EventSupervisorQueueItem):
@@ -96,14 +100,13 @@ class bayestarStartCheck(esUtils.EventSupervisorTask):
 
 class BayestarItem(esUtils.EventSupervisorQueueItem):
     """
-    a check that Bayestar produced the expected data and finished
+    a check that Bayestar produced the expected data
 
     alert:
         graceid
     options:
         skymap dt
         skymap tagnames
-        finish dt
         email on success
         email on failure
         email on exception
@@ -116,7 +119,6 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
 
         skymap_dt = float(options['skymap dt'])
         skymap_tagnames = options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None
-        finish_dt = float(options['finish dt'])
 
         emailOnSuccess = options['email on success'].split()
         emailOnFailure = options['email on failure'].split()
@@ -132,15 +134,7 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
                      logDir=logDir, 
                      logTag=taskTag,
                  ),
-                 bayestarFinishCheck(
-                     finish_dt, 
-                     emailOnSuccess=emailOnSuccess, 
-                     emailOnFailure=emailOnFailure, 
-                     emailOnException=emailOnException, 
-                     logDir=logDir, 
-                     logTag=taskTag,
-                 ),
-                ]
+        ]
 
         super(BayestarItem, self).__init__( 
             graceid,
@@ -191,6 +185,53 @@ class bayestarSkymapCheck(esUtils.EventSupervisorTask):
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return action_required
+
+class BayestarFinishItem(esUtils.EventSupervisorQueueItem):
+    """
+    a check that Bayestar produced a finish statement
+
+    alert:
+        graceid
+    options:
+        finish dt
+        email on success
+        email on failure
+        email on exception
+    """
+    description = "a check that BAYESTAR finished"
+    name        = "bayestar finish"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
+        graceid = alert['uid']
+
+        finish_dt = float(options['finish dt'])
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
+
+        taskTag = '%s.%s'%(logTag, self.name)
+        tasks = [bayestarFinishCheck(
+                     finish_dt,
+                     emailOnSuccess=emailOnSuccess,
+                     emailOnFailure=emailOnFailure,
+                     emailOnException=emailOnException,
+                     logDir=logDir,
+                     logTag=taskTag,
+                 ),
+        ]
+
+        super(BayestarFinishItem, self).__init__(
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
+
 
 class bayestarFinishCheck(esUtils.EventSupervisorTask):
     """

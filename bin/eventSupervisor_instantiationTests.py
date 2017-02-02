@@ -1029,15 +1029,13 @@ if opts.bayestar:
     assert( item.graceid == graceid )
     assert( item.annotate == annotate )
     assert( item.complete == False )
-    assert( len(item.tasks) == 2 )
+    assert( len(item.tasks) == 1 )
     assert( len(item.completedTasks) == 0 )
-    assert( item.expiration == t0+min(float(options['skymap dt']), float(options['finish dt'])) )
+    assert( item.expiration == t0+float(options['skymap dt']) )
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
     skymap = tasks['bayestarSkymap']
-    finish = tasks['bayestarFinish']
-    ###   bayestarSkymapCheck
     assert( skymap.expiration == t0+float(options['skymap dt']) )
     assert( skymap.emailOnSuccess == options['email on success'].split() )
     assert( skymap.emailOnFailure == options['email on failure'].split() )
@@ -1045,7 +1043,30 @@ if opts.bayestar:
     assert( skymap.tagnames == (options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None) )
     print "        WARNING: bayestarSkymapCheck Task.execute() not implemented and not tested"
 
+    #--------------------
+    # BayestarFinishItem
+    #--------------------
+    print "BayestarFinishItem"
+
+    graceid = 'FakeEvent'
+    alert = {
+        'uid' : graceid
+        }
+    t0 = time.time()
+    options = dict(config.items('bayestar finish'))
+
+    item = bayestar.BayestarFinishItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.complete == False )
+    assert( len(item.tasks) == 1 )
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+float(options['finish dt']) )
+
     ###   bayestarFinishItem
+    tasks = dict( (task.name, task) for task in item.tasks )
+    finish = tasks['bayestarFinish']
+    ###   bayestarSkymapCheck
     assert( finish.expiration == t0+float(options['finish dt']) )
     assert( finish.emailOnSuccess == options['email on success'].split() )
     assert( finish.emailOnFailure == options['email on failure'].split() )

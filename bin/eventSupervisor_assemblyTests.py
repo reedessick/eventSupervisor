@@ -52,6 +52,7 @@ parser.add_option("", "--omegaScanStart", default=False, action="store_true")
 parser.add_option("", "--segDbStart", default=False, action="store_true")
 
 parser.add_option("", "--bayestarStart", default=False, action="store_true")
+parser.add_option("", "--bayestarSkymap", default=False, action="store_true")
 parser.add_option("", "--bayeswavePEStart", default=False, action="store_true")
 parser.add_option("", "--lalinfStart", default=False, action="store_true")
 parser.add_option("", "--libPEStart", default=False, action="store_true")
@@ -80,6 +81,7 @@ opts.idqActiveChan      = opts.idqActiveChan      or opts.everything
 opts.omegaScanStart     = opts.omegaScanStart     or opts.everything
 opts.segDbStart         = opts.segDbStart         or opts.everything
 opts.bayestarStart      = opts.bayestarStart      or opts.everything
+opts.bayestarSkymap     = opts.bayestarSkymap     or opts.everything
 opts.bayeswavePEStart   = opts.bayeswavePEStart   or opts.everything
 opts.lalinfStart        = opts.lalinfStart        or opts.everything
 opts.libPEStart         = opts.libPEStart         or opts.everything
@@ -492,6 +494,50 @@ if opts.bayestarStart:
     assert queue[0].name==name
 
     logger.info("passed all assertion statements for --bayestarStart")
+
+#-------------------------------------------------
+
+if opts.bayestarSkymap:
+
+    logger.info("TESTING: bayestarSkymap")
+    alert = {
+             'alert_type' : 'update',
+             'uid'      : 'G123FAKE',
+             'object' : {'tag_names':['faketag'],
+                         'group'    : 'CBC',
+                         'pipeline' : 'gstlal',
+                        },
+             'description' : 'INFO:BAYESTAR:uploaded sky map',
+             'file'        : 'bayestar.fits.gz',
+            }
+    queue          = utils.SortedQueue()
+    queueByGraceID = dict()
+
+    completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
+
+    for name in es.fits+['bayestar finish']:
+        for i, item in enumerate(queue):
+            if item.name==name:
+                queue.pop(i)
+                break
+            else:
+                assert False, 'could not find item corresponding to name=%s'%name
+    assert len(queue)==0, 'queue should be empty at this point'
+
+    assert len(queueByGraceID.keys())==1, 'there should be only one key here'
+    assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
+
+    queue = queueByGraceID[alert['uid']]
+    for name in es.fits+['bayestar finish']:
+        for i, item in enumerate(queue):
+            if item.name==name:
+                queue.pop(i)
+                break
+            else:
+                assert False, 'could not find item corresponding to name=%s'%name
+    assert len(queue)==0, 'queue should be empty at this point'
+
+    logger.info("passed all assertion statements for --bayestarSkymap")
 
 #-------------------------------------------------
 

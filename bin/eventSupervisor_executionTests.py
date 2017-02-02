@@ -443,6 +443,10 @@ if opts.bayestar:
     name = 'bayestar'
     tests.append( (name, alert) )
 
+    #------- BayestaFinish
+    name = 'bayestar finish'
+    tests.append( (name, alert) )
+
 #------------------------
 
 if opts.embright:
