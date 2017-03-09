@@ -22,6 +22,7 @@ from ligo.gracedb.rest import GraceDb
 
 from lvalertMP.lvalert import lvalertMPutils as utils
 from lvalertMP.lvalert.commands import parseCommand
+from ligo.lvalert_heartbeat.lvalertMP_heartbeat import parseHeartbeat
 
 import eventSupervisorUtils as esUtils
 
@@ -159,10 +160,12 @@ def parseAlert( queue, queueByGraceID, alert, t0, config, logTag='iQ' ):
     NOTE: if we mark something as complete within this method, we must remove it from queueByGraceID as well 
         but do not have to remove it from queue
     """
-    ### determine if this is a command and delegate accordingly
     graceid = alert['uid']
-    if graceid == 'command':
+    if graceid == 'command': ### determine if this is a command and delegate accordingly
         return parseCommand( queue, queueByGraceID, alert, t0, logTag=logTag )
+
+    elif graceid == 'heartbeat': ### determine if this is a heartbeat and delegate accordingly
+        return parseHeartbeat( queue, queueByGraceID, alert, t0, config, logTag=logTag )
 
     ### set up logger
     logger = logging.getLogger('%s.parseAlert'%logTag) ### propagate to iQ's logger
