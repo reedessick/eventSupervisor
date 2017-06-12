@@ -97,6 +97,7 @@ new = [
     'idq start',
     'h1 omega scan start',
     'l1 omega scan start',
+    'cit omega scan start',
     'segdb2grcdb start',
     'notify',
     'bayeswave pe start',
@@ -114,6 +115,7 @@ parent_child = {
     'idqActiveChan'         : ['idq omega scan start'], 
     'h1 omega scan start'   : ['h1 omega scan'],
     'l1 omega scan start'   : ['l1 omega scan'], 
+    'cit omega scan start'  : ['cit omega scan'], 
     'segdb2grcdb start'     : ['segdb2grcdb'],
     'psd'                   : ['bayestar start', 
                                'em bright',
@@ -367,6 +369,12 @@ def parseUpdate( alert, config ):
     elif config.has_section('h1 omega scan start') \
              and omegaScan.is_OmegaScanStart( description, chansets=config.get('h1 omega scan start', 'chansets').split() ):
         return 'h1 omega scan start'
+
+    ### cit omega scan start
+    ### ensure that we actually care about this
+    elif config.has_section('cit omega scan start') \
+            and omegaScan.is_OmegaScanStart( description, chansets=config.get('cit omega scan start', 'chansets').split() ):
+        return 'cit omega scan start'
 
     ### unspecified omega scan start
     ### note: this allows less flexibility than 'h1 omega scan start' and 'l1 omega scan start', but also doesn't require the chansets to be specified a priori

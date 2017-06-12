@@ -323,3 +323,17 @@ class H1OmegaScanItem(OmegaScanItem):
     this declaration is necessary for automated look-up within config file
     """
     name = "h1 omega scan"
+
+class CITOmegaScanStartItem(OmegaScanStartItem):
+    """
+    child of OmegaScanStartItem that specifically looks for the CIT process
+    this declaratoin is necessary for automated look-up within config file
+    """
+    name = "cit omega scan start"
+
+class CITOmegaScanItem(OmegaScanItem):
+    """
+    child of OmegaScanItem that specifically looks for the CIT process
+    this declaration is necessary for automated look-up within config file
+    """
+    name = "cit omega scan"
