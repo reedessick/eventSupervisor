@@ -304,7 +304,7 @@ if opts.segDB2grcDB:
 
 if opts.omegaScan: 
 
-#   assume that if H1 works, so will L1?
+#   assume that if H1 works, so will L1 and CIT?
 
     ### set up inputs
     alert = {

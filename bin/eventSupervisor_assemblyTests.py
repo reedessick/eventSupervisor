@@ -400,7 +400,7 @@ if opts.omegaScanStart:
 
     logger.info("TESTING: omegaScanStart")
 
-    name = 'l1 omega scan' ### only check L1, assume H1 works too...
+    name = 'l1 omega scan' ### only check L1, assume H1 and CIT work too...
 
     alert = {
              'alert_type'  : 'update',

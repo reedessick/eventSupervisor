@@ -1844,6 +1844,86 @@ if opts.omegaScan:
     assert( finishTask.chansets ==chansets )
     print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
 
+    #--------------------
+    # V1OmegaScanStartItem
+    #--------------------
+    print "    CITOmegaScanStartItem"
+
+    graceid = 'FakeEvent'
+    alert = {
+        'uid' : graceid,
+        }
+    t0 = time.time()
+    options = dict(config.items('cit omega scan start'))
+    chansets = options['chansets'].split()
+
+    item = omegaScan.CITOmegaScanStartItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.complete == False )
+    assert( len(item.tasks) == 1 ) ### 2 ifos
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+float(options['dt']) )
+    assert( item.chansets == chansets )
+
+    ###   omegaScanStartCheck
+    task = item.tasks[0]
+
+    assert( task.expiration == t0+float(options['dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
+    assert( task.chansets == chansets )
+
+    print "        WARNING: omegaScanStartCheck Task.execute() not implemented and not tested"
+
+    #--------------------
+    # V1OmegaScanItem
+    #--------------------
+    print "    CITOmegaScanItem"
+
+    graceid = 'FakeEvent'
+    alert = {
+        'uid' : graceid,
+        'object': {'comment':'automatic OmegaScans begun for: %s. WARNING: we will not track the individual OmegaScan processes to ensure completion'%(', '.join(chansets))},
+        }
+    t0 = time.time()
+    options = dict(config.items('h1 omega scan'))
+
+    item = omegaScan.CITOmegaScanItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.complete == False )
+    assert( len(item.tasks) == len(chansets)+1 )
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+min(float(options['data dt']), float(options['finish dt'])) )
+    assert( item.chansets == chansets )
+
+    ### check tasks
+    dataTasks = [ task for task in item.tasks if task.name=='omegaScanData' ]
+    assert( len(dataTasks)==len(chansets) )
+
+    finishTask = [task for task in item.tasks if task.name=='omegaScanFinish']
+    assert( len(finishTask)==1 )
+    finishTask = finishTask[0]
+
+    ###   omegaScanDataCheck
+    for chanset, task in zip(chansets, dataTasks):
+        assert( task.expiration == t0+float(options['data dt']) )
+        assert( task.emailOnSuccess == options['email on success'].split() )
+        assert( task.emailOnFailure == options['email on failure'].split() )
+        assert( task.emailOnException == options['email on exception'].split() )
+        assert( task.chanset == chanset )
+    print "        WARNING: omegaScanDataCheck Task.execute() not implemented and not tested"
+
+    ###   omegaScanFinishCheck
+    assert( finishTask.expiration == t0+float(options['finish dt']) )
+    assert( task.emailOnSuccess == options['email on success'].split() )
+    assert( task.emailOnFailure == options['email on failure'].split() )
+    assert( task.emailOnException == options['email on exception'].split() )
+    assert( finishTask.chansets ==chansets )
+    print "        WARNING: omegaScanFinishCheck Task.execute() not implemented and not tested"
+
     '''
     #--------------------
     # IDQOmegaScanStartItem
