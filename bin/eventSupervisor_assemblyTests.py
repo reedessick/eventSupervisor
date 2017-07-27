@@ -158,7 +158,7 @@ if opts.psd:
 
     completed = es.parseAlert( queue, queueByGraceID, alert, time.time(), config, logTag=opts.logTag )
 
-    assert len(queue)==2, "should be a single item in the queue"
+    assert len(queue)==3, "should be 3 items in the queue"
     names = [name for name in es.parent_child['psd']] ### make a copy
     for item in queue:
         assert item.name in names, "must the the correct type"
@@ -169,7 +169,7 @@ if opts.psd:
     assert queueByGraceID.has_key(alert['uid']), 'that key should be this one'
 
     queue = queueByGraceID[alert['uid']]
-    assert len(queue)==2
+    assert len(queue)==3
     names = [name for name in es.parent_child['psd']] ### make a copy
     for item in queue:
         assert item.name in names, "must the the correct type"

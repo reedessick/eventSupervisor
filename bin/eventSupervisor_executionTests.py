@@ -433,14 +433,12 @@ if opts.bayestar:
     name = 'bayestar start'
     tests.append( (name, alert) )
 
-    ### set up inputs
-    alert = {
-             'alert_type' : 'update',
-             'uid':graceid, ### generate an alert from graceid? Should already be a dicitonary by this point...
-            }
-
     #------- Bayestar
     name = 'bayestar'
+    tests.append( (name, alert) )
+
+    #------- BayestarNoVirgo
+    name = 'bayestarNoVirgo'
     tests.append( (name, alert) )
 
     #------- BayestaFinish

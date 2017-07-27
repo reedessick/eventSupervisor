@@ -1044,6 +1044,36 @@ if opts.bayestar:
     print "        WARNING: bayestarSkymapCheck Task.execute() not implemented and not tested"
 
     #--------------------
+    # BayestarNoVirgoItem
+    #--------------------
+    print "    BayestarNoVirgoItem"
+
+    graceid = 'FakeEvent'
+    alert = {
+        'uid' : graceid
+        }
+    t0 = time.time()
+    options = dict(config.items('bayestar'))
+
+    item = bayestar.BayestarNoVirgoItem( alert, t0, options, gdb, annotate=annotate )
+    assert( item.graceid == graceid )
+    assert( item.annotate == annotate )
+    assert( item.complete == False )
+    assert( len(item.tasks) == 1 )
+    assert( len(item.completedTasks) == 0 )
+    assert( item.expiration == t0+float(options['skymap dt']) )
+
+    ### check tasks
+    tasks = dict( (task.name, task) for task in item.tasks )
+    skymap = tasks['bayestarSkymap']
+    assert( skymap.expiration == t0+float(options['skymap dt']) )
+    assert( skymap.emailOnSuccess == options['email on success'].split() )
+    assert( skymap.emailOnFailure == options['email on failure'].split() )
+    assert( skymap.emailOnException == options['email on exception'].split() )
+    assert( skymap.tagnames == (options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None) )
+    print "        WARNING: bayestarNoVirgoSkymapCheck Task.execute() not implemented and not tested"
+
+    #--------------------
     # BayestarFinishItem
     #--------------------
     print "BayestarFinishItem"

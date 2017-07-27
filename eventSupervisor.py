@@ -117,7 +117,8 @@ parent_child = {
     'l1 omega scan start'   : ['l1 omega scan'], 
     'cit omega scan start'  : ['cit omega scan'], 
     'segdb2grcdb start'     : ['segdb2grcdb'],
-    'psd'                   : ['bayestar start', 
+    'psd'                   : ['bayestar start',
+                               'bayestarNoVirgo', ### we can't tell the noVirgo runs appart from the standard runs, so we only check for the no_virgo skymap (instead of also checking start/finish messages). More notes within pe/bayestar.py
                                'em bright',
                               ],
     'bayestar start'        : ['bayestar'],

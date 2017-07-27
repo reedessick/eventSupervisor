@@ -111,7 +111,7 @@ class BayestarItem(esUtils.EventSupervisorQueueItem):
         email on failure
         email on exception
     """
-    description = "a check that BAYESTAR produced the expected data and finished"
+    description = "a check that BAYESTAR produced the expected data"
     name        = "bayestar"
 
     def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
@@ -265,3 +265,98 @@ class bayestarFinishCheck(esUtils.EventSupervisorTask):
             if annotate:
                 esUtils.writeGDBLog( gdb, graceid, message )
         return True ### action_required = True
+
+#-------------------------------------------------
+# hopefully temporary addition to deal with "_no_virgo" skymaps generated in parallel to the original runs
+# NOTE: the only difference between the Bayestar processes is the output filename, which means I cannot tell them apart based on only the
+#       start or finish message. Therefore, I'm only supporting a "skymap check" for the no_virgo process, which will be triggered by the 
+#       addition of psd.xml.gz and run on a separate timeout. This should be documented within eventSupervisor.py as well.
+
+class BayestarNoVirgoItem(esUtils.EventSupervisorQueueItem):
+    """
+    a check that Bayestar produced the expected data (excluding virgo)
+
+    alert:
+        graceid
+    options:
+        skymap dt
+        skymap tagnames
+        email on success
+        email on failure
+        email on exception
+    """
+    description = "a check that BAYESTAR produced the expected data (excluding virgo)"
+    name        = "bayestarNoVirgo"
+
+    def __init__(self, alert, t0, options, gdb, annotate=False, warnings=False, logDir='.', logTag='iQ'):
+        graceid = alert['uid']
+
+        skymap_dt = float(options['skymap dt'])
+        skymap_tagnames = options['skymap tagnames'].split() if options.has_key('skymap tagnames') else None
+
+        emailOnSuccess = options['email on success'].split()
+        emailOnFailure = options['email on failure'].split()
+        emailOnException = options['email on exception'].split()
+
+        taskTag = '%s.%s'%(logTag, self.name)
+        tasks = [bayestarNoVirgoSkymapCheck(
+                     skymap_dt,
+                     tagnames=skymap_tagnames,
+                     emailOnSuccess=emailOnSuccess,
+                     emailOnFailure=emailOnFailure,
+                     emailOnException=emailOnException,
+                     logDir=logDir,
+                     logTag=taskTag,
+                 ),
+        ]
+
+        super(BayestarNoVirgoItem, self).__init__(
+            graceid,
+            gdb,
+            t0,
+            tasks,
+            annotate=annotate,
+            warnings=warnings,
+            logDir=logDir,
+            logTag=logTag,
+        )
+
+class bayestarNoVirgoSkymapCheck(esUtils.EventSupervisorTask):
+    """
+    a check that Bayestar produced a skymap which excludes virgo
+    """
+    description = "a check that bayestar produced a skymap which excludes virgo"
+    name        = "bayestarNoVirgoSkymap"
+
+    def __init__(self, timeout, tagnames=None, emailOnSuccess=[], emailOnFailure=[], emailOnException=[], logDir='.', logTag='iQ'):
+        self.tagnames = tagnames
+        super(bayestarNoVirgoSkymapCheck, self).__init__(
+            timeout,
+            emailOnSuccess=emailOnSuccess,
+            emailOnFailure=emailOnFailure,
+            emailOnException=emailOnException,
+            logDir=logDir,
+            logTag=logTag,
+        )
+
+    def bayestarNoVirgoSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
+        """
+        a check that bayestar produced a skymap which excludes virgo
+        looks for the existence of a skymap and the correct tagnames
+        """
+        if verbose:
+            logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
+            logger.info( "%s : %s"%(graceid, self.description) )
+        fitsname = "bayestar_no_virgo.fits.gz"
+        self.warning, action_required = esUtils.check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
+        if verbose or annotate:
+            if action_required:
+                message = "action required : "+self.warning
+            else:
+                message = "no action required : "+self.warning
+            if verbose:
+                logger.debug( message )
+            if annotate:
+                esUtils.writeGDBLog( gdb, graceid, message )
+        return action_required
+
