@@ -1065,7 +1065,7 @@ if opts.bayestar:
 
     ### check tasks
     tasks = dict( (task.name, task) for task in item.tasks )
-    skymap = tasks['bayestarSkymap']
+    skymap = tasks['bayestarNoVirgoSkymap']
     assert( skymap.expiration == t0+float(options['skymap dt']) )
     assert( skymap.emailOnSuccess == options['email on success'].split() )
     assert( skymap.emailOnFailure == options['email on failure'].split() )

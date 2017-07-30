@@ -342,11 +342,23 @@ class bayestarNoVirgoSkymapCheck(esUtils.EventSupervisorTask):
     def bayestarNoVirgoSkymap(self, graceid, gdb, verbose=False, annotate=False, **kwargs):
         """
         a check that bayestar produced a skymap which excludes virgo
+        Only checks for a skymap iff Virgo is present in the instrument list. Otherwise, ignores this event (return False)
         looks for the existence of a skymap and the correct tagnames
         """
         if verbose:
             logger = esUtils.genTaskLogger( self.logDir, self.name, logTag=self.logTag )
             logger.info( "%s : %s"%(graceid, self.description) )
+
+        ### FIXME: the following might be fragile...
+        if 'V1' not in gdb.event(graceid).json()['instruments'].split(','):
+            if verbose or annotate:
+                message = 'no action required : V1 not in list of instruments and therefore existence of bayestar_no_virgo.fits.gz is irrelevant'
+                if verbose:
+                    logger.debug( message )
+                if annotate:
+                    esUtils.writeGDBLog( gdb, graceid, message )
+            return False ### not the trigger set I was expecting 
+
         fitsname = "bayestar_no_virgo.fits.gz"
         self.warning, action_required = esUtils.check4file( graceid, gdb, fitsname, tagnames=self.tagnames, verbose=verbose, logTag=logger.name if verbose else None )
         if verbose or annotate:
